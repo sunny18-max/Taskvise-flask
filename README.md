@@ -53,5 +53,5 @@ This project is lightweight, portable, and ideal for **academic projects, hackat
 
 ---
 
-## 📁 Project Structure
+
 
