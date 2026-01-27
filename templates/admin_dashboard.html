@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - TaskVise{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="brand-text">TaskVise</span>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-primary" onclick="addEmployeeDialog.open()">
+                    <i class="fas fa-users"></i>
+                    Manage Employees
+                </button>
+                <div class="user-dropdown">
+                    <button class="nav-btn user-menu-toggle" id="userMenuToggle">
+                        <div class="user-avatar-small">
+                            {{ session.get('full_name', 'Admin')[0] if session.get('full_name') else 'A' }}
+                        </div>
+                        <span>Admin</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/admin/profile" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="/admin/settings" class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ session.get('full_name', 'Admin')[0] if session.get('full_name') else 'A' }}
+                    </div>
+                    <div class="user-details">
+                        <h3>Administrator</h3>
+                        <p>System Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/admin/dashboard" class="nav-item {% if request.path == '/admin/dashboard' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="/admin/employees" class="nav-item {% if request.path == '/admin/employees' %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Employees</span>
+                </a>
+
+                <a href="/admin/projects" class="nav-item {% if request.path == '/admin/projects' %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projects</span>
+                </a>
+
+                <a href="/admin/tasks" class="nav-item {% if request.path == '/admin/tasks' %}active{% endif %}">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tasks</span>
+                </a>
+
+                <a href="/admin/analytics" class="nav-item {% if request.path == '/admin/analytics' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+
+                <a href="/admin/skill-gap-analysis" class="nav-item {% if request.path == '/admin/skill-gap-analysis' %}active{% endif %}">
+                    <i class="fas fa-search"></i>
+                    <span>Skill Gap Analysis</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="content-header">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1 id="page-title">
+                        {% if request.path == '/admin/dashboard' %}Dashboard Overview
+                        {% elif request.path == '/admin/employees' %}Employee Management
+                        {% elif request.path == '/admin/projects' %}Project Management
+                        {% elif request.path == '/admin/tasks' %}Task Management
+                        {% elif request.path == '/admin/analytics' %}Analytics Dashboard
+                        {% elif request.path == '/admin/skill-gap-analysis' %}Skill Gap Analysis
+                        {% elif request.path == '/admin/profile' %}Profile Settings
+                        {% elif request.path == '/admin/settings' %}System Settings
+                        {% else %}Admin Dashboard{% endif %}
+                    </h1>
+                    <p id="page-subtitle">
+                        {% if request.path == '/admin/dashboard' %}Welcome back! Here's what's happening today.
+                        {% elif request.path == '/admin/employees' %}Manage your team members and their details.
+                        {% elif request.path == '/admin/projects' %}Track and manage all your projects.
+                        {% elif request.path == '/admin/tasks' %}Monitor task progress and assignments.
+                        {% elif request.path == '/admin/analytics' %}View insights and performance metrics.
+                        {% elif request.path == '/admin/skill-gap-analysis' %}Identify and analyze skill gaps across your organization.
+                        {% elif request.path == '/admin/profile' %}Manage your account settings and preferences.
+                        {% elif request.path == '/admin/settings' %}Configure system-wide settings and preferences.
+                        {% else %}Admin dashboard overview{% endif %}
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline" onclick="adminDashboard.refreshData()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                    {% if request.path == '/admin/projects' %}
+                    <button class="btn btn-primary" onclick="createProjectDialog.open()">
+                        <i class="fas fa-plus"></i>
+                        Add Project
+                    </button>
+                    {% elif request.path == '/admin/employees' %}
+                    <button class="btn btn-primary" onclick="addEmployeeDialog.open()">
+                        <i class="fas fa-plus"></i>
+                        Add Employee
+                    </button>
+                    {% elif request.path == '/admin/tasks' %}
+                    <button class="btn btn-primary" onclick="openAssignTaskDialog()">
+                        <i class="fas fa-plus"></i>
+                        Add Task
+                    </button>
+                    {% endif %}
+                </div>
+            </header>
+
+            <div class="content-area">
+                {% if request.path == '/admin/dashboard' %}
+                    {% include 'admin/dashboard.html' %}
+                {% elif request.path == '/admin/employees' %}
+                    {% include 'admin/employees.html' %}
+                {% elif request.path == '/admin/projects' %}
+                    {% include 'admin/projects.html' %}
+                {% elif request.path == '/admin/tasks' %}
+                    {% include 'admin/tasks.html' %}
+                {% elif request.path == '/admin/analytics' %}
+                    {% include 'admin/analytics.html' %}
+                {% elif request.path == '/admin/skill-gap-analysis' %}
+                    {% include 'admin/skill_gap_analysis.html' %}
+                {% elif request.path == '/admin/profile' %}
+                    {% include 'admin/profile.html' %}
+                {% elif request.path == '/admin/settings' %}
+                    {% include 'admin/settings.html' %}
+                {% else %}
+                    {% include 'admin/dashboard.html' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
+
+<!-- Include CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+<!-- Include JavaScript -->
+<script id="initial-admin-data" type="application/json">{{ ( {'employees': employees or [], 'projects': projects or [], 'tasks': tasks or [], 'stats': stats or {}} )|tojson|safe }}</script>
+<script id="recent-activity-data" type="application/json">{{ (recent_activity or [])|tojson|safe }}</script>
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/add_employee.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/edit_employee.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/createProjectDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/assignTaskDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editTaskDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProjectDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/employeeDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form_utils.js') }}"></script>
+
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize admin dashboard
+    if (typeof initAdminDashboard === 'function') {
+        initAdminDashboard();
+    }
+
+    // User dropdown toggle
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdown = document.getElementById('userDropdown');
+    
+    if (userMenuToggle && userDropdown) {
+        userMenuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            userDropdown.classList.remove('show');
+        });
+    }
+
+    // Sidebar toggle for mobile
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
+    
+    console.log('Admin dashboard initialized successfully');
+});
+
+// Global fallback functions
+function showNotification(message, type = 'info') {
+    if (window.adminDashboard && typeof window.adminDashboard.showNotification === 'function') {
+        window.adminDashboard.showNotification(message, type);
+    } else {
+        // Fallback notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #3b82f6;
+            z-index: 10001;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        if (type === 'success') notification.style.borderLeftColor = '#10b981';
+        if (type === 'error') notification.style.borderLeftColor = '#ef4444';
+        if (type === 'warning') notification.style.borderLeftColor = '#f59e0b';
+        
+        notification.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #64748b; padding: 0; margin-left: 12px;">×</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+}
+
+function refreshAdminData() {
+    if (window.adminDashboard && typeof window.adminDashboard.refreshData === 'function') {
+        window.adminDashboard.refreshData();
+    } else {
+        location.reload();
+    }
+}
+</script>
+{% endblock %}

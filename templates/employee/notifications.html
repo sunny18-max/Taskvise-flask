@@ -1,0 +1,671 @@
+<div class="notifications-view">
+    <div class="page-header animate-slide-up">
+        <div class="header-content">
+            <div>
+                <h1 class="page-title">Notifications</h1>
+                <p class="page-subtitle">Stay updated with your work notifications</p>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-outline" id="mark-all-read">
+                    <i class="fas fa-check-double"></i> Mark All Read
+                </button>
+                <button class="btn btn-outline" id="clear-notifications">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Filter -->
+    <div class="notifications-filter animate-slide-up animate-delay-100">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="unread">Unread</button>
+        <button class="filter-btn" data-filter="tasks">Tasks</button>
+        <button class="filter-btn" data-filter="projects">Projects</button>
+        <button class="filter-btn" data-filter="system">System</button>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-list animate-slide-up animate-delay-200">
+        <div class="notification-item unread">
+            <div class="notification-icon">
+                <i class="fas fa-tasks text-primary"></i>
+            </div>
+            <div class="notification-content">
+                <h4>New Task Assigned</h4>
+                <p>You have been assigned to "Design Homepage Layout" by John Doe</p>
+                <span class="notification-time">2 hours ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="1">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="1">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item">
+            <div class="notification-icon">
+                <i class="fas fa-project-diagram text-success"></i>
+            </div>
+            <div class="notification-content">
+                <h4>Project Update</h4>
+                <p>"Website Redesign" project deadline has been updated to Feb 15, 2024</p>
+                <span class="notification-time">1 day ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="2">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="2">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item unread">
+            <div class="notification-icon">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+            </div>
+            <div class="notification-content">
+                <h4>Task Reminder</h4>
+                <p>"API Documentation" task is due in 2 days</p>
+                <span class="notification-time">1 day ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="3">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="3">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item">
+            <div class="notification-icon">
+                <i class="fas fa-check-circle text-success"></i>
+            </div>
+            <div class="notification-content">
+                <h4>Task Completed</h4>
+                <p>"Bug Fix - Login Issue" has been marked as completed</p>
+                <span class="notification-time">2 days ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="4">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="4">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item">
+            <div class="notification-icon">
+                <i class="fas fa-calendar-alt text-info"></i>
+            </div>
+            <div class="notification-content">
+                <h4>Leave Approved</h4>
+                <p>Your leave request for Dec 15-20, 2024 has been approved</p>
+                <span class="notification-time">3 days ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="5">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="5">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item">
+            <div class="notification-icon">
+                <i class="fas fa-cog text-secondary"></i>
+            </div>
+            <div class="notification-content">
+                <h4>System Maintenance</h4>
+                <p>Scheduled maintenance this weekend. System may be unavailable for 2 hours.</p>
+                <span class="notification-time">1 week ago</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline mark-read" data-id="6">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="btn btn-sm btn-outline delete-notification" data-id="6">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load More -->
+    <div class="load-more-section animate-slide-up animate-delay-300">
+        <button class="btn btn-outline" id="load-more-notifications">
+            <i class="fas fa-refresh"></i> Load More
+        </button>
+    </div>
+</div>
+
+<style>
+.notifications-view {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Notifications Filter */
+.notifications-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e9ecef;
+    background: white;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+}
+
+/* Notifications List */
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.notification-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.notification-item.unread {
+    background: #f8f9ff;
+    border-left: 4px solid #667eea;
+}
+
+.notification-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.text-primary { color: #667eea; }
+.text-success { color: #48bb78; }
+.text-warning { color: #ed8936; }
+.text-info { color: #4299e1; }
+.text-secondary { color: #a0aec0; }
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-content h4 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.notification-content p {
+    margin: 0 0 8px 0;
+    color: #495057;
+    line-height: 1.5;
+}
+
+.notification-time {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Button Styles */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+/* Load More Section */
+.load-more-section {
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Animations */
+.animate-slide-up {
+    animation: slideUp 0.6s ease;
+}
+
+.animate-delay-100 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+    animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+    animation-delay: 0.3s;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Notification Item Animation */
+.notification-item {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .notifications-view {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .notification-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .notifications-filter {
+        justify-content: center;
+    }
+    
+    .notification-item {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .notification-actions {
+        justify-content: center;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .notification-item {
+        padding: 16px;
+    }
+    
+    .notification-content h4 {
+        font-size: 1rem;
+    }
+    
+    .notification-content p {
+        font-size: 0.9rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const notificationItems = document.querySelectorAll('.notification-item');
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active button
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter notifications
+            notificationItems.forEach(item => {
+                if (filter === 'all') {
+                    item.style.display = 'flex';
+                } else if (filter === 'unread') {
+                    item.style.display = item.classList.contains('unread') ? 'flex' : 'none';
+                } else {
+                    // For other filters, you would check notification type
+                    // This is simplified for demo purposes
+                    const iconClass = item.querySelector('.notification-icon i').className;
+                    if (filter === 'tasks' && iconClass.includes('fa-tasks')) {
+                        item.style.display = 'flex';
+                    } else if (filter === 'projects' && iconClass.includes('fa-project-diagram')) {
+                        item.style.display = 'flex';
+                    } else if (filter === 'system' && iconClass.includes('fa-cog')) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+
+    // Mark as read
+    document.querySelectorAll('.mark-read').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-id');
+            const notificationItem = this.closest('.notification-item');
+            
+            // Remove unread class and update button
+            notificationItem.classList.remove('unread');
+            this.innerHTML = '<i class="fas fa-check-double"></i>';
+            this.disabled = true;
+            
+            // Update background color
+            notificationItem.style.background = 'white';
+            notificationItem.style.borderLeft = '1px solid #e9ecef';
+            
+            console.log('Marked notification as read:', notificationId);
+            
+            // Show success feedback
+            this.style.background = '#48bb78';
+            this.style.color = 'white';
+            setTimeout(() => {
+                this.style.background = '';
+                this.style.color = '';
+            }, 1000);
+        });
+    });
+
+    // Delete notification
+    document.querySelectorAll('.delete-notification').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-id');
+            const notificationItem = this.closest('.notification-item');
+            
+            if (confirm('Are you sure you want to delete this notification?')) {
+                // Add fade out animation
+                notificationItem.style.opacity = '0';
+                notificationItem.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    notificationItem.remove();
+                    // Show notification count update
+                    updateNotificationCount();
+                }, 300);
+                
+                console.log('Deleted notification:', notificationId);
+            }
+        });
+    });
+
+    // Mark all as read
+    const markAllReadBtn = document.getElementById('mark-all-read');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function() {
+            const unreadNotifications = document.querySelectorAll('.notification-item.unread');
+            
+            unreadNotifications.forEach(item => {
+                item.classList.remove('unread');
+                item.style.background = 'white';
+                item.style.borderLeft = '1px solid #e9ecef';
+                
+                const markReadBtn = item.querySelector('.mark-read');
+                if (markReadBtn) {
+                    markReadBtn.innerHTML = '<i class="fas fa-check-double"></i>';
+                    markReadBtn.disabled = true;
+                }
+            });
+            
+            // Show success message
+            alert(`Marked ${unreadNotifications.length} notifications as read!`);
+            updateNotificationCount();
+        });
+    }
+
+    // Clear all notifications
+    const clearNotificationsBtn = document.getElementById('clear-notifications');
+    if (clearNotificationsBtn) {
+        clearNotificationsBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all notifications?')) {
+                const allNotifications = document.querySelectorAll('.notification-item');
+                
+                allNotifications.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.style.opacity = '0';
+                        item.style.transform = 'translateX(-20px)';
+                        
+                        setTimeout(() => {
+                            item.remove();
+                        }, 300);
+                    }, index * 100);
+                });
+                
+                setTimeout(() => {
+                    updateNotificationCount();
+                    alert('All notifications cleared!');
+                }, allNotifications.length * 100 + 300);
+            }
+        });
+    }
+
+    // Load more notifications
+    const loadMoreBtn = document.getElementById('load-more-notifications');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            this.disabled = true;
+            
+            // Simulate loading more notifications
+            setTimeout(() => {
+                // Add sample notifications
+                const notificationsList = document.querySelector('.notifications-list');
+                const newNotification = document.createElement('div');
+                newNotification.className = 'notification-item';
+                newNotification.innerHTML = `
+                    <div class="notification-icon">
+                        <i class="fas fa-info-circle text-info"></i>
+                    </div>
+                    <div class="notification-content">
+                        <h4>System Update</h4>
+                        <p>New features have been added to the employee dashboard.</p>
+                        <span class="notification-time">Just now</span>
+                    </div>
+                    <div class="notification-actions">
+                        <button class="btn btn-sm btn-outline mark-read" data-id="new-1">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline delete-notification" data-id="new-1">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                notificationsList.appendChild(newNotification);
+                
+                // Re-attach event listeners to new buttons
+                attachEventListenersToNewItems();
+                
+                // Restore button state
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                alert('Loaded more notifications!');
+                
+            }, 1500);
+        });
+    }
+
+    // Helper function to update notification count (for demo)
+    function updateNotificationCount() {
+        const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+        console.log(`Unread notifications: ${unreadCount}`);
+        // In a real app, you might update a badge count here
+    }
+
+    // Helper function to attach event listeners to new items
+    function attachEventListenersToNewItems() {
+        document.querySelectorAll('.mark-read').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+                btn.setAttribute('data-listener-attached', 'true');
+                btn.addEventListener('click', function() {
+                    const notificationItem = this.closest('.notification-item');
+                    notificationItem.classList.remove('unread');
+                    this.innerHTML = '<i class="fas fa-check-double"></i>';
+                    this.disabled = true;
+                    notificationItem.style.background = 'white';
+                    notificationItem.style.borderLeft = '1px solid #e9ecef';
+                });
+            }
+        });
+
+        document.querySelectorAll('.delete-notification').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+                btn.setAttribute('data-listener-attached', 'true');
+                btn.addEventListener('click', function() {
+                    const notificationItem = this.closest('.notification-item');
+                    if (confirm('Are you sure you want to delete this notification?')) {
+                        notificationItem.style.opacity = '0';
+                        notificationItem.style.transform = 'translateX(-20px)';
+                        setTimeout(() => notificationItem.remove(), 300);
+                    }
+                });
+            }
+        });
+    }
+
+    // Initialize notification count
+    updateNotificationCount();
+});
+</script>

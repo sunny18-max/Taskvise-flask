@@ -1,0 +1,125 @@
+<div class="view-content">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card elevated">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="total-employees">{{ stats.total_employees|default(0) }}</div>
+                    <div class="stat-label">Total Employees</div>
+                </div>
+                <div class="stat-icon blue">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card elevated">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="active-projects">{{ stats.active_projects|default(0) }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-icon green">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card elevated">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="completed-tasks">{{ stats.completed_tasks|default(0) }}</div>
+                    <div class="stat-label">Completed Tasks</div>
+                </div>
+                <div class="stat-icon purple">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card elevated">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="total-tasks">{{ stats.total_tasks|default(0) }}</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-icon orange">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Team Performance -->
+    <div class="grid-2-col">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-clock"></i>
+                    Recent Activity
+                </h3>
+            </div>
+            <div class="card-content">
+                <div id="recent-activity">
+                    {% if recent_activity %}
+                        {% for activity in recent_activity %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="{{ activity.icon }}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-message">{{ activity.message }}</div>
+                                <div class="activity-time">{{ activity.time }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state small">
+                            <p>No recent activity</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-line"></i>
+                    Team Performance
+                </h3>
+            </div>
+            <div class="card-content">
+                <div id="team-performance">
+                    <div class="performance-metrics">
+                        <div class="metric">
+                            <div class="metric-value">{{ stats.completion_rate|default('0%') }}</div>
+                            <div class="metric-label">Completion Rate</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">{{ stats.overdue_tasks|default(0) }}</div>
+                            <div class="metric-label">Overdue Tasks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Scoped enhancements for Admin Overview */
+.stat-card.elevated { position: relative; overflow: hidden; }
+.stat-card.elevated::after { content: ""; position: absolute; inset: auto 0 0 0; height: 3px; background: linear-gradient(90deg,#3b82f6,#8b5cf6); opacity:.25; }
+
+#recent-activity .activity-item { display:flex; gap:.75rem; padding:.5rem .25rem; border-bottom:1px dashed #e5e7eb; }
+#recent-activity .activity-item:last-child { border-bottom:none; }
+#recent-activity .activity-icon { width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+#recent-activity .activity-content { display:flex; flex-direction:column; gap:.15rem; }
+#recent-activity .activity-message { font-weight:600; color:#111827; }
+#recent-activity .activity-time { font-size:.8rem; color:#6b7280; }
+
+.grid-2-col .card { border-radius:12px; border:1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.grid-2-col .card-header { padding:1rem 1.25rem 0; }
+.grid-2-col .card-content { padding: 0 1.25rem 1.25rem; }
+</style>

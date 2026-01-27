@@ -1,0 +1,102 @@
+<!-- manager profile redesigned -->
+<div class="profile-page">
+  <div class="page-header">
+    <h1 class="title">My Profile</h1>
+    <p class="subtitle">Manage your personal information and settings</p>
+  </div>
+
+  <div class="profile-grid">
+    <!-- Summary Card -->
+    <div class="card summary-card">
+      <div class="avatar">{{ (profile.name if profile else session.get('full_name','M'))[:1] }}</div>
+      <div class="name">{{ profile.name if profile else session.get('full_name', 'Manager') }}</div>
+      <div class="role-badge">Manager</div>
+      <div class="summary-list">
+        <div class="summary-item"><i class="fas fa-envelope"></i> {{ profile.email if profile else session.get('username','') }}</div>
+        <div class="summary-item"><i class="fas fa-phone"></i> {{ profile.phone if profile and profile.phone else 'Not provided' }}</div>
+        <div class="summary-item"><i class="fas fa-building"></i> {{ profile.department if profile and profile.department else 'Management' }}</div>
+      </div>
+    </div>
+
+    <!-- Personal Information Card -->
+    <div class="card info-card">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-user"></i> Personal Information</div>
+        <button class="edit-btn" onclick="openEditProfileDialog && openEditProfileDialog(window.currentProfile)"><i class="fas fa-edit"></i> Edit</button>
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">Full Name</div>
+          <div class="value">{{ profile.name if profile else session.get('full_name','Manager') }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Email</div>
+          <div class="value">{{ profile.email if profile else session.get('username','') }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Phone</div>
+          <div class="value">{{ profile.phone if profile and profile.phone else 'Not provided' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Department</div>
+          <div class="value">{{ profile.department if profile and profile.department else 'Management' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Location</div>
+          <div class="value">{{ profile.location if profile and profile.location else 'Not provided' }}</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Designation</div>
+          <div class="value">{{ profile.position if profile and profile.position else 'Manager' }}</div>
+        </div>
+        <div class="info-item full">
+          <div class="label">Skills</div>
+          <div class="chips">
+            {% set skills_text = profile.skills if profile and profile.skills else '' %}
+            {% set skills = skills_text.split(',') if skills_text else [] %}
+            {% if skills|length > 0 %}
+              {% for s in skills %}
+                <span class="chip">{{ s.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="muted">No skills listed</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.profile-page { padding: 1.5rem; }
+.page-header { margin-bottom: 1rem; }
+.title { color:#2563eb; font-size:1.75rem; font-weight:800; margin:0 0 .25rem 0; }
+.subtitle { color:#64748b; margin:0; }
+
+.profile-grid { display:grid; grid-template-columns: 320px 1fr; gap:1rem; }
+
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 6px 24px rgba(2,6,23,0.06); }
+.summary-card { padding:1.25rem; display:flex; flex-direction:column; align-items:center; }
+.avatar { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; margin-bottom:.75rem; }
+.name { font-weight:700; color:#0f172a; margin-bottom:.25rem; }
+.role-badge { background:#e0ecff; color:#1d4ed8; border:1px solid #93c5fd; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; font-weight:700; margin-bottom:1rem; }
+.summary-list { width:100%; display:flex; flex-direction:column; gap:.5rem; color:#475569; }
+.summary-item { display:flex; align-items:center; gap:.5rem; }
+
+.info-card { padding:1.25rem; }
+.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+.card-title { font-weight:700; color:#0f172a; }
+.edit-btn { border:1px solid #e5e7eb; background:#fff; border-radius:8px; padding:.5rem .75rem; cursor:pointer; color:#334155; display:flex; align-items:center; gap:.5rem; }
+.edit-btn:hover { background:#f8fafc; }
+
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.info-item .label { color:#64748b; font-size:.875rem; margin-bottom:.25rem; }
+.info-item .value { color:#0f172a; font-weight:600; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:.6rem .75rem; }
+.info-item.full { grid-column:1/-1; }
+.chips { display:flex; flex-wrap:wrap; gap:.5rem; }
+.chip { background:#f1f5f9; border:1px solid #e2e8f0; color:#374151; border-radius:999px; padding:.25rem .5rem; font-size:.75rem; }
+.muted { color:#94a3b8; }
+
+@media (max-width: 1024px) { .profile-grid { grid-template-columns:1fr; } }
+</style>

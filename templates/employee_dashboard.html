@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="brand-text">TaskVise</span>
+            </div>
+            <div class="nav-actions">
+                <!-- User Dropdown Menu -->
+                <div class="user-dropdown">
+                    <button class="nav-btn user-menu-toggle" id="userMenuToggle">
+                        <div class="user-avatar-small">
+                            {{ profile.name[0] if profile.name else 'U' }}
+                        </div>
+                        <span>{{ profile.name or 'Employee' }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/employee/profile" class="dropdown-item" data-view="profile">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="/employee/settings" class="dropdown-item" data-view="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ profile.name[0] if profile.name else 'U' }}
+                    </div>
+                    <div class="user-details">
+                        <h3>{{ profile.name or 'Employee' }}</h3>
+                        <p>{{ profile.role|title or 'Employee' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/employee/overview" class="nav-item {% if current_view == 'overview' %}active{% endif %}" data-view="overview">
+                    <i class="fas fa-home"></i>
+                    <span>Overview</span>
+                </a>
+                
+                <div class="nav-section {% if current_view == 'tasks' %}active{% endif %}">
+                    <a href="/employee/tasks" class="nav-item {% if current_view == 'tasks' %}active{% endif %}" data-view="tasks">
+                        <i class="fas fa-check-square"></i>
+                        <span>My Tasks</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu">
+                        <a href="/employee/tasks" class="nav-subitem {% if current_view == 'tasks' and not request.args.get('filter') %}active{% endif %}" data-view="tasks">
+                            All Tasks <span class="count" id="all-tasks-count">(0)</span>
+                        </a>
+                        <a href="/employee/tasks?filter=in-progress" class="nav-subitem {% if request.args.get('filter') == 'in-progress' %}active{% endif %}" data-view="tasks" data-filter="in-progress">
+                            <span class="status-dot status-in-progress"></span>
+                            In Progress <span class="count" id="in-progress-count">(0)</span>
+                        </a>
+                        <a href="/employee/tasks?filter=overdue" class="nav-subitem {% if request.args.get('filter') == 'overdue' %}active{% endif %}" data-view="tasks" data-filter="overdue">
+                            <span class="status-dot status-overdue"></span>
+                            Overdue <span class="count" id="overdue-count">(0)</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-section {% if current_view == 'projects' %}active{% endif %}">
+                    <a href="/employee/projects" class="nav-item {% if current_view == 'projects' %}active{% endif %}" data-view="projects">
+                        <i class="fas fa-target"></i>
+                        <span>My Projects</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu">
+                        <a href="/employee/projects" class="nav-subitem {% if current_view == 'projects' and not request.args.get('filter') %}active{% endif %}" data-view="projects">
+                            All Projects <span class="count" id="all-projects-count">(0)</span>
+                        </a>
+                        <a href="/employee/projects?filter=active" class="nav-subitem {% if request.args.get('filter') == 'active' %}active{% endif %}" data-view="projects" data-filter="active">
+                            <span class="status-dot status-active"></span>
+                            Active <span class="count" id="active-projects-count">(0)</span>
+                        </a>
+                        <a href="/employee/projects?filter=on-hold" class="nav-subitem {% if request.args.get('filter') == 'on-hold' %}active{% endif %}" data-view="projects" data-filter="on-hold">
+                            <span class="status-dot status-on-hold"></span>
+                            On Hold <span class="count" id="on-hold-projects-count">(0)</span>
+                        </a>
+                    </div>
+                </div>
+
+                <a href="/employee/workload" class="nav-item {% if current_view == 'workload' %}active{% endif %}" data-view="workload">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Workload & Help</span>
+                </a>
+
+                <div class="nav-section">
+                    <a href="/employee/leave" class="nav-item {% if current_view == 'leave' %}active{% endif %}" data-view="leave">
+                        <i class="fas fa-calendar"></i>
+                        <span>Leave Management</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu">
+                        <a href="/employee/leave" class="nav-subitem {% if current_view == 'leave' and not request.args.get('filter') %}active{% endif %}" data-view="leave">My Leave Calendar</a>
+                        <a href="/employee/leave?filter=pending" class="nav-subitem {% if request.args.get('filter') == 'pending' %}active{% endif %}" data-view="leave" data-filter="pending">Pending Requests</a>
+                        <a href="/employee/leave?filter=approved" class="nav-subitem {% if request.args.get('filter') == 'approved' %}active{% endif %}" data-view="leave" data-filter="approved">Approved Leaves</a>
+                    </div>
+                </div>
+
+                <a href="/employee/reports" class="nav-item {% if current_view == 'reports' %}active{% endif %}" data-view="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+
+                <a href="/employee/notifications" class="nav-item {% if current_view == 'notifications' %}active{% endif %}" data-view="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                    <span class="badge" id="notification-badge">0</span>
+                </a>
+
+                <a href="/employee/profile" class="nav-item {% if current_view == 'profile' %}active{% endif %}" data-view="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+
+                <a href="/employee/settings" class="nav-item {% if current_view == 'settings' %}active{% endif %}" data-view="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Workload Indicator -->
+            <div class="workload-indicator">
+                <div class="workload-header">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Current Workload</span>
+                </div>
+                <div class="workload-status workload-{{ stats.workload|default('light') }}" id="workload-status">{{ stats.workload|title|default('Light') }}</div>
+                <div class="workload-message" id="workload-message">
+                    {% if stats.workload == 'light' %}Light workload
+                    {% elif stats.workload == 'balanced' %}Manageable workload
+                    {% else %}Consider requesting help{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="content-header">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <p id="page-subtitle">Welcome back! Here's what's happening today.</p>
+                </div>
+                <div class="header-actions">
+                    <!-- Removed refresh and notification buttons -->
+                </div>
+            </header>
+
+            <div class="content-area" id="dashboard-view">
+                {% if current_view == 'overview' %}
+                    {% include 'employee/overview.html' ignore missing %}
+                {% elif current_view == 'tasks' %}
+                    {% include 'employee/tasks.html' %}
+                {% elif current_view == 'projects' %}
+                    {% include 'employee/projects.html' %}
+                {% elif current_view == 'leave' %}
+                    {% include 'employee/leave.html' %}
+                {% elif current_view == 'workload' %}
+                    {% include 'employee/workload.html' %}
+                {% elif current_view == 'reports' %}
+                    {% include 'employee/reports.html' ignore missing %}
+                {% elif current_view == 'notifications' %}
+                    {% include 'employee/notifications.html' ignore missing %}
+                {% elif current_view == 'profile' %}
+                    {% include 'employee/profile.html' ignore missing %}
+                {% elif current_view == 'settings' %}
+                    {% include 'employee/settings.html' ignore missing %}
+                {% else %}
+                    {% include 'employee/overview.html' ignore missing %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- Modal Styles -->
+    <style>
+        /* Sidebar dropdown counts and status dots */
+        .nav-subitem {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-subitem .count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status-dot.status-in-progress {
+            background: #3b82f6;
+        }
+        
+        .status-dot.status-overdue {
+            background: #ef4444;
+        }
+        
+        .status-dot.status-active {
+            background: #10b981;
+        }
+        
+        .status-dot.status-on-hold {
+            background: #f59e0b;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: normal;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast Styles */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10001;
+            animation: slideInRight 0.3s ease;
+        }
+
+        .toast-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-body {
+            padding: 12px 16px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Hide inner page headers from included views to prevent duplicate titles
+           The main dashboard header already shows the page title/subtitle. */
+        .content-area .page-header { display: none; }
+    </style>
+</div>
+
+<!-- Include JavaScript -->
+<script src="{{ url_for('static', filename='js/employee_dashboard.js') }}"></script>
+<script>
+  window.__employeeProfile = JSON.parse('{{ profile | tojson | safe }}');
+  function openEditProfile() {
+    if (window.openEditProfileDialog) {
+      window.openEditProfileDialog(window.__employeeProfile || {});
+    }
+  }
+  function openLeaveRequest() {
+    if (window.openLeaveRequestDialog) {
+      window.openLeaveRequestDialog();
+    }
+  }
+  async function apiChangePassword() {
+    try {
+      const res = await fetch('/api/employee/password/update', { method: 'POST' });
+      if (!res.ok) throw new Error();
+      if (window.showToast) showToast('Password updated', 'success');
+    } catch (e) {
+      if (window.showToast) showToast('Failed to update password', 'error');
+    }
+  }
+  
+  // Update sidebar counts
+  async function updateSidebarCounts() {
+    try {
+      const [tasksRes, projectsRes] = await Promise.all([
+        fetch('/api/employee/tasks', { credentials: 'same-origin' }),
+        fetch('/api/employee/projects', { credentials: 'same-origin' })
+      ]);
+      
+      if (tasksRes.ok) {
+        const tasks = await tasksRes.json();
+        const allTasks = tasks.length;
+        const inProgress = tasks.filter(t => (t.status || '').toLowerCase() === 'in-progress').length;
+        const overdue = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && (t.status || '').toLowerCase() !== 'completed').length;
+        
+        document.getElementById('all-tasks-count').textContent = `(${allTasks})`;
+        document.getElementById('in-progress-count').textContent = `(${inProgress})`;
+        document.getElementById('overdue-count').textContent = `(${overdue})`;
+      }
+      
+      if (projectsRes.ok) {
+        const projects = await projectsRes.json();
+        const allProjects = projects.length;
+        const active = projects.filter(p => (p.status || '').toLowerCase() === 'active').length;
+        const onHold = projects.filter(p => (p.status || '').toLowerCase() === 'on-hold').length;
+        
+        document.getElementById('all-projects-count').textContent = `(${allProjects})`;
+        document.getElementById('active-projects-count').textContent = `(${active})`;
+        document.getElementById('on-hold-projects-count').textContent = `(${onHold})`;
+      }
+    } catch (error) {
+      console.error('Error updating sidebar counts:', error);
+    }
+  }
+  
+  // Update counts on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSidebarCounts();
+    
+    // Toggle dropdown menus
+    document.querySelectorAll('.nav-section > .nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        const section = this.parentElement;
+        const wasActive = section.classList.contains('active');
+        
+        // Close all other sections
+        document.querySelectorAll('.nav-section').forEach(s => s.classList.remove('active'));
+        
+        // Toggle current section
+        if (!wasActive) {
+          section.classList.add('active');
+          e.preventDefault(); // Prevent navigation when opening dropdown
+        }
+      });
+    });
+  });
+</script>
+<script src="{{ url_for('static', filename='js/dialogs/editProfileDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/leaveRequestDialog.js') }}"></script>
+{% endblock %}

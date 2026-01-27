@@ -1,0 +1,561 @@
+<div class="notifications-view">
+  <div class="notifications-content">
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <div class="header-info">
+        <h2>Notifications</h2>
+        <p id="notificationSubtitle">All caught up!</p>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-outline" id="markAllReadBtn" style="display: none;">
+          <i class="fas fa-check-circle"></i>
+          Mark All as Read
+        </button>
+        <button class="btn btn-outline" id="refreshBtn">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-container" id="notificationsContainer">
+      <!-- Notifications will be populated here -->
+      <div class="empty-state">
+        <i class="fas fa-bell"></i>
+        <h4>No notifications</h4>
+        <p>You're all caught up! Notifications will appear here when you have new updates.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Notifications Data and Functions
+let notifications = [];
+
+// Initialize notifications
+document.addEventListener('DOMContentLoaded', function() {
+  loadNotifications();
+  setupNotificationEventListeners();
+});
+
+function loadNotifications() {
+  // Load from localStorage or API
+  const savedNotifications = localStorage.getItem('user-notifications');
+  if (savedNotifications) {
+    notifications = JSON.parse(savedNotifications);
+  }
+  
+  updateNotificationsDisplay();
+}
+
+function setupNotificationEventListeners() {
+  document.getElementById('refreshBtn').addEventListener('click', refreshNotifications);
+  document.getElementById('markAllReadBtn').addEventListener('click', markAllAsRead);
+}
+
+function refreshNotifications() {
+  const refreshBtn = document.getElementById('refreshBtn');
+  const icon = refreshBtn.querySelector('i');
+  
+  // Add spinning animation
+  icon.classList.add('fa-spin');
+  refreshBtn.disabled = true;
+  
+  // Simulate API call
+  setTimeout(() => {
+    loadNotifications();
+    icon.classList.remove('fa-spin');
+    refreshBtn.disabled = false;
+    showNotification('Notifications updated', 'success');
+  }, 1000);
+}
+
+function markAllAsRead() {
+  notifications = notifications.map(notif => ({ ...notif, read: true }));
+  saveNotifications();
+  updateNotificationsDisplay();
+  showNotification('All notifications marked as read', 'success');
+}
+
+function markAsRead(notificationId) {
+  notifications = notifications.map(notif =>
+    notif.id === notificationId ? { ...notif, read: true } : notif
+  );
+  saveNotifications();
+  updateNotificationsDisplay();
+  showNotification('Notification marked as read', 'success');
+}
+
+function saveNotifications() {
+  localStorage.setItem('user-notifications', JSON.stringify(notifications));
+}
+
+function updateNotificationsDisplay() {
+  const container = document.getElementById('notificationsContainer');
+  const subtitle = document.getElementById('notificationSubtitle');
+  const markAllBtn = document.getElementById('markAllReadBtn');
+  
+  const unreadCount = notifications.filter(notif => !notif.read).length;
+  
+  // Update subtitle
+  if (unreadCount > 0) {
+    subtitle.textContent = `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`;
+    markAllBtn.style.display = 'flex';
+  } else {
+    subtitle.textContent = 'All caught up!';
+    markAllBtn.style.display = 'none';
+  }
+  
+  if (notifications.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-bell"></i>
+        <h4>No notifications</h4>
+        <p>You're all caught up! Notifications will appear here when you have new updates.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = notifications.map(notif => `
+    <div class="notification-item ${notif.read ? 'read' : 'unread'} ${getNotificationTypeClass(notif.type)}">
+      <div class="notification-content">
+        <div class="notification-icon">
+          ${getNotificationIcon(notif.type)}
+        </div>
+        <div class="notification-details">
+          <div class="notification-header">
+            <h3 class="notification-title">${notif.title}</h3>
+            <div class="notification-badges">
+              ${!notif.read ? '<span class="badge badge-new">New</span>' : ''}
+              <span class="badge badge-type">${notif.type.replace('_', ' ')}</span>
+            </div>
+          </div>
+          <p class="notification-message">${notif.message}</p>
+          <div class="notification-meta">
+            <span class="notification-date">
+              ${formatDate(notif.createdAt)}
+            </span>
+            ${notif.taskId ? `
+              <span class="badge badge-secondary">
+                Task: ${notif.taskId.slice(0, 8)}...
+              </span>
+            ` : ''}
+            ${notif.projectId ? `
+              <span class="badge badge-secondary">
+                Project: ${notif.projectId.slice(0, 8)}...
+              </span>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+      ${!notif.read ? `
+        <button class="btn-icon mark-read-btn" onclick="markAsRead('${notif.id}')" title="Mark as read">
+          <i class="fas fa-check-circle"></i>
+        </button>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function getNotificationIcon(type) {
+  switch (type) {
+    case 'task_assigned': return '📋';
+    case 'task_completed': return '✅';
+    case 'project_assigned': return '📁';
+    case 'leave_status_update': return '📅';
+    case 'leave_reminder': return '⏰';
+    default: return '🔔';
+  }
+}
+
+function getNotificationTypeClass(type) {
+  switch (type) {
+    case 'task_assigned': return 'type-task';
+    case 'task_completed': return 'type-completed';
+    case 'project_assigned': return 'type-project';
+    case 'leave_status_update': return 'type-leave';
+    case 'leave_reminder': return 'type-reminder';
+    default: return 'type-default';
+  }
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function showNotification(message, type) {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+    <div class="notification-content">
+      <i class="fas fa-${type === 'success' ? 'check' : 'info'}"></i>
+      <span>${message}</span>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+
+// Add some sample notifications for demo
+function addSampleNotifications() {
+  const sampleNotifications = [
+    {
+      id: '1',
+      title: 'Task Assigned',
+      message: 'You have been assigned to "Implement user authentication"',
+      type: 'task_assigned',
+      read: false,
+      createdAt: new Date().toISOString(),
+      taskId: 'task_123456'
+    },
+    {
+      id: '2',
+      title: 'Project Update',
+      message: 'The website redesign project has been completed',
+      type: 'project_assigned',
+      read: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      projectId: 'project_789'
+    }
+  ];
+  
+  notifications = [...sampleNotifications, ...notifications];
+  saveNotifications();
+  updateNotificationsDisplay();
+}
+
+// Uncomment the line below to add sample notifications for testing
+// addSampleNotifications();
+</script>
+
+<style>
+.notifications-view {
+  padding: 1.5rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.notifications-content {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.header-info h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.header-info p {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-outline {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Notifications Container */
+.notifications-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notification-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.notification-item.unread {
+  border-left: 4px solid;
+  background: #f0f9ff;
+}
+
+.notification-item.read {
+  opacity: 0.75;
+}
+
+.notification-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.notification-item.read:hover {
+  opacity: 1;
+}
+
+/* Notification type colors */
+.notification-item.type-task.unread { border-left-color: #3b82f6; }
+.notification-item.type-completed.unread { border-left-color: #10b981; }
+.notification-item.type-project.unread { border-left-color: #8b5cf6; }
+.notification-item.type-leave.unread { border-left-color: #f59e0b; }
+.notification-item.type-reminder.unread { border-left-color: #ef4444; }
+.notification-item.type-default.unread { border-left-color: #6b7280; }
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.notification-details {
+  flex: 1;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.notification-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.notification-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notification-message {
+  color: #374151;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.mark-read-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.mark-read-btn:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-new {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge-type {
+  background: #f1f5f9;
+  color: #475569;
+  text-transform: capitalize;
+}
+
+.badge-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.empty-state h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.empty-state p {
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Notifications (toast style) */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+  background: #10b981;
+}
+
+.notification.info {
+  background: #3b82f6;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notifications-view {
+    padding: 1rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .notification-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .mark-read-btn {
+    align-self: flex-end;
+    margin-left: 0;
+  }
+  
+  .notification-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .notification-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>

@@ -1,0 +1,890 @@
+<div class="team-notes">
+  <div class="notes-content">
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <div class="header-info">
+        <h2>Team Collaboration Notes</h2>
+        <p>Share instructions, updates, and important information with your team</p>
+      </div>
+      <button class="btn btn-primary new-note-btn">
+        <i class="fas fa-comment"></i>
+        New Note
+      </button>
+    </div>
+
+    <!-- Create/Edit Note Form -->
+    <div class="note-form-container" id="noteFormContainer" style="display: none;">
+      <div class="note-form-card">
+        <div class="card-header">
+          <div class="card-title" id="formTitle">Create New Note</div>
+          <p class="card-description" id="formDescription">Share important information with your entire team</p>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" id="noteTitle" class="form-input" placeholder="Enter note title...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div class="priority-buttons">
+              <button class="priority-btn" data-priority="low">Low</button>
+              <button class="priority-btn active" data-priority="medium">Medium</button>
+              <button class="priority-btn" data-priority="high">High</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Content</label>
+            <textarea id="noteContent" class="form-textarea" placeholder="Write your message for the team..." rows="6"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" id="saveNoteBtn">Create Note</button>
+            <button class="btn btn-outline" id="cancelNoteBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes-grid">
+      <!-- Notes List -->
+      <div class="notes-list">
+        <div class="notes-container" id="notesContainer">
+          <!-- Notes will be populated here -->
+          <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <h4>No Notes Yet</h4>
+            <p>Create your first note to share information with your team</p>
+            <button class="btn btn-primary" id="createFirstNoteBtn">
+              <i class="fas fa-comment"></i>
+              Create First Note
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Overview -->
+      <div class="notes-overview">
+        <div class="overview-card">
+          <div class="card-header">
+            <div class="card-title">Notes Overview</div>
+          </div>
+          <div class="card-content">
+            <div class="overview-stats">
+              <div class="stat-item">
+                <div class="stat-value" id="totalNotes">0</div>
+                <div class="stat-label">Total Notes</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="pinnedNotes">0</div>
+                <div class="stat-label">Pinned Notes</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="highPriorityNotes">0</div>
+                <div class="stat-label">High Priority</div>
+              </div>
+            </div>
+            
+            <div class="visibility-info">
+              <div class="info-label">Team Visibility</div>
+              <div class="info-text">All notes are visible to <span id="teamMemberCount">0</span> team members</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Team Notes Data and Functions
+let notes = [];
+let teamMembers = [];
+let currentUser = { displayName: 'Manager' };
+let editingNote = null;
+
+// Initialize team notes
+document.addEventListener('DOMContentLoaded', function() {
+  loadTeamNotes();
+  setupNotesEventListeners();
+});
+
+async function loadTeamNotes() {
+  try {
+    const res = await fetch('/api/notes', { credentials: 'same-origin' });
+    if (res.ok) {
+      const rows = await res.json();
+      // Normalize booleans
+      notes = (rows || []).map(r => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        author: r.author,
+        authorId: r.author_id,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        isPinned: String(r.is_pinned).toLowerCase() === 'true',
+        priority: r.priority || 'medium',
+        visibleTo: r.visible_to || 'all'
+      }));
+    } else {
+      notes = [];
+    }
+  } catch (e) {
+    console.error('Failed to load notes', e);
+    notes = [];
+  }
+
+  // Mock team members
+  teamMembers = [
+    { id: '1', fullName: 'John Smith', role: 'Developer' },
+    { id: '2', fullName: 'Sarah Johnson', role: 'Designer' },
+    { id: '3', fullName: 'Mike Wilson', role: 'Tester' }
+  ];
+
+  updateNotesDisplay();
+}
+
+function setupNotesEventListeners() {
+  // New note button
+  document.querySelector('.new-note-btn').addEventListener('click', showNoteForm);
+  document.getElementById('createFirstNoteBtn').addEventListener('click', showNoteForm);
+  
+  // Form buttons
+  document.getElementById('saveNoteBtn').addEventListener('click', saveNote);
+  document.getElementById('cancelNoteBtn').addEventListener('click', cancelNoteForm);
+  
+  // Priority buttons
+  document.querySelectorAll('.priority-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+}
+
+function showNoteForm(note = null) {
+  editingNote = note;
+  const formContainer = document.getElementById('noteFormContainer');
+  const formTitle = document.getElementById('formTitle');
+  const formDescription = document.getElementById('formDescription');
+  const saveBtn = document.getElementById('saveNoteBtn');
+  
+  if (note) {
+    formTitle.textContent = 'Edit Note';
+    formDescription.textContent = 'Update your note for the team';
+    saveBtn.textContent = 'Update Note';
+    
+    document.getElementById('noteTitle').value = note.title;
+    document.getElementById('noteContent').value = note.content;
+    
+    // Set priority
+    document.querySelectorAll('.priority-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.priority === note.priority);
+    });
+  } else {
+    formTitle.textContent = 'Create New Note';
+    formDescription.textContent = 'Share important information with your entire team';
+    saveBtn.textContent = 'Create Note';
+    
+    document.getElementById('noteTitle').value = '';
+    document.getElementById('noteContent').value = '';
+    
+    // Reset to medium priority
+    document.querySelectorAll('.priority-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.priority === 'medium');
+    });
+  }
+  
+  formContainer.style.display = 'block';
+  formContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelNoteForm() {
+  document.getElementById('noteFormContainer').style.display = 'none';
+  editingNote = null;
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteContent').value = '';
+}
+
+async function saveNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  const content = document.getElementById('noteContent').value.trim();
+  const priority = document.querySelector('.priority-btn.active').dataset.priority;
+  
+  if (!title || !content) {
+    alert('Please fill in both title and content');
+    return;
+  }
+  
+  let changedId = null;
+  try {
+    if (editingNote) {
+      const res = await fetch(`/api/notes/${editingNote.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ title, content, priority })
+      });
+      if (!res.ok) throw new Error('Update failed');
+      changedId = editingNote.id;
+    } else {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ title, content, priority })
+      });
+      if (!res.ok) throw new Error('Create failed');
+      const data = await res.json();
+      changedId = data.id;
+    }
+    await loadTeamNotes();
+    cancelNoteForm();
+  } catch (e) {
+    console.error('Save note failed', e);
+    showNotification('Failed to save note. Please check network/auth.', 'error');
+    return;
+  }
+  
+  showNotification(
+    editingNote ? 'Note updated successfully' : 'Note created successfully',
+    'success'
+  );
+
+  // Scroll to and highlight the updated/created note
+  if (changedId) {
+    setTimeout(() => scrollAndHighlightNote(changedId), 0);
+  }
+}
+
+async function deleteNote(noteId) {
+  if (!confirm('Are you sure you want to delete this note?')) return;
+  try {
+    const res = await fetch(`/api/notes/${noteId}`, { method: 'DELETE', credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Delete failed');
+    await loadTeamNotes();
+    showNotification('Note deleted successfully', 'success');
+  } catch (e) {
+    console.error('Delete note failed', e);
+    showNotification('Failed to delete note. Please check network/auth.', 'error');
+  }
+}
+
+async function togglePinNote(noteId) {
+  try {
+    const note = notes.find(n => n.id === noteId);
+    const res = await fetch(`/api/notes/${noteId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ is_pinned: !(note && note.isPinned) })
+    });
+    if (!res.ok) throw new Error('Pin toggle failed');
+    await loadTeamNotes();
+  } catch (e) {
+    console.error('Toggle pin failed', e);
+    showNotification('Failed to update note. Please check network/auth.', 'error');
+  }
+}
+
+function saveNotesToStorage() {}
+
+function updateNotesDisplay() {
+  updateNotesList();
+  updateOverviewStats();
+}
+
+function updateNotesList() {
+  const container = document.getElementById('notesContainer');
+  
+  if (notes.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-comments"></i>
+        <h4>No Notes Yet</h4>
+        <p>Create your first note to share information with your team</p>
+        <button class="btn btn-primary" id="createFirstNoteBtn">
+          <i class="fas fa-comment"></i>
+          Create First Note
+        </button>
+      </div>
+    `;
+    
+    // Re-attach event listener
+    document.getElementById('createFirstNoteBtn').addEventListener('click', showNoteForm);
+    return;
+  }
+  
+  // Sort notes: pinned first, then by creation date
+  const sortedNotes = [...notes].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+  
+  container.innerHTML = sortedNotes.map(note => `
+    <div class="note-item ${note.isPinned ? 'pinned' : ''}" id="note-${note.id}">
+      <div class="note-header">
+        <div class="note-title-section">
+          <h3 class="note-title">${note.title}</h3>
+          <div class="note-badges">
+            ${note.isPinned ? '<i class="fas fa-thumbtack pinned-icon"></i>' : ''}
+            <span class="badge ${getPriorityClass(note.priority)}">${note.priority}</span>
+          </div>
+        </div>
+        <div class="note-actions">
+          <button class="btn-icon" onclick="showNoteForm(${JSON.stringify(note).replace(/"/g, '&quot;')})" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn-icon" onclick="togglePinNote('${note.id}')" title="${note.isPinned ? 'Unpin' : 'Pin'}">
+            <i class="fas fa-thumbtack"></i>
+          </button>
+          <button class="btn-icon" onclick="deleteNote('${note.id}')" title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="note-content">${note.content}</div>
+      
+      <div class="note-footer">
+        <div class="note-meta">
+          <div class="meta-item">
+            <i class="fas fa-user"></i>
+            <span>${note.author}</span>
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-calendar"></i>
+            <span>${formatDate(note.updatedAt || note.createdAt)}</span>
+            ${note.updatedAt ? '<span>(edited)</span>' : ''}
+          </div>
+        </div>
+        <div class="note-visibility">
+          <i class="fas fa-eye"></i>
+          <span>Visible to ${teamMembers.length} team members</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateOverviewStats() {
+  document.getElementById('totalNotes').textContent = notes.length;
+  document.getElementById('pinnedNotes').textContent = notes.filter(n => n.isPinned).length;
+  document.getElementById('highPriorityNotes').textContent = notes.filter(n => n.priority === 'high').length;
+  document.getElementById('teamMemberCount').textContent = teamMembers.length;
+}
+
+function getPriorityClass(priority) {
+  switch (priority) {
+    case 'high': return 'badge-danger';
+    case 'medium': return 'badge-warning';
+    default: return 'badge-success';
+  }
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function showNotification(message, type) {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.innerHTML = `
+    <div class="notification-content">
+      <i class="fas fa-${type === 'success' ? 'check' : 'info'}"></i>
+      <span>${message}</span>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
+}
+</script>
+
+<style>
+.team-notes {
+  padding: 1.5rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.notes-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.header-info h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.header-info p {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.new-note-btn {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.new-note-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Note Form */
+.note-form-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.priority-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.priority-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.priority-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-outline {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+  background: #f9fafb;
+}
+
+/* Notes Grid */
+.notes-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.notes-list {
+  min-height: 500px;
+}
+
+.notes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.note-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.note-item.pinned {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.note-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.note-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.note-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.note-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pinned-icon {
+  color: #f59e0b;
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+.note-content {
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+
+.note-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.note-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.note-visibility {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Notes Overview */
+.overview-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.overview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.visibility-info {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.info-text {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-danger {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.empty-state p {
+  max-width: 300px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.5;
+}
+
+/* Notifications */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+  background: #10b981;
+}
+
+.notification.info {
+  background: #3b82f6;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .team-notes {
+    padding: 1rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .note-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .note-footer {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .note-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .priority-buttons {
+    flex-direction: column;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+</style>

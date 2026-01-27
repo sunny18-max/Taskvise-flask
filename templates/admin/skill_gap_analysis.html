@@ -1,0 +1,515 @@
+<div class="view-content">
+    <div class="skill-gap-container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div>
+                        <div class="stat-value">{{ projects|length }}</div>
+                        <div class="stat-label">Total Projects</div>
+                    </div>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div>
+                        <div class="stat-value" id="high-priority-gaps">0</div>
+                        <div class="stat-label">High Priority Gaps</div>
+                    </div>
+                    <div class="stat-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div>
+                        <div class="stat-value">{{ employees|length }}</div>
+                        <div class="stat-label">Total Employees</div>
+                    </div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div>
+                        <div class="stat-value" id="avg-skill-match">0%</div>
+                        <div class="stat-label">Avg. Skill Match</div>
+                    </div>
+                    <div class="stat-icon purple">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card">
+            <div class="card-content">
+                <div class="filters-grid">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="skill-search" placeholder="Search projects or skills...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Project</label>
+                        <select id="project-filter" class="form-select">
+                            <option value="all">All Projects</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Gap Severity</label>
+                        <select id="severity-filter" class="form-select">
+                            <option value="all">All Severities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Department</label>
+                        <select id="department-filter" class="form-select">
+                            <option value="all">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skill Gaps Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-search"></i>
+                    Skill Gap Analysis
+                </h3>
+                <p class="card-description">Overview of missing skills across all projects with recommendations</p>
+            </div>
+            <div class="card-content">
+                <div class="table-container">
+                    <table class="skill-gap-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Required Skills</th>
+                                <th>Available Skills</th>
+                                <th>Missing Skills</th>
+                                <th>Match Rate</th>
+                                <th>Gap Severity</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="skill-gaps-body">
+                            <tr>
+                                <td colspan="7" class="empty-table">
+                                    <div class="empty-state small">
+                                        <i class="fas fa-check-circle"></i>
+                                        <p>No skill gaps found</p>
+                                        <p class="empty-description">All skill requirements are currently met across projects</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Skill Gap Visualization
+                </h3>
+                <p class="card-description">Visual representation of missing skills across projects</p>
+            </div>
+            <div class="card-content">
+                <div class="visualization-grid">
+                    <!-- Missing Skills Chart -->
+                    <div class="chart-section">
+                        <h4>Missing Skills by Project</h4>
+                        <div class="bar-chart" id="missing-skills-chart">
+                            <!-- Bar chart will be populated by JavaScript -->
+                            <div class="empty-state small">
+                                <p>No data available for visualization</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Severity Distribution -->
+                    <div class="chart-section">
+                        <h4>Gap Severity Distribution</h4>
+                        <div class="severity-distribution">
+                            <div class="donut-chart">
+                                <div class="donut-segment high"></div>
+                                <div class="donut-segment medium"></div>
+                                <div class="donut-segment low"></div>
+                                <div class="donut-center">
+                                    <span id="total-projects-count">0</span>
+                                    <small>Projects</small>
+                                </div>
+                            </div>
+                            <div class="severity-legend">
+                                <div class="legend-item">
+                                    <span class="legend-color high"></span>
+                                    <span>High: <span id="high-count">0</span></span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color medium"></span>
+                                    <span>Medium: <span id="medium-count">0</span></span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color low"></span>
+                                    <span>Low: <span id="low-count">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.skill-gap-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.stat-icon.red {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.skill-gap-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.skill-gap-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.skill-gap-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+}
+
+.skill-gap-table tr:hover {
+    background: #f8fafc;
+}
+
+.empty-table {
+    text-align: center;
+    padding: 3rem !important;
+}
+
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    max-width: 200px;
+}
+
+.skill-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.skill-required {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.skill-available {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #86efac;
+}
+
+.skill-missing {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+.match-rate {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.match-bar {
+    width: 60px;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.match-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.match-fill.high {
+    background: #10b981;
+}
+
+.match-fill.medium {
+    background: #f59e0b;
+}
+
+.match-fill.low {
+    background: #ef4444;
+}
+
+.severity-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.severity-high {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.severity-medium {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fed7aa;
+}
+
+.severity-low {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.recommendation {
+    max-width: 200px;
+    font-size: 0.875rem;
+}
+
+.visualization-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.chart-section h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #374151;
+}
+
+.bar-chart {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bar-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.bar-label {
+    width: 120px;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bar-track {
+    flex: 1;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: #ef4444;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.bar-value {
+    width: 30px;
+    text-align: right;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.severity-distribution {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.donut-chart {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #ef4444 0% 40%,
+        #f59e0b 40% 70%,
+        #10b981 70% 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.donut-center {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.donut-center small {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: normal;
+}
+
+.severity-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-color.high {
+    background: #ef4444;
+}
+
+.legend-color.medium {
+    background: #f59e0b;
+}
+
+.legend-color.low {
+    background: #10b981;
+}
+
+@media (max-width: 1024px) {
+    .filters-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .visualization-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .skills-list {
+        max-width: 150px;
+    }
+}
+</style>
+
+<script>
+// This would be populated with actual data from your backend
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with empty data - you would fetch this from your API
+    updateSkillGapStats(0, 0, 0);
+});
+
+function updateSkillGapStats(highCount, mediumCount, lowCount) {
+    document.getElementById('high-priority-gaps').textContent = highCount;
+    document.getElementById('avg-skill-match').textContent = '75%'; // Example value
+    document.getElementById('total-projects-count').textContent = highCount + mediumCount + lowCount;
+    document.getElementById('high-count').textContent = highCount;
+    document.getElementById('medium-count').textContent = mediumCount;
+    document.getElementById('low-count').textContent = lowCount;
+}
+</script>

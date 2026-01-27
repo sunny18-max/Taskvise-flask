@@ -1,0 +1,148 @@
+Taskvise - Flask conversion scaffold\n===================================\n\nWhat I created:\n- A Flask application skeleton (app.py) that provides:\n  - CSV-backed storage for users, employees, tasks, projects, leave requests, and work sessions (files in /data)\n  - Authentication (login/logout) using username + password stored in users.csv (passwords hashed)\n  - REST API endpoints for CRUD operations:\n    - /api/users, /api/users/<id>\n    - /api/employees, /api/employees/<id>\n    - /api/tasks, /api/tasks/<id>\n    - /api/projects, /api/projects/<id>\n    - /api/leave, /api/leave/<id>\n    - /api/work, /api/work/<id>\n  - Simple HTML templates for login and dashboard (templates/)\n  - Static assets were copied from the uploaded project where possible into static/\n\nWhat I could not fully convert automatically:\n- Complex React components and application logic (JSX/React state/routing) were not transformed into one-to-one static HTML/JS.\n- The original React app's exact styling and interactivity is preserved where static CSS/JS files were present and copied into /static. If your React code renders UI dynamically via client-side rendering, you'll need to adapt those components into plain HTML + vanilla JS or keep React but serve it as a static build.\n- Some files from your uploaded project were placed in the converted project's static directory when they matched typical asset types (css/js/images). See the list of copied assets below.\n\nHow to run:\n1. Create a Python virtualenv and install requirements:\n   python -m venv venv\n   source venv/bin/activate   # or venv\\Scripts\\activate on Windows\n   pip install -r requirements.txt\n\n2. Run the app:\n   export FLASK_APP=app.py\n   export FLASK_ENV=development\n   flask run --host=0.0.0.0 --port=5000\n   or simply: python app.py\n\n3. Default CSV files are in the data/ folder. Create an account via the API:\n   POST /api/users  with JSON {"username":"admin","password":"secret","full_name":"Admin","role":"admin"}\n\nFiles copied from your uploaded project (if any):\n[
+  "taskvise1/index.html",
+  "taskvise1/leaveManagement.js",
+  "taskvise1/postcss.config.js",
+  "taskvise1/server.js",
+  "taskvise1/src/App.css",
+  "taskvise1/src/index.css",
+  "taskvise1/src/hooks/useAuth.js",
+  "taskvise1/src/lib/firebase.js"
+]\n\nNotes & next steps:\n- If you want a pixel-perfect reproduction of your React UI, provide either the built static files (the React production build in 'build' or 'dist') or allow me to convert specific React component files into HTML templates. I can then replace the placeholder templates with full HTML versions.\n- I can also integrate client-side JS to call the REST API endpoints and reproduce the app's functions (task creation, assignment, project pages, etc.).
+
+Converted React components (best-effort):
+- templates/includes/._Chatbot.html  (original source copied to static/js/components)
+- templates/includes/._ThemeProvider.html  (original source copied to static/js/components)
+- templates/includes/api_employees_route.html  (original source copied to static/js/components)
+- templates/includes/api_notifications_route.html  (original source copied to static/js/components)
+- templates/includes/api_projects_route.html  (original source copied to static/js/components)
+- templates/includes/api_tasks_route.html  (original source copied to static/js/components)
+- templates/includes/auth_AuthProvider.html  (original source copied to static/js/components)
+- templates/includes/auth_EnhancedCredentials.html  (original source copied to static/js/components)
+- templates/includes/auth_LoginForm.html  (original source copied to static/js/components)
+- templates/includes/auth_UnifiedSignupForm.html  (original source copied to static/js/components)
+- templates/includes/charts_GanttChart.html  (original source copied to static/js/components)
+- templates/includes/dashboard_NotificationPanel.html  (original source copied to static/js/components)
+- templates/includes/dashboard_QuickActions.html  (original source copied to static/js/components)
+- templates/includes/dashboard_RecentTasks.html  (original source copied to static/js/components)
+- templates/includes/dashboard_StatsCard.html  (original source copied to static/js/components)
+- templates/includes/layout_DashboardLayout.html  (original source copied to static/js/components)
+- templates/includes/layout_ProtectedRoute.html  (original source copied to static/js/components)
+- templates/includes/navigation_Navbar.html  (original source copied to static/js/components)
+- templates/includes/ui_accordion.html  (original source copied to static/js/components)
+- templates/includes/ui_alert-dialog.html  (original source copied to static/js/components)
+- templates/includes/ui_alert.html  (original source copied to static/js/components)
+- templates/includes/ui_aspect-ratio.html  (original source copied to static/js/components)
+- templates/includes/ui_avatar.html  (original source copied to static/js/components)
+- templates/includes/ui_badge.html  (original source copied to static/js/components)
+- templates/includes/ui_breadcrumb.html  (original source copied to static/js/components)
+- templates/includes/ui_button.html  (original source copied to static/js/components)
+- templates/includes/ui_calender.html  (original source copied to static/js/components)
+- templates/includes/ui_card.html  (original source copied to static/js/components)
+- templates/includes/ui_carousel.html  (original source copied to static/js/components)
+- templates/includes/ui_chart.html  (original source copied to static/js/components)
+- templates/includes/ui_checkbox.html  (original source copied to static/js/components)
+- templates/includes/ui_collapsible.html  (original source copied to static/js/components)
+- templates/includes/ui_command.html  (original source copied to static/js/components)
+- templates/includes/ui_context-menu.html  (original source copied to static/js/components)
+- templates/includes/ui_dialog.html  (original source copied to static/js/components)
+- templates/includes/ui_drawer.html  (original source copied to static/js/components)
+- templates/includes/ui_dropdown-menu.html  (original source copied to static/js/components)
+- templates/includes/ui_form.html  (original source copied to static/js/components)
+- templates/includes/ui_hover-card.html  (original source copied to static/js/components)
+- templates/includes/ui_input-otp.html  (original source copied to static/js/components)
+- templates/includes/ui_input.html  (original source copied to static/js/components)
+- templates/includes/ui_label.html  (original source copied to static/js/components)
+- templates/includes/ui_menubar.html  (original source copied to static/js/components)
+- templates/includes/ui_navigation-menu.html  (original source copied to static/js/components)
+- templates/includes/ui_pagination.html  (original source copied to static/js/components)
+- templates/includes/ui_popover.html  (original source copied to static/js/components)
+- templates/includes/ui_progress.html  (original source copied to static/js/components)
+- templates/includes/ui_radio-group.html  (original source copied to static/js/components)
+- templates/includes/ui_resizable.html  (original source copied to static/js/components)
+- templates/includes/ui_scroll-area.html  (original source copied to static/js/components)
+- templates/includes/ui_select.html  (original source copied to static/js/components)
+- templates/includes/ui_separator.html  (original source copied to static/js/components)
+- templates/includes/ui_sheet.html  (original source copied to static/js/components)
+- templates/includes/ui_sidebar.html  (original source copied to static/js/components)
+- templates/includes/ui_skeleton.html  (original source copied to static/js/components)
+- templates/includes/ui_slider.html  (original source copied to static/js/components)
+- templates/includes/ui_sonner.html  (original source copied to static/js/components)
+- templates/includes/ui_switch.html  (original source copied to static/js/components)
+- templates/includes/ui_table.html  (original source copied to static/js/components)
+- templates/includes/ui_tabs.html  (original source copied to static/js/components)
+- templates/includes/ui_textarea.html  (original source copied to static/js/components)
+- templates/includes/ui_toast.html  (original source copied to static/js/components)
+- templates/includes/ui_toaster.html  (original source copied to static/js/components)
+- templates/includes/ui_toggle-group.html  (original source copied to static/js/components)
+- templates/includes/ui_toggle.html  (original source copied to static/js/components)
+- templates/includes/ui_tooltip.html  (original source copied to static/js/components)
+- templates/includes/ui_use-toast.html  (original source copied to static/js/components)
+
+Copied JS/TS sources into static/js/components/ (for reference or to reuse as-is):
+- static/js/components/./Chatbot.tsx
+- static/js/components/./ThemeProvider.tsx
+- static/js/components/api/employees/route.ts
+- static/js/components/api/notifications/route.ts
+- static/js/components/api/projects/route.ts
+- static/js/components/api/tasks/route.ts
+- static/js/components/auth/AuthProvider.tsx
+- static/js/components/auth/EnhancedCredentials.tsx
+- static/js/components/auth/LoginForm.tsx
+- static/js/components/auth/UnifiedSignupForm.tsx
+- static/js/components/charts/GanttChart.tsx
+- static/js/components/dashboard/NotificationPanel.tsx
+- static/js/components/dashboard/QuickActions.tsx
+- static/js/components/dashboard/RecentTasks.tsx
+- static/js/components/dashboard/StatsCard.tsx
+- static/js/components/layout/DashboardLayout.tsx
+- static/js/components/layout/ProtectedRoute.tsx
+- static/js/components/navigation/Navbar.tsx
+- static/js/components/ui/accordion.tsx
+- static/js/components/ui/alert-dialog.tsx
+- static/js/components/ui/alert.tsx
+- static/js/components/ui/aspect-ratio.tsx
+- static/js/components/ui/avatar.tsx
+- static/js/components/ui/badge.tsx
+- static/js/components/ui/breadcrumb.tsx
+- static/js/components/ui/button.tsx
+- static/js/components/ui/calender.tsx
+- static/js/components/ui/card.tsx
+- static/js/components/ui/carousel.tsx
+- static/js/components/ui/chart.tsx
+- static/js/components/ui/checkbox.tsx
+- static/js/components/ui/collapsible.tsx
+- static/js/components/ui/command.tsx
+- static/js/components/ui/context-menu.tsx
+- static/js/components/ui/dialog.tsx
+- static/js/components/ui/drawer.tsx
+- static/js/components/ui/dropdown-menu.tsx
+- static/js/components/ui/form.tsx
+- static/js/components/ui/hover-card.tsx
+- static/js/components/ui/input-otp.tsx
+- static/js/components/ui/input.tsx
+- static/js/components/ui/label.tsx
+- static/js/components/ui/menubar.tsx
+- static/js/components/ui/navigation-menu.tsx
+- static/js/components/ui/pagination.tsx
+- static/js/components/ui/popover.tsx
+- static/js/components/ui/progress.tsx
+- static/js/components/ui/radio-group.tsx
+- static/js/components/ui/resizable.tsx
+- static/js/components/ui/scroll-area.tsx
+- static/js/components/ui/select.tsx
+- static/js/components/ui/separator.tsx
+- static/js/components/ui/sheet.tsx
+- static/js/components/ui/sidebar.tsx
+- static/js/components/ui/skeleton.tsx
+- static/js/components/ui/slider.tsx
+- static/js/components/ui/sonner.tsx
+- static/js/components/ui/switch.tsx
+- static/js/components/ui/table.tsx
+- static/js/components/ui/tabs.tsx
+- static/js/components/ui/textarea.tsx
+- static/js/components/ui/toast.tsx
+- static/js/components/ui/toaster.tsx
+- static/js/components/ui/toggle-group.tsx
+- static/js/components/ui/toggle.tsx
+- static/js/components/ui/tooltip.tsx
+- static/js/components/ui/use-toast.ts

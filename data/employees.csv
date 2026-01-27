@@ -1,0 +1,28 @@
+id,name,email,position,department,join_date,phone,skills,location,last_login,password_last_changed
+350ad777-bbb7-4f65-973d-904fc0e28a4d,Emp2,empl2@gmail.com,Full Stack Developer,Engineering,2025-10-11 21:20:56,7909180345,"React js,Node js,CSS,Js",,2025-10-12 12:30:30,2025-10-11 21:20:56
+95da96e3-f410-4b77-b96e-e98841c16284,Emp3,empl3@gmail.com,DevOps Engineer,Engineering,2025-10-12 12:40:10,8279102823,React,,2025-10-12 12:40:31,2025-10-12 12:40:10
+f826133c-6adf-4dad-89f3-23cf13e492d6,System Administrator,admin,Admin,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:25
+cd4a6c6a-0d48-45d5-befa-b8aa032511e3,Project Manager,manager,Manager,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:25
+5bd6f099-abde-4978-a196-609a664e9bf2,John Doe,Employee1,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:25
+be1abc72-b7b2-427e-bf14-9dbe74457b62,Jane Smith,Employee2,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:26
+bc2e2108-25bb-4e70-80cc-629181da39da,HR Manager,hr,Hr,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:26
+8f8a53a6-6dde-42f2-99d5-b7d0eba0d7c4,Team Lead,teamlead,Teamlead,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:11:26
+9b403be4-2def-4d7e-ba85-a58a416a65ac,System Administrator,admin@company.com,Admin,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:28
+e959c9a3-1575-4c44-b8c1-0743f12d3c6b,Project Manager,manager@company.com,Manager,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:28
+34745f76-4a17-4de9-905b-9e7ea8c6b56f,John Doe,employee1@company.com,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:28
+5b56e940-44bd-4e23-b381-461033c6c8e9,Jane Smith,employee2@company.com,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:29
+12fbd49d-1524-4c95-a55c-7792d7fc4da2,HR Manager,hr@company.com,Hr,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:29
+fc30b514-c340-432f-9bd2-5294654b328d,Team Lead,teamlead@company.com,Teamlead,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:29
+3453e896-5b6b-4e39-b31b-2e44351d38d6,System Administrator,admin@.com,Admin,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:44
+f096f6fd-48a2-4cef-bddd-435c31c9e36a,Project Manager,manager@.com,Manager,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:44
+97cc66f0-c9e1-49f6-b0b1-5b80dc9880a2,John Doe,employee1@.com,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:45
+7faec8c5-94bc-4b15-b522-dc103ae65b28,Jane Smith,employee2@.com,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:45
+898f8b99-38dd-4303-9d59-fcf1cb99207b,HR Manager,hr@.com,Hr,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:45
+5e31a3c7-a8f3-44b5-a57f-98b258d4e6ce,Team Lead,teamlead@.com,Teamlead,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:45
+2e136e5d-5cd5-46e1-981f-c22e4dfe4e36,System Administrator,admin@gmail.com,Admin,IT,2025-10-12,555-0100,Sample Skills,Office,2026-01-27 15:02:07,2025-10-12 14:23:46
+d2380943-149c-44ed-afe6-0e19d2c8e7f1,Project Manager,manager@gmail.com,Manager,IT,2025-10-12,555-0100,Sample Skills,Office,2026-01-27 15:03:14,2025-10-12 14:23:46
+ea79fcfa-550f-4f0a-8ed7-dbffa15733a4,John Doe,employee1@gmail.com,Employee,IT,2025-10-12,9908179816,Sample Skills,Hyderabad,2026-01-27 15:01:40,2025-10-15 22:43:15
+1f7c046e-d129-4cb8-a14f-6e8cff37361f,Jane Smith,employee2@gmail.com,Employee,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:47
+ded7b49b-b696-4fae-9e49-a3e9dda0a360,HR Manager,hr@gmail.com,Hr,IT,2025-10-12,555-0100,Sample Skills,Office,,2025-10-12 14:23:47
+65d17a37-92bd-4127-9e46-6dd117065029,Team Lead,teamlead@gmail.com,Teamlead,IT,2025-10-12,555-0100,Sample Skills,Office,2025-10-15 18:52:49,2025-10-12 14:23:47
+7013bbad-f593-497e-aa87-16425955aeb7,Bindu,middela.bindu1302@gmail.com,Lead Developer,IT,2026-01-08 06:38:09,9014591172,Python,,2026-01-08 06:39:31,2026-01-08 06:38:09

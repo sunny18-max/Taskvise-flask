@@ -1,0 +1,539 @@
+<div class="view-container">
+    <!-- Projects Grid -->
+    <div class="projects-grid">
+        {% for project in projects %}
+        <div class="project-card">
+            <div class="project-header">
+                <div class="project-info">
+                    <h3 class="project-title">{{ project.name }}</h3>
+                    <p class="project-description">{{ project.description or 'No description provided' }}</p>
+                </div>
+                <div class="project-actions">
+                    <span class="status-badge {{ project.status }}">
+                        {{ project.status|title }}
+                    </span>
+                    <button class="btn-icon" onclick="editProject('{{ project.id }}')" title="Edit Project">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon danger" onclick="deleteProject('{{ project.id }}')" title="Delete Project">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="project-progress">
+                <div class="progress-header">
+                    <span class="progress-label">Project Progress</span>
+                    <span class="progress-value">{{ project.progress or 0 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ project.progress or 0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="project-stats">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ project.completed_tasks or 0 }}/{{ project.total_tasks or 0 }}</div>
+                        <div class="stat-label">Tasks</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ project.actual_hours or 0 }}/{{ project.estimated_hours or 0 }}h</div>
+                        <div class="stat-label">Hours</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">
+                            {% if project.deadline %}
+                                {{ project.deadline }}
+                            {% elif project.end_date %}
+                                {{ project.end_date }}
+                            {% else %}
+                                No deadline
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Deadline</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ project.team_members_count or 0 }}</div>
+                        <div class="stat-label">Team Members</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h3>No Projects Found</h3>
+            <p>Create your first project to get started</p>
+            <button class="btn btn-primary" onclick="openCreateProjectDialog()">
+                <i class="fas fa-plus"></i>
+                Create Project
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function ensureProjectDialogLoaded() {
+    return new Promise((resolve, reject) => {
+        if (window.openEditProjectDialog) return resolve();
+        const existing = document.querySelector('script[data-dialog="editProject"]');
+        if (existing) {
+            existing.addEventListener('load', () => resolve());
+            existing.addEventListener('error', () => reject(new Error('Failed to load editProjectDialog.js')));
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = '/static/js/dialogs/editProjectDialog.js?v=' + Date.now();
+        script.async = true;
+        script.defer = true;
+        script.dataset.dialog = 'editProject';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load editProjectDialog.js'));
+        document.head.appendChild(script);
+    });
+}
+
+async function editProject(projectId) {
+    try {
+        // Get current projects data
+        const projects = await window.managerDashboard.getProjects();
+        const employees = await window.managerDashboard.getEmployees();
+        await ensureProjectDialogLoaded();
+        
+        // Call the edit project dialog function
+        if (window.openEditProjectDialog) {
+            window.openEditProjectDialog(projectId, projects, employees, updateProject);
+        } else {
+            showNotification('Edit project dialog not available', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening edit project dialog:', error);
+        showNotification('Failed to open edit project dialog', 'error');
+    }
+}
+
+async function updateProject(projectId, updateData) {
+    try {
+        // Convert date string to proper format if needed
+        if (updateData.deadline) {
+            // Ensure the deadline is in proper format for your backend
+            updateData.deadline = new Date(updateData.deadline).toISOString();
+        }
+        
+        // Call the manager dashboard update function
+        const success = await window.managerDashboard.updateProject(projectId, updateData);
+        
+        if (success) {
+            showNotification('Project updated successfully', 'success');
+            // Refresh the projects view
+            if (window.managerDashboard.loadProjects) {
+                window.managerDashboard.loadProjects();
+            }
+            return true;
+        } else {
+            throw new Error('Failed to update project');
+        }
+    } catch (error) {
+        console.error('Error updating project:', error);
+        showNotification(error.message || 'Failed to update project', 'error');
+        return false;
+    }
+}
+
+function deleteProject(projectId) {
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+        if (window.managerDashboard && window.managerDashboard.deleteProject) {
+            window.managerDashboard.deleteProject(projectId)
+                .then(success => {
+                    if (success) {
+                        showNotification('Project deleted successfully', 'success');
+                    } else {
+                        showNotification('Failed to delete project', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting project:', error);
+                    showNotification('Failed to delete project', 'error');
+                });
+        } else {
+            showNotification('Delete project feature coming soon', 'info');
+        }
+    }
+}
+
+function openCreateProjectDialog() {
+    showNotification('Create project feature coming soon', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    if (window.managerDashboard) {
+        window.managerDashboard.showNotification(message, type);
+    } else {
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
+}
+
+// Preload dialog (non-blocking)
+ensureProjectDialogLoaded().catch(()=>{});
+</script>
+
+<style>
+.view-container {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Projects Grid */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+}
+
+.project-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.project-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: #e2e8f0;
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.project-info {
+    flex: 1;
+}
+
+.project-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+}
+
+.project-description {
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    font-size: 0.9rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.project-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: 1px solid;
+}
+
+.status-badge.completed { 
+    background: #f0fdf4; 
+    color: #16a34a; 
+    border-color: #bbf7d0;
+}
+.status-badge.active { 
+    background: #dbeafe; 
+    color: #1d4ed8; 
+    border-color: #93c5fd;
+}
+.status-badge.planning { 
+    background: #fef3c7; 
+    color: #92400e; 
+    border-color: #fcd34d;
+}
+.status-badge.on-hold { 
+    background: #f1f5f9; 
+    color: #64748b; 
+    border-color: #cbd5e1;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.btn-icon:hover {
+    background: #f1f5f9;
+    color: #374151;
+    transform: scale(1.05);
+}
+
+.btn-icon.danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Project Progress */
+.project-progress {
+    margin-bottom: 1.5rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.progress-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.progress-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* Project Stats */
+.project-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    border: 1px solid #f1f5f9;
+}
+
+.stat-item:hover {
+    background: white;
+    border-color: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+    font-size: 0.8rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9rem;
+    margin-bottom: 0.125rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #e2e8f0;
+}
+
+.empty-icon {
+    font-size: 3.5rem;
+    color: #cbd5e1;
+    margin-bottom: 1.25rem;
+    opacity: 0.6;
+}
+
+.empty-state h3 {
+    font-size: 1.35rem;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.empty-state p {
+    color: #64748b;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .view-container {
+        padding: 1rem;
+    }
+    
+    .projects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .project-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .project-actions {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+    
+    .project-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .project-card {
+        padding: 1.25rem;
+    }
+    
+    .project-title {
+        font-size: 1.1rem;
+    }
+    
+    .project-stats {
+        gap: 0.75rem;
+    }
+    
+    .stat-item {
+        padding: 0.6rem;
+    }
+}
+</style>

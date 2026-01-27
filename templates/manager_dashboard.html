@@ -1,0 +1,725 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="brand-text">TaskVise</span>
+            </div>
+            <div class="nav-actions">
+                <!-- User Dropdown Menu -->
+                <div class="user-dropdown">
+                    <button class="nav-btn user-menu-toggle" id="userMenuToggle">
+                        <div class="user-avatar-small">
+                            {{ session.get('full_name', 'Manager')[0] if session.get('full_name') else 'M' }}
+                        </div>
+                        <span>{{ session.get('full_name', 'Manager') }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="/manager/profile" class="dropdown-item" data-view="profile">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="/manager/settings" class="dropdown-item" data-view="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ session.get('full_name', 'Manager')[0] if session.get('full_name') else 'M' }}
+                    </div>
+                    <div class="user-details">
+                        <h3>{{ session.get('full_name', 'Manager') }}</h3>
+                        <p>Manager</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/manager/overview" class="nav-item {% if current_view == 'overview' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Overview</span>
+                </a>
+                
+                <div class="nav-section">
+                    <a href="/manager/employees" class="nav-item {% if current_view == 'employees' %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>Team Management</span>
+                        <i class="dropdown-icon fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu {% if current_view == 'employees' %}active{% endif %}">
+                        <a href="/manager/employees" class="nav-subitem {% if current_view == 'employees' and not request.args.get('filter') %}active{% endif %}">All Employees</a>
+                        <a href="/manager/employees?filter=active" class="nav-subitem {% if current_view == 'employees' and request.args.get('filter') == 'active' %}active{% endif %}">Active Team</a>
+                        <a href="/manager/employees?filter=on-leave" class="nav-subitem {% if current_view == 'employees' and request.args.get('filter') == 'on-leave' %}active{% endif %}">On Leave</a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <a href="/manager/projects" class="nav-item {% if current_view == 'projects' %}active{% endif %}">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Projects</span>
+                        <i class="dropdown-icon fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu {% if current_view == 'projects' %}active{% endif %}">
+                        <a href="/manager/projects" class="nav-subitem {% if current_view == 'projects' and not request.args.get('filter') %}active{% endif %}">All Projects</a>
+                        <a href="/manager/projects?filter=active" class="nav-subitem {% if current_view == 'projects' and request.args.get('filter') == 'active' %}active{% endif %}">Active Projects</a>
+                        <a href="/manager/projects?filter=completed" class="nav-subitem {% if current_view == 'projects' and request.args.get('filter') == 'completed' %}active{% endif %}">Completed</a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <a href="/manager/tasks" class="nav-item {% if current_view == 'tasks' %}active{% endif %}">
+                        <i class="fas fa-tasks"></i>
+                        <span>Task Management</span>
+                        <i class="dropdown-icon fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu {% if current_view == 'tasks' %}active{% endif %}">
+                        <a href="/manager/tasks" class="nav-subitem {% if current_view == 'tasks' and not request.args.get('filter') %}active{% endif %}">All Tasks</a>
+                        <a href="/manager/tasks?filter=in-progress" class="nav-subitem {% if current_view == 'tasks' and request.args.get('filter') == 'in-progress' %}active{% endif %}">In Progress</a>
+                        <a href="/manager/tasks?filter=overdue" class="nav-subitem {% if current_view == 'tasks' and request.args.get('filter') == 'overdue' %}active{% endif %}">Overdue</a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <a href="/manager/leave" class="nav-item {% if current_view == 'leave' %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Leave Management</span>
+                        <i class="dropdown-icon fas fa-chevron-down"></i>
+                    </a>
+                    <div class="nav-submenu {% if current_view == 'leave' %}active{% endif %}">
+                        <a href="/manager/leave" class="nav-subitem {% if current_view == 'leave' and not request.args.get('filter') %}active{% endif %}">All Requests</a>
+                        <a href="/manager/leave?filter=pending" class="nav-subitem {% if current_view == 'leave' and request.args.get('filter') == 'pending' %}active{% endif %}">Pending Approval</a>
+                        <a href="/manager/leave?filter=approved" class="nav-subitem {% if current_view == 'leave' and request.args.get('filter') == 'approved' %}active{% endif %}">Approved</a>
+                    </div>
+                </div>
+
+                <a href="/manager/workload-balancer" class="nav-item {% if current_view == 'workload-balancer' %}active{% endif %}">
+                    <i class="fas fa-balance-scale"></i>
+                    <span>Workload Balancer</span>
+                </a>
+
+                <a href="/manager/skill-recommendations" class="nav-item {% if current_view == 'skill-recommendations' %}active{% endif %}">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Skill Development</span>
+                </a>
+
+                <a href="/manager/team-notes" class="nav-item {% if current_view == 'team-notes' %}active{% endif %}">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Team Notes</span>
+                </a>
+
+                <a href="/manager/reports" class="nav-item {% if current_view == 'reports' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports & Analytics</span>
+                </a>
+
+                <a href="/manager/notifications" class="nav-item {% if current_view == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                    {% if stats.unreadNotifications > 0 %}
+                    <span class="badge badge-danger" id="notification-badge">{{ stats.unreadNotifications }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+
+            <!-- Quick Actions Panel -->
+            <div class="workload-indicator">
+                <div class="workload-header">
+                    <i class="fas fa-bolt"></i>
+                    <span>Quick Actions</span>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="btn btn-primary full-width" onclick="openAssignTaskDialog()">
+                        <i class="fas fa-plus"></i>
+                        Assign Task
+                    </button>
+                    <button class="btn btn-outline full-width" onclick="openCreateProjectDialog()">
+                        <i class="fas fa-plus"></i>
+                        New Project
+                    </button>
+                </div>
+                <div class="workload-message" style="margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
+                    Team Status: <span style="color: #10b981; font-weight: 600;">Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="main-content">
+            <header class="content-header">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1 id="page-title">
+                        {% if current_view == 'overview' %}Manager Overview
+                        {% elif current_view == 'employees' %}Team Management
+                        {% elif current_view == 'projects' %}Project Management
+                        {% elif current_view == 'tasks' %}Task Management
+                        {% elif current_view == 'leave' %}Leave Management
+                        {% elif current_view == 'workload-balancer' %}Workload Balancer
+                        {% elif current_view == 'skill-recommendations' %}Skill Development
+                        {% elif current_view == 'team-notes' %}Team Notes
+                        {% elif current_view == 'reports' %}Reports & Analytics
+                        {% elif current_view == 'notifications' %}Notifications
+                        {% elif current_view == 'profile' %}Profile
+                        {% elif current_view == 'settings' %}Settings
+                        {% else %}Manager Dashboard{% endif %}
+                    </h1>
+                    <p id="page-subtitle">
+                        {% if current_view == 'overview' %}Welcome back! Here's your team overview.
+                        {% elif current_view == 'employees' %}Manage your team members and their details.
+                        {% elif current_view == 'projects' %}Track and manage all projects.
+                        {% elif current_view == 'tasks' %}Assign and monitor team tasks.
+                        {% elif current_view == 'leave' %}Review and manage leave requests.
+                        {% elif current_view == 'workload-balancer' %}Optimize team workload distribution.
+                        {% elif current_view == 'skill-recommendations' %}Identify and develop team skills.
+                        {% elif current_view == 'team-notes' %}Share important information with your team.
+                        {% elif current_view == 'reports' %}View detailed analytics and reports.
+                        {% elif current_view == 'notifications' %}Stay updated with team activities.
+                        {% else %}Manager dashboard overview{% endif %}
+                    </p>
+                </div>
+                <!-- Removed the refresh button from header -->
+            </header>
+
+            <div class="content-area" id="dashboard-view">
+                <!-- Dynamic content based on current view -->
+                <div id="view-content">
+                    {% if current_view == 'overview' %}
+                        {% include 'manager_views/overview.html' %}
+                    {% elif current_view == 'employees' %}
+                        {% include 'manager_views/employees.html' %}
+                    {% elif current_view == 'projects' %}
+                        {% include 'manager_views/projects.html' %}
+                    {% elif current_view == 'tasks' %}
+                        {% include 'manager_views/tasks.html' %}
+                    {% elif current_view == 'leave' %}
+                        {% include 'manager_views/leave_management.html' %}
+                    {% elif current_view == 'workload-balancer' %}
+                        {% include 'manager_views/workload_balancer.html' %}
+                    {% elif current_view == 'skill-recommendations' %}
+                        {% include 'manager_views/skill_recommendations.html' %}
+                    {% elif current_view == 'team-notes' %}
+                        {% include 'manager_views/team_notes.html' %}
+                    {% elif current_view == 'reports' %}
+                        {% include 'manager_views/reports.html' %}
+                    {% elif current_view == 'notifications' %}
+                        {% include 'manager_views/notifications.html' %}
+                    {% elif current_view == 'profile' %}
+                        {% include 'manager_views/profile.html' %}
+                    {% elif current_view == 'settings' %}
+                        {% include 'manager_views/settings.html' %}
+                    {% else %}
+                        {% include 'manager_views/overview.html' %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog Container -->
+    <div id="dialog-container"></div>
+</div>
+
+<!-- Include JavaScript -->
+<script src="{{ url_for('static', filename='js/manager_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/assignTaskDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/createProjectDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editTaskDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProjectDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/employeeDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProfileDialog.js') }}"></script>
+
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize manager dashboard
+    if (typeof initManagerDashboard === 'function') {
+        initManagerDashboard();
+    }
+
+    // User dropdown toggle
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdown = document.getElementById('userDropdown');
+    
+    if (userMenuToggle && userDropdown) {
+        userMenuToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+            userDropdown.classList.remove('show');
+        });
+    }
+
+    // Sidebar toggle for mobile
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
+
+    // Sidebar navigation section toggle
+    const navSections = document.querySelectorAll('.nav-section > .nav-item');
+    navSections.forEach(section => {
+        section.addEventListener('click', function(e) {
+            // Only prevent default if it's not a link to another page
+            if (this.getAttribute('href') === '#' || this.getAttribute('href') === '') {
+                e.preventDefault();
+            }
+            
+            const parentSection = this.parentElement;
+            const submenu = parentSection.querySelector('.nav-submenu');
+            
+            if (submenu) {
+                // Toggle active class on the submenu
+                submenu.classList.toggle('active');
+                
+                // Rotate the dropdown icon
+                const dropdownIcon = this.querySelector('.dropdown-icon');
+                if (dropdownIcon) {
+                    if (submenu.classList.contains('active')) {
+                        dropdownIcon.classList.remove('fa-chevron-down');
+                        dropdownIcon.classList.add('fa-chevron-up');
+                    } else {
+                        dropdownIcon.classList.remove('fa-chevron-up');
+                        dropdownIcon.classList.add('fa-chevron-down');
+                    }
+                }
+            }
+        });
+    });
+
+    // Auto-expand active nav sections
+    const activeNavItems = document.querySelectorAll('.nav-item.active, .nav-subitem.active');
+    activeNavItems.forEach(item => {
+        const navSection = item.closest('.nav-section');
+        if (navSection) {
+            const submenu = navSection.querySelector('.nav-submenu');
+            if (submenu) {
+                submenu.classList.add('active');
+                const dropdownIcon = navSection.querySelector('.dropdown-icon');
+                if (dropdownIcon) {
+                    dropdownIcon.classList.remove('fa-chevron-down');
+                    dropdownIcon.classList.add('fa-chevron-up');
+                }
+            }
+        }
+    });
+    
+    console.log('Manager dashboard initialized successfully');
+});
+
+// Global fallback functions
+function showNotification(message, type = 'info') {
+    if (window.managerDashboard && typeof window.managerDashboard.showNotification === 'function') {
+        window.managerDashboard.showNotification(message, type);
+    } else {
+        // Fallback notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #3b82f6;
+            z-index: 10001;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        if (type === 'success') notification.style.borderLeftColor = '#10b981';
+        if (type === 'error') notification.style.borderLeftColor = '#ef4444';
+        if (type === 'warning') notification.style.borderLeftColor = '#f59e0b';
+        
+        notification.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #64748b; padding: 0; margin-left: 12px;">×</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+}
+
+function refreshManagerData() {
+    if (window.managerDashboard && typeof window.managerDashboard.refreshData === 'function') {
+        window.managerDashboard.refreshData();
+    } else {
+        location.reload();
+    }
+}
+</script>
+
+<style>
+/* Dialog Styles */
+.dialog-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: dialogSlideIn 0.3s ease;
+}
+
+.dialog-header {
+    padding: 24px 24px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.dialog-description {
+    color: #6b7280;
+    margin: 0 0 16px 0;
+    font-size: 0.875rem;
+}
+
+.dialog-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.dialog-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.dialog-content {
+    padding: 24px;
+}
+
+.dialog-actions {
+    padding: 16px 24px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.selected-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.member-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 4px 8px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: #1e40af;
+    margin-left: 4px;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tag-remove:hover {
+    background: #dbeafe;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.btn-outline {
+    background: white;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.full-width {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Sidebar Navigation Styles */
+.nav-section .nav-submenu {
+    display: none;
+    padding-left: 20px;
+}
+
+.nav-section .nav-submenu.active {
+    display: block;
+}
+
+.nav-subitem {
+    display: block;
+    padding: 8px 16px;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    border-left: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-subitem:hover {
+    color: #374151;
+    background: #f9fafb;
+}
+
+.nav-subitem.active {
+    color: #3b82f6;
+    border-left-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.dropdown-icon {
+    margin-left: auto;
+    transition: transform 0.2s;
+    font-size: 0.75rem;
+}
+
+/* Animation */
+@keyframes dialogSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Dropdown styles */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    min-width: 200px;
+    z-index: 1000;
+    margin-top: 8px;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #374151;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+    background: #f9fafb;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 8px 0;
+}
+
+/* Badge styles */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.badge-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.badge-warning {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fed7aa;
+}
+
+.badge-outline {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,813 @@
+<div class="overview-view">
+    <div class="page-header animate-slide-up">
+        <h1 class="page-title">Employee Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ session.full_name or 'Employee' }}! Here's your work overview.</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid animate-slide-up animate-delay-100">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Total Tasks</p>
+                    <p class="stat-value" id="total-tasks">{{ stats.totalTasks if stats else 0 }}</p>
+                    <div class="stat-badge">
+                        <span id="completed-tasks">{{ stats.completedTasks if stats else 0 }}</span> completed
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-square"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Hours Worked</p>
+                    <p class="stat-value" id="hours-worked">
+                        {% if stats and stats.totalTasks %}
+                            {{ "%.1f"|format(stats.totalTasks * 0.5) }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </p>
+                    <div class="stat-badge">
+                        <span id="estimated-hours">
+                            {% if stats and stats.totalTasks %}
+                                {{ "%.1f"|format(stats.totalTasks * 0.8) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </span>h estimated
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Productivity</p>
+                    <p class="stat-value" id="productivity">
+                        {{ (stats.completedTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%
+                    </p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="productivity-bar" 
+                             style="width: {{ (stats.completedTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Active Projects</p>
+                    <p class="stat-value" id="active-projects">{{ stats.activeProjects if stats else 0 }}</p>
+                    <div class="stat-badge badge-danger">
+                        <span id="overdue-tasks">{{ stats.overdueTasks if stats else 0 }}</span> overdue
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-target"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid animate-slide-up animate-delay-200">
+        <!-- Recent Tasks -->
+        <div class="card card-professional">
+            <div class="card-header">
+                <h3><i class="fas fa-check-square"></i> Recent Tasks</h3>
+                <a href="/employee/tasks" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-content">
+                <div class="task-list" id="recent-tasks">
+                    {% if tasks and tasks|length > 0 %}
+                        {% for task in tasks[:5] %}
+                        <div class="task-item">
+                            <div class="task-info">
+                                <h4>{{ task.title }}</h4>
+                                <p class="task-description">{{ task.description or 'No description' }}</p>
+                                <div class="task-meta">
+                                    <span class="task-priority priority-{{ task.priority or 'medium' }}">
+                                        {{ task.priority|title if task.priority else 'Medium' }}
+                                    </span>
+                                    <span class="task-due">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ task.due_date or 'No due date' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="task-status">
+                                <span class="status-badge status-{{ task.status or 'pending' }}">
+                                    {{ task.status|replace('-', ' ')|title if task.status else 'Pending' }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-check-square"></i>
+                            <p>No tasks assigned yet</p>
+                            <a href="/employee/tasks" class="btn btn-outline btn-sm">Browse Tasks</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Projects -->
+        <div class="card card-professional">
+            <div class="card-header">
+                <h3><i class="fas fa-target"></i> Active Projects</h3>
+                <a href="/employee/projects" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-content">
+                <div class="project-list" id="active-projects-list">
+                    {% if projects and projects|length > 0 %}
+                        {% for project in projects[:3] %}
+                        <div class="project-item">
+                            <div class="project-info">
+                                <h4>{{ project.name }}</h4>
+                                <p class="project-description">{{ project.description or 'No description' }}</p>
+                                <div class="project-meta">
+                                    <span class="project-status status-{{ project.status or 'active' }}">
+                                        {{ project.status|title if project.status else 'Active' }}
+                                    </span>
+                                    <span class="project-dates">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ project.start_date }} - {{ project.end_date }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="project-progress">
+                                {% set project_tasks = tasks|selectattr('project_id', 'equalto', project.id)|list %}
+                                {% set completed_tasks = project_tasks|selectattr('status', 'equalto', 'completed')|list %}
+                                {% set progress = ((completed_tasks|length / project_tasks|length * 100) if project_tasks|length > 0 else 0)|round|int %}
+                                
+                                <div class="progress-info">
+                                    <span class="progress-value">{{ progress }}%</span>
+                                    <span class="progress-text">Complete</span>
+                                </div>
+                                <div class="progress-bar small">
+                                    <div class="progress-fill" style="width: {{ progress }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-target"></i>
+                            <p>No active projects assigned yet</p>
+                            <a href="/employee/projects" class="btn btn-outline btn-sm">Browse Projects</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card card-professional animate-slide-up animate-delay-300">
+        <div class="card-header">
+            <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+        </div>
+        <div class="card-content">
+            <div class="quick-actions">
+                <a href="/employee/tasks" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <span class="action-label">New Task</span>
+                </a>
+                <a href="/employee/leave" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                    <span class="action-label">Request Leave</span>
+                </a>
+                <a href="/employee/workload" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <span class="action-label">Get Help</span>
+                </a>
+                <a href="/employee/reports" class="action-item">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <span class="action-label">View Reports</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.overview-view {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-content {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #2d3748;
+}
+
+.stat-badge {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.stat-badge span {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.badge-danger {
+    color: #e53e3e;
+}
+
+.badge-danger span {
+    color: #e53e3e;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: #667eea;
+    opacity: 0.8;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progress-bar.small {
+    height: 6px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.card-professional {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.card-professional:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    padding: 20px 24px 0;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.card-header h3 i {
+    color: #667eea;
+}
+
+.card-content {
+    padding: 20px 24px;
+}
+
+/* Task List */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    background: #f1f3f4;
+    transform: translateY(-1px);
+}
+
+.task-info {
+    flex: 1;
+}
+
+.task-info h4 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.task-description {
+    margin: 0 0 12px 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.task-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+}
+
+.task-priority {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.priority-high {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.priority-medium {
+    background: #feebc8;
+    color: #dd6b20;
+}
+
+.priority-low {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.task-due {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #6c757d;
+}
+
+.task-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.status-in-progress {
+    background: #bee3f8;
+    color: #2c5aa0;
+}
+
+.status-pending {
+    background: #feebc8;
+    color: #dd6b20;
+}
+
+.status-overdue {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+/* Project List */
+.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.project-item {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.project-item:hover {
+    background: #f1f3f4;
+    transform: translateY(-1px);
+}
+
+.project-info h4 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.project-description {
+    margin: 0 0 12px 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.project-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.project-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.status-active {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.status-planning {
+    background: #feebc8;
+    color: #dd6b20;
+}
+
+.status-completed {
+    background: #bee3f8;
+    color: #2c5aa0;
+}
+
+.project-dates {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #6c757d;
+}
+
+.project-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-value {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9rem;
+}
+
+.progress-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.action-item:hover {
+    background: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.action-label {
+    font-weight: 600;
+    color: #2d3748;
+    text-align: center;
+}
+
+/* Button Styles */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    text-decoration: none;
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+}
+
+/* Animations */
+.animate-slide-up {
+    animation: slideUp 0.6s ease;
+}
+
+.animate-delay-100 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+    animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+    animation-delay: 0.3s;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .overview-view {
+        padding: 15px;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .task-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .task-status {
+        align-self: flex-start;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to progress bars
+    const progressBars = document.querySelectorAll('.progress-fill');
+    
+    progressBars.forEach(bar => {
+        const originalWidth = bar.style.width;
+        bar.style.width = '0%';
+        
+        setTimeout(() => {
+            bar.style.width = originalWidth;
+        }, 500);
+    });
+
+    // Add click handlers for task items
+    document.querySelectorAll('.task-item').forEach(item => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function() {
+            // In a real app, this would navigate to task details
+            console.log('Task clicked:', this.querySelector('h4').textContent);
+        });
+    });
+
+    // Add click handlers for project items
+    document.querySelectorAll('.project-item').forEach(item => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function() {
+            // In a real app, this would navigate to project details
+            console.log('Project clicked:', this.querySelector('h4').textContent);
+        });
+    });
+
+    // Update real-time data (simulated)
+    function updateRealTimeData() {
+        // Simulate real-time updates
+        setTimeout(() => {
+            const productivity = document.getElementById('productivity');
+            const productivityBar = document.getElementById('productivity-bar');
+            
+            if (productivity && productivityBar) {
+                const currentValue = parseInt(productivity.textContent);
+                if (currentValue < 100) {
+                    const newValue = Math.min(currentValue + 5, 100);
+                    productivity.textContent = newValue + '%';
+                    productivityBar.style.width = newValue + '%';
+                }
+            }
+        }, 3000);
+    }
+
+    // Initialize real-time updates
+    updateRealTimeData();
+});
+</script>

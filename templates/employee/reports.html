@@ -1,0 +1,787 @@
+<div class="reports-view">
+    <div class="page-header animate-slide-up">
+        <div class="header-content">
+            <div>
+                <h1 class="page-title">Reports & Analytics</h1>
+                <p class="page-subtitle">Comprehensive view of your work performance</p>
+            </div>
+            <button class="btn btn-outline" id="export-report">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="stats-grid animate-slide-up animate-delay-100">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Productivity Score</p>
+                    <p class="stat-value">{{ (stats.completedTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (stats.completedTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%"></div>
+                    </div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Tasks Completed</p>
+                    <p class="stat-value">{{ stats.completedTasks if stats else 0 }}</p>
+                    <p class="stat-subtext">of {{ stats.totalTasks if stats else 0 }} total</p>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">Avg. Hours/Day</p>
+                    <p class="stat-value">
+                        {% if stats and stats.totalTasks %}
+                            {{ "%.1f"|format(stats.totalTasks * 0.5) }}h
+                        {% else %}
+                            0h
+                        {% endif %}
+                    </p>
+                    <p class="stat-subtext">Last 30 days</p>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <p class="stat-label">On Time Rate</p>
+                    <p class="stat-value">
+                        {% if stats and tasks and tasks|length > 0 %}
+                            {{ (((tasks|length - stats.overdueTasks) / tasks|length * 100)|round|int) if tasks|length > 0 else 100 }}%
+                        {% else %}
+                            100%
+                        {% endif %}
+                    </p>
+                    <p class="stat-subtext">{{ stats.overdueTasks if stats else 0 }} overdue</p>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid animate-slide-up animate-delay-200">
+        <!-- Task Distribution -->
+        <div class="card card-professional">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> Task Distribution</h3>
+            </div>
+            <div class="card-content">
+                <div class="distribution-chart">
+                    {% if tasks and tasks|length > 0 %}
+                        {% set completed_tasks = tasks|selectattr('status', 'equalto', 'completed')|list|length %}
+                        {% set in_progress_tasks = tasks|selectattr('status', 'equalto', 'in-progress')|list|length %}
+                        {% set pending_tasks = tasks|selectattr('status', 'equalto', 'pending')|list|length %}
+                        {% set overdue_tasks = stats.overdueTasks if stats else 0 %}
+                        
+                        <div class="chart-bars">
+                            <div class="chart-bar">
+                                <div class="bar-label">Completed</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill completed" style="width: {{ (completed_tasks / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ completed_tasks }} ({{ (completed_tasks / tasks|length * 100)|round|int }}%)</div>
+                            </div>
+                            <div class="chart-bar">
+                                <div class="bar-label">In Progress</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill in-progress" style="width: {{ (in_progress_tasks / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ in_progress_tasks }} ({{ (in_progress_tasks / tasks|length * 100)|round|int }}%)</div>
+                            </div>
+                            <div class="chart-bar">
+                                <div class="bar-label">Pending</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill pending" style="width: {{ (pending_tasks / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ pending_tasks }} ({{ (pending_tasks / tasks|length * 100)|round|int }}%)</div>
+                            </div>
+                            <div class="chart-bar">
+                                <div class="bar-label">Overdue</div>
+                                <div class="bar-container">
+                                    <div class="bar-fill overdue" style="width: {{ (overdue_tasks / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ overdue_tasks }} ({{ (overdue_tasks / tasks|length * 100)|round|int }}%)</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-chart-pie"></i>
+                            <p>No task data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Breakdown -->
+        <div class="card card-professional">
+            <div class="card-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Priority Breakdown</h3>
+            </div>
+            <div class="card-content">
+                <div class="priority-breakdown">
+                    {% if tasks and tasks|length > 0 %}
+                        {% set high_priority = tasks|selectattr('priority', 'equalto', 'high')|list|length %}
+                        {% set medium_priority = tasks|selectattr('priority', 'equalto', 'medium')|list|length %}
+                        {% set low_priority = tasks|selectattr('priority', 'equalto', 'low')|list|length %}
+                        
+                        <div class="priority-items">
+                            <div class="priority-item high">
+                                <div class="priority-info">
+                                    <span class="priority-label">High Priority</span>
+                                    <span class="priority-count">{{ high_priority }} tasks</span>
+                                </div>
+                                <div class="priority-bar">
+                                    <div class="priority-fill" style="width: {{ (high_priority / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <span class="priority-percent">{{ (high_priority / tasks|length * 100)|round|int }}%</span>
+                            </div>
+                            <div class="priority-item medium">
+                                <div class="priority-info">
+                                    <span class="priority-label">Medium Priority</span>
+                                    <span class="priority-count">{{ medium_priority }} tasks</span>
+                                </div>
+                                <div class="priority-bar">
+                                    <div class="priority-fill" style="width: {{ (medium_priority / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <span class="priority-percent">{{ (medium_priority / tasks|length * 100)|round|int }}%</span>
+                            </div>
+                            <div class="priority-item low">
+                                <div class="priority-info">
+                                    <span class="priority-label">Low Priority</span>
+                                    <span class="priority-count">{{ low_priority }} tasks</span>
+                                </div>
+                                <div class="priority-bar">
+                                    <div class="priority-fill" style="width: {{ (low_priority / tasks|length * 100)|round|int }}%"></div>
+                                </div>
+                                <span class="priority-percent">{{ (low_priority / tasks|length * 100)|round|int }}%</span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>No priority data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Performance -->
+    <div class="card card-professional animate-slide-up animate-delay-300">
+        <div class="card-header">
+            <h3><i class="fas fa-rocket"></i> Project Performance</h3>
+        </div>
+        <div class="card-content">
+            <div class="project-performance">
+                {% if projects and projects|length > 0 %}
+                    {% for project in projects %}
+                    <div class="performance-item">
+                        <div class="project-info">
+                            <h4>{{ project.name }}</h4>
+                            <p class="project-description">{{ project.description or 'No description' }}</p>
+                        </div>
+                        <div class="performance-stats">
+                            {% set project_tasks = tasks|selectattr('project_id', 'equalto', project.id)|list %}
+                            {% set completed_tasks = project_tasks|selectattr('status', 'equalto', 'completed')|list %}
+                            {% set progress = ((completed_tasks|length / project_tasks|length * 100) if project_tasks|length > 0 else 0)|round|int %}
+                            
+                            <div class="performance-metric">
+                                <span class="metric-value">{{ progress }}%</span>
+                                <span class="metric-label">Progress</span>
+                            </div>
+                            <div class="performance-metric">
+                                <span class="metric-value">{{ completed_tasks|length }}/{{ project_tasks|length }}</span>
+                                <span class="metric-label">Tasks</span>
+                            </div>
+                            <div class="performance-metric">
+                                <span class="metric-value">
+                                    {% if project_tasks|length > 0 %}
+                                        {{ (project_tasks|selectattr('status', 'equalto', 'overdue')|list|length) }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </span>
+                                <span class="metric-label">Overdue</span>
+                            </div>
+                        </div>
+                        <div class="performance-bar">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ progress }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-rocket"></i>
+                        <p>No project data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.reports-view {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-content {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #2d3748;
+}
+
+.stat-subtext {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: #667eea;
+    opacity: 0.8;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.card-professional {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.card-professional:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    padding: 20px 24px 0;
+    border-bottom: none;
+}
+
+.card-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.card-header h3 i {
+    color: #667eea;
+}
+
+.card-content {
+    padding: 20px 24px;
+}
+
+/* Task Distribution */
+.chart-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chart-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bar-label {
+    width: 100px;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.bar-container {
+    flex: 1;
+    height: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.bar-fill.completed {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.bar-fill.in-progress {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.bar-fill.pending {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+
+.bar-fill.overdue {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+.bar-value {
+    width: 80px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+/* Priority Breakdown */
+.priority-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.priority-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.priority-info {
+    flex: 1;
+}
+
+.priority-label {
+    display: block;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.priority-count {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.priority-bar {
+    width: 100px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.priority-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.priority-item.high .priority-fill {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+.priority-item.medium .priority-fill {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.priority-item.low .priority-fill {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.priority-percent {
+    width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+/* Project Performance */
+.project-performance {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.performance-item {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.project-info h4 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.project-description {
+    margin: 0 0 16px 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.performance-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.performance-metric {
+    text-align: center;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Button Styles */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Animations */
+.animate-slide-up {
+    animation: slideUp 0.6s ease;
+}
+
+.animate-delay-100 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+    animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+    animation-delay: 0.3s;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .reports-view {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .performance-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .chart-bar {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .bar-label {
+        width: auto;
+    }
+    
+    .bar-value {
+        width: auto;
+        text-align: center;
+    }
+    
+    .priority-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    
+    .priority-bar {
+        width: 100%;
+    }
+    
+    .priority-percent {
+        width: auto;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('export-report');
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+            this.disabled = true;
+            
+            // Simulate export functionality
+            setTimeout(() => {
+                // Create a simple CSV export (for demo)
+                const csvContent = generateCSV();
+                downloadCSV(csvContent, 'employee-report.csv');
+                
+                // Restore button state
+                this.innerHTML = originalText;
+                this.disabled = false;
+                
+                alert('Report exported successfully!');
+            }, 2000);
+        });
+    }
+
+    // Helper function to generate CSV content
+    function generateCSV() {
+        const headers = ['Metric', 'Value', 'Percentage'];
+        const data = [
+            ['Total Tasks', '{{ stats.totalTasks if stats else 0 }}', '100%'],
+            ['Completed Tasks', '{{ stats.completedTasks if stats else 0 }}', '{{ (stats.completedTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%'],
+            ['In Progress Tasks', '{{ stats.inProgressTasks if stats else 0 }}', '{{ (stats.inProgressTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%'],
+            ['Overdue Tasks', '{{ stats.overdueTasks if stats else 0 }}', '{{ (stats.overdueTasks / stats.totalTasks * 100)|round|int if stats and stats.totalTasks > 0 else 0 }}%']
+        ];
+        
+        return [headers, ...data].map(row => row.join(',')).join('\n');
+    }
+
+    // Helper function to download CSV
+    function downloadCSV(csvContent, filename) {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Add animation to progress bars
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-fill, .bar-fill, .priority-fill');
+        
+        progressBars.forEach(bar => {
+            const originalWidth = bar.style.width;
+            bar.style.width = '0%';
+            
+            setTimeout(() => {
+                bar.style.width = originalWidth;
+            }, 500);
+        });
+    });
+});
+</script>

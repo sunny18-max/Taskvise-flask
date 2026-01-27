@@ -1,0 +1,7 @@
+id,title,description,project_id,assignee_id,status,priority,created_at,due_date
+f3038af4-8291-4ee6-842b-914935a4b6d7,Increase the logo size,Increase the size of logo in taskvise app,,34745f76-4a17-4de9-905b-9e7ea8c6b56f,pending,medium,2025-10-12,2025-10-12
+e099db86-ac9c-480d-8a91-0f9618c0d5a0,Leave management, Correct the leave management section in employee dashboard,,34745f76-4a17-4de9-905b-9e7ea8c6b56f,pending,high,2025-10-14 16:06:17,2025-10-14
+f0f88cf6-e22f-40bc-a11c-0b1cf7520b6a,Structure the dashboard properly,the dashboard layout structuring is not good,372c28a3-8970-4495-9faa-54d347b70479,be1abc72-b7b2-427e-bf14-9dbe74457b62,pending,medium,2025-10-15 21:05:45,2025-10-16
+3a3b9647-8a2e-4594-af7e-ab34220529e8,Structure the navbar correctly,in serenity app structure the navbar correctly,372c28a3-8970-4495-9faa-54d347b70479,5bd6f099-abde-4978-a196-609a664e9bf2,pending,high,2025-10-16 00:26:14,2025-10-16
+32ff5781-fb06-4433-a577-c7a734f66712,Prepare list of tasks,Prepare list of tasks for all the team members for tomorrow,372c28a3-8970-4495-9faa-54d347b70479,65d17a37-92bd-4127-9e46-6dd117065029,pending,high,2026-01-08 06:55:42,2026-01-08
+63046cfb-2551-4c48-8fd2-7de1a8358950,Collect University Details,list down university details in india,d2380943-149c-44ed-afe6-0e19d2c8e7f1,5bd6f099-abde-4978-a196-609a664e9bf2,pending,high,2026-01-08 07:52:05,2026-01-10

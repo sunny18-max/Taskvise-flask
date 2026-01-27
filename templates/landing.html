@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="app-container">
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="logo">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <span class="brand-text">TaskVise</span>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-btn secondary" onclick="window.location.href='{{ url_for('login') }}'">
+          <i class="fas fa-sign-in-alt"></i>
+          Sign In
+        </button>
+        <button class="nav-btn primary" onclick="window.location.href='{{ url_for('signup') }}'">
+          <i class="fas fa-user-plus"></i>
+          Sign Up
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-background"></div>
+    <div class="container">
+      <div class="hero-content" data-aos="fade-up" data-aos-duration="1000">
+        <div class="hero-badge">
+          <i class="fas fa-briefcase"></i>
+          Professional Workforce Management
+        </div>
+        <h1 class="hero-title">
+          Optimize Your <span class="gradient-text">Workforce</span> with TaskVise
+        </h1>
+        <p class="hero-description">
+          Streamline resource allocation, track projects efficiently, and maximize team productivity with our comprehensive manpower planning solution.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" onclick="window.location.href='{{ url_for('signup') }}'">
+            Get Started
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <button class="btn btn-outline btn-large">
+            <i class="fas fa-play-circle"></i>
+            View Demo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Elements -->
+    <div class="floating-card card-1" data-aos="fade-right" data-aos-delay="200">
+      <div class="card-icon success">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <span>Task Completed</span>
+    </div>
+    <div class="floating-card card-2" data-aos="fade-left" data-aos-delay="400">
+      <div class="card-icon primary">
+        <i class="fas fa-bullseye"></i>
+      </div>
+      <span>98% Efficiency</span>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="section features-section">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2 class="section-title">Everything You Need for Workforce Management</h2>
+        <p class="section-description">
+          Comprehensive tools designed to optimize your team's performance and productivity.
+        </p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="100">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>Resource Management</h3>
+          <p>Efficiently manage employees, interns, and track skills, availability, and workload.</p>
+        </div>
+        
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="200">
+          <div class="feature-icon">
+            <i class="fas fa-project-diagram"></i>
+          </div>
+          <h3>Project & Task Tracking</h3>
+          <p>Organize projects with task dependencies, priorities, and automated progress tracking.</p>
+        </div>
+        
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="300">
+          <div class="feature-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <h3>Leave Management</h3>
+          <p>Handle leave requests with conflict detection and workload optimization.</p>
+        </div>
+        
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="100">
+          <div class="feature-icon">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <h3>Advanced Analytics</h3>
+          <p>Real-time dashboards, utilization reports, and exportable analytics.</p>
+        </div>
+        
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="200">
+          <div class="feature-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <h3>Smart Scheduling</h3>
+          <p>AI-powered recommendations for optimal employee-task assignments.</p>
+        </div>
+        
+        <div class="feature-card" data-aos="zoom-in" data-aos-delay="300">
+          <div class="feature-icon">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h3>Role-Based Access</h3>
+          <p>Secure access control for Admin, Manager, and Employee roles.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits Section -->
+  <section class="section benefits-section">
+    <div class="container">
+      <div class="benefits-grid">
+        <div class="benefits-content" data-aos="fade-right">
+          <h2 class="section-title">Proven Results for Modern Teams</h2>
+          <p class="section-description">
+            Join hundreds of organizations that have transformed their workforce management with TaskVise.
+          </p>
+          <div class="benefits-list">
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>50% reduction in resource conflicts</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>Improved task completion rates</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>Reduced missed deadlines by 80%</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>Real-time workload visibility</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>Automated conflict detection</span>
+            </div>
+            <div class="benefit-item">
+              <i class="fas fa-check-circle success"></i>
+              <span>Comprehensive reporting suite</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="window.location.href='{{ url_for('signup') }}'">
+            Start Your Free Trial
+          </button>
+        </div>
+        
+        <div class="benefits-stats" data-aos="fade-left" data-aos-delay="200">
+          <div class="stats-card">
+            <div class="stat-item">
+              <span class="stat-label">Team Efficiency</span>
+              <span class="stat-value success">+85%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Project Delivery</span>
+              <span class="stat-value primary">+92%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Resource Utilization</span>
+              <span class="stat-value warning">+78%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="section cta-section">
+    <div class="container">
+      <div class="cta-content" data-aos="zoom-in">
+        <h2 class="section-title">Ready to Transform Your Workforce Management?</h2>
+        <p class="section-description">
+          Join thousands of teams already using TaskVise to optimize their operations.
+        </p>
+        <button class="btn btn-primary btn-large" onclick="window.location.href='{{ url_for('signup') }}'">
+          Get Started Today
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    AOS.init({
+      duration: 1000,
+      once: true,
+      offset: 100
+    });
+  });
+</script>
+{% endblock %}

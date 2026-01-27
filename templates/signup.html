@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="app-container auth-container">
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="logo">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <span class="brand-text">TaskVise</span>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-btn secondary" onclick="window.location.href='{{ url_for('landing') }}'">
+          Back to Home
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="auth-layout">
+    <!-- Left Side - Admin Info -->
+    <div class="auth-welcome">
+      <div class="admin-info-card">
+        <div class="admin-icon">
+          <i class="fas fa-user-plus"></i>
+        </div>
+        <h2>Admin Portal</h2>
+        <p>Create and manage employee accounts with complete profile data</p>
+        
+        <div class="admin-features">
+          <div class="feature">
+            <i class="fas fa-check"></i>
+            <span>Complete profile storage</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check"></i>
+            <span>Secure authentication</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check"></i>
+            <span>Role-based access control</span>
+          </div>
+          <div class="feature">
+            <i class="fas fa-check"></i>
+            <span>Credentials shown after creation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Signup Form -->
+    <div class="auth-form-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-icon">
+            <i class="fas fa-building"></i>
+          </div>
+          <h2>Create Employee Account</h2>
+          <p>Enter employee details to create a complete profile</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('signup') }}" class="auth-form signup-form" id="signupForm">
+          {% if error %}
+          <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ error }}
+          </div>
+          {% endif %}
+          
+          {% if success %}
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ success }}
+          </div>
+          {% endif %}
+
+          <!-- Personal Information -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fullName">
+                <i class="fas fa-user"></i>
+                Full Name *
+              </label>
+              <input 
+                type="text" 
+                id="fullName" 
+                name="fullName" 
+                placeholder="John Doe"
+                class="form-input"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="email">
+                <i class="fas fa-envelope"></i>
+                Email Address *
+              </label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                placeholder="john@company.com"
+                class="form-input"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone">
+                <i class="fas fa-phone"></i>
+                Phone Number *
+              </label>
+              <input 
+                type="tel" 
+                id="phone" 
+                name="phone" 
+                placeholder="1234567890"
+                pattern="[0-9]{10}"
+                class="form-input"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="role">
+                <i class="fas fa-user-tag"></i>
+                Role *
+              </label>
+              <select id="role" name="role" class="form-input" required>
+                <option value="">Select role</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="hr">HR</option>
+                <option value="teamlead">Team Lead</option>
+                <option value="employee">Employee</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Professional Information -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="designation">
+                <i class="fas fa-briefcase"></i>
+                Designation *
+              </label>
+              <select id="designation" name="designation" class="form-input" required>
+                <option value="">Select designation</option>
+                <option value="Software Engineer">Software Engineer</option>
+                <option value="Senior Software Engineer">Senior Software Engineer</option>
+                <option value="Lead Developer">Lead Developer</option>
+                <option value="Frontend Developer">Frontend Developer</option>
+                <option value="Backend Developer">Backend Developer</option>
+                <option value="Full Stack Developer">Full Stack Developer</option>
+                <option value="DevOps Engineer">DevOps Engineer</option>
+                <option value="UI/UX Designer">UI/UX Designer</option>
+                <option value="Product Manager">Product Manager</option>
+                <option value="Project Manager">Project Manager</option>
+                <option value="Team Lead">Team Lead</option>
+                <option value="Technical Architect">Technical Architect</option>
+                <option value="Quality Assurance">Quality Assurance</option>
+                <option value="Business Analyst">Business Analyst</option>
+                <option value="Data Analyst">Data Analyst</option>
+                <option value="Marketing Specialist">Marketing Specialist</option>
+                <option value="Sales Representative">Sales Representative</option>
+                <option value="HR Specialist">HR Specialist</option>
+                <option value="Operations Manager">Operations Manager</option>
+                <option value="Finance Manager">Finance Manager</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="department">
+                <i class="fas fa-building"></i>
+                Department *
+              </label>
+              <select id="department" name="department" class="form-input" required>
+                <option value="">Select department</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Product">Product</option>
+                <option value="Design">Design</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Sales">Sales</option>
+                <option value="Human Resources">Human Resources</option>
+                <option value="Finance">Finance</option>
+                <option value="Operations">Operations</option>
+                <option value="Quality Assurance">Quality Assurance</option>
+                <option value="DevOps">DevOps</option>
+                <option value="Data Science">Data Science</option>
+                <option value="Business Development">Business Development</option>
+                <option value="Customer Support">Customer Support</option>
+                <option value="Legal">Legal</option>
+                <option value="IT">IT</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Skills Section -->
+          <div class="form-group skills-section">
+            <label>
+              <i class="fas fa-tools"></i>
+              Skills *
+            </label>
+            <div class="skills-input-container">
+              <div class="skills-input">
+                <div class="skills-input-row">
+                  <input 
+                    type="text" 
+                    id="skillInput" 
+                    placeholder="Add a skill (e.g., Python, React, Project Management)"
+                    class="form-input"
+                    onkeypress="if(event.key === 'Enter') {event.preventDefault(); addSkill();}"
+                  >
+                  <button type="button" class="skills-add-btn" onclick="addSkill()">
+                    <i class="fas fa-plus"></i>
+                    Add Skill
+                  </button>
+                </div>
+                <input type="hidden" id="skills" name="skills" required>
+                <div id="skillsList" class="skills-list"></div>
+                <div id="skillsError" class="error-message">
+                  <i class="fas fa-exclamation-circle"></i>
+                  At least one skill is required
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-user-plus"></i>
+            Create Employee Account
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          <p>Already have credentials?</p>
+          <button class="auth-link" onclick="window.location.href='{{ url_for('login') }}'">
+            Sign in instead
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let skills = [];
+
+  function addSkill() {
+    const skillInput = document.getElementById('skillInput');
+    const skill = skillInput.value.trim();
+    
+    if (skill && !skills.includes(skill)) {
+      skills.push(skill);
+      updateSkillsDisplay();
+      skillInput.value = '';
+      validateSkills();
+    }
+  }
+
+  function removeSkill(skillToRemove) {
+    skills = skills.filter(skill => skill !== skillToRemove);
+    updateSkillsDisplay();
+    validateSkills();
+  }
+
+  function updateSkillsDisplay() {
+    const skillsList = document.getElementById('skillsList');
+    const skillsInput = document.getElementById('skills');
+    
+    skillsList.innerHTML = '';
+    skillsInput.value = skills.join(',');
+    
+    skills.forEach(skill => {
+      const badge = document.createElement('div');
+      badge.className = 'skill-badge';
+      badge.innerHTML = `
+        ${skill}
+        <button type="button" onclick="removeSkill('${skill}')">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      skillsList.appendChild(badge);
+    });
+  }
+
+  function validateSkills() {
+    const skillsError = document.getElementById('skillsError');
+    if (skills.length === 0) {
+      skillsError.style.display = 'flex';
+      return false;
+    } else {
+      skillsError.style.display = 'none';
+      return true;
+    }
+  }
+
+  // Form validation
+  document.getElementById('signupForm').addEventListener('submit', function(e) {
+    if (!validateSkills()) {
+      e.preventDefault();
+      return false;
+    }
+    return true;
+  });
+
+  // Initialize AOS
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        duration: 800,
+        once: true
+      });
+    }
+  });
+</script>
+{% endblock %}

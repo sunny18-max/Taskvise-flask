@@ -1,0 +1,567 @@
+<!-- settings.html -->
+<div class="view-container">
+    <div class="view-header">
+        <h1 class="view-title">Settings</h1>
+        <p class="view-subtitle">Manage your application preferences</p>
+    </div>
+
+    <div class="settings-card">
+        <div class="settings-section">
+            <h3 class="settings-section-title">
+                <i class="fas fa-user-cog"></i> Account Settings
+            </h3>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Personal Information</h4>
+                        <p class="setting-description">Update your name, email, and other personal details</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="editPersonalInfo()">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Password</h4>
+                        <p class="setting-description">Change your account password</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="changePassword()">
+                        <i class="fas fa-key"></i> Change
+                    </button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Two-Factor Authentication</h4>
+                        <p class="setting-description">Add an extra layer of security to your account</p>
+                    </div>
+                    <div class="setting-actions">
+                        <span class="badge badge-outline" id="twoFactorStatus">Disabled</span>
+                        <button class="btn btn-outline" onclick="toggleTwoFactor()">
+                            <i class="fas fa-shield-alt"></i> Enable
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">
+                <i class="fas fa-bell"></i> Notifications
+            </h3>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Email Notifications</h4>
+                        <p class="setting-description">Receive email alerts for important updates</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifications" checked onchange="updateNotificationSetting('email', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Push Notifications</h4>
+                        <p class="setting-description">Get instant notifications in your browser</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="pushNotifications" checked onchange="updateNotificationSetting('push', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Task Reminders</h4>
+                        <p class="setting-description">Receive reminders for upcoming deadlines</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="taskReminders" onchange="updateNotificationSetting('taskReminders', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">
+                <i class="fas fa-paint-brush"></i> Appearance
+            </h3>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Theme</h4>
+                        <p class="setting-description">Choose between light and dark mode</p>
+                    </div>
+                    <div class="theme-selector">
+                        <button class="theme-option active" data-theme="light" onclick="changeTheme('light')">
+                            <i class="fas fa-sun"></i> Light
+                        </button>
+                        <button class="theme-option" data-theme="dark" onclick="changeTheme('dark')">
+                            <i class="fas fa-moon"></i> Dark
+                        </button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Language</h4>
+                        <p class="setting-description">Select your preferred language</p>
+                    </div>
+                    <select class="form-select" id="languageSelect" onchange="changeLanguage(this.value)">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3 class="settings-section-title">
+                <i class="fas fa-database"></i> Data Management
+            </h3>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Export Data</h4>
+                        <p class="setting-description">Download your data in CSV or JSON format</p>
+                    </div>
+                    <div class="export-options">
+                        <button class="btn btn-outline" onclick="exportData('csv')">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportData('json')">
+                            <i class="fas fa-file-code"></i> JSON
+                        </button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4 class="setting-title">Delete Account</h4>
+                        <p class="setting-description">Permanently delete your account and all data</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="deleteAccount()">
+                        <i class="fas fa-trash"></i> Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Expose current profile for edit dialog prefill
+window.currentProfile = JSON.parse('{{ (profile or {}) | tojson | safe }}');
+
+function editPersonalInfo() {
+    if (window.openEditProfileDialog) {
+        window.openEditProfileDialog(window.currentProfile || {});
+    } else {
+        showNotification('Edit profile dialog not available', 'error');
+    }
+}
+
+function changePassword() {
+    openChangePasswordDialog();
+}
+
+function openChangePasswordDialog() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10000;`;
+    const modal = document.createElement('div');
+    modal.style.cssText = `background:#fff;border-radius:12px;box-shadow:0 20px 45px rgba(2,6,23,.16);width:92%;max-width:520px;max-height:90vh;overflow:auto;`;
+    modal.innerHTML = `
+      <div style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:#111827;">Change Password</h3>
+        <button id="cp-close" style="background:none;border:0;font-size:1.25rem;color:#64748b;cursor:pointer">×</button>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Current Password</label>
+          <input type="password" id="cp-current" class="form-input" placeholder="Enter current password" />
+        </div>
+        <div>
+          <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">New Password</label>
+          <input type="password" id="cp-new" class="form-input" placeholder="Enter new password" />
+          <small style="color:#6b7280;">Password must be at least 6 characters long</small>
+        </div>
+        <div>
+          <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Confirm New Password</label>
+          <input type="password" id="cp-confirm" class="form-input" placeholder="Confirm new password" />
+        </div>
+        <div id="cp-error" style="display:none;color:#b91c1c;font-size:.875rem;"></div>
+      </div>
+      <div style="padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">
+        <button id="cp-cancel" class="btn btn-outline" style="padding:.6rem 1rem;border-radius:8px;">Cancel</button>
+        <button id="cp-save" class="btn btn-primary" style="padding:.6rem 1rem;border-radius:8px;">Update Password</button>
+      </div>
+    `;
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function close() { document.body.removeChild(overlay); }
+    modal.querySelector('#cp-close').onclick = close;
+    modal.querySelector('#cp-cancel').onclick = (e)=>{ e.preventDefault(); close(); };
+    modal.addEventListener('click', (e)=>{ if (e.target === overlay) close(); });
+    modal.addEventListener('keydown', (e)=>{ if (e.key==='Escape') close(); });
+
+    modal.querySelector('#cp-save').onclick = async (e)=>{
+        e.preventDefault();
+        const current = document.getElementById('cp-current').value.trim();
+        const next = document.getElementById('cp-new').value.trim();
+        const confirm = document.getElementById('cp-confirm').value.trim();
+        const err = document.getElementById('cp-error');
+        err.style.display = 'none';
+        err.textContent = '';
+        if (!current || !next || !confirm) {
+            err.textContent = 'Please fill all fields'; err.style.display = 'block'; return;
+        }
+        if (next.length < 6) { err.textContent = 'New password must be at least 6 characters'; err.style.display = 'block'; return; }
+        if (next !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+        try {
+            const res = await fetch('/api/employee/password/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ current_password: current, new_password: next }) });
+            if (!res.ok) throw new Error('Failed');
+            showNotification('Password updated successfully','success');
+            close();
+        } catch (e) {
+            showNotification('Failed to update password','error');
+        }
+    };
+}
+
+function toggleTwoFactor() {
+    const statusElement = document.getElementById('twoFactorStatus');
+    const button = event.target.closest('button');
+    
+    if (statusElement.textContent === 'Disabled') {
+        statusElement.textContent = 'Enabled';
+        statusElement.className = 'badge badge-success';
+        button.innerHTML = '<i class="fas fa-shield-alt"></i> Disable';
+        showNotification('Two-factor authentication enabled', 'success');
+    } else {
+        statusElement.textContent = 'Disabled';
+        statusElement.className = 'badge badge-outline';
+        button.innerHTML = '<i class="fas fa-shield-alt"></i> Enable';
+        showNotification('Two-factor authentication disabled', 'info');
+    }
+}
+
+function updateNotificationSetting(type, enabled) {
+    const status = enabled ? 'enabled' : 'disabled';
+    showNotification(`${type} notifications ${status}`, 'info');
+}
+
+function changeTheme(theme) {
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    showNotification(`Theme changed to ${theme} mode`, 'success');
+}
+
+function changeLanguage(language) {
+    showNotification(`Language changed to ${language}`, 'success');
+}
+
+function exportData(format) {
+    showNotification(`Exporting data as ${format.toUpperCase()}...`, 'info');
+    // Simulate download
+    setTimeout(() => {
+        showNotification(`Data exported successfully as ${format.toUpperCase()}`, 'success');
+    }, 1500);
+}
+
+function deleteAccount() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        showNotification('Account deletion feature coming soon', 'warning');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    if (window.managerDashboard) {
+        window.managerDashboard.showNotification(message, type);
+    } else {
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
+}
+
+// Initialize settings from localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.toggle('active', option.dataset.theme === savedTheme);
+    });
+});
+</script>
+
+<style>
+:root {
+    --bg-color: #ffffff;
+    --text-color: #1e293b;
+    --border-color: #e2e8f0;
+    --card-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1e293b;
+    --text-color: #f1f5f9;
+    --border-color: #334155;
+    --card-bg: #334155;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.settings-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    max-width: 800px;
+}
+
+.settings-section {
+    margin-bottom: 2.5rem;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.setting-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.setting-description {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.setting-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-outline {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #64748b;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #3b82f6;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.theme-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.theme-option {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.theme-option.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.theme-option:hover:not(.active) {
+    background: #f8fafc;
+}
+
+.form-select {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    min-width: 150px;
+}
+
+.export-options {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.btn-outline:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+@media (max-width: 768px) {
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .setting-actions {
+        align-self: flex-end;
+    }
+    
+    .theme-selector {
+        flex-direction: column;
+    }
+    
+    .export-options {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .export-options .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>

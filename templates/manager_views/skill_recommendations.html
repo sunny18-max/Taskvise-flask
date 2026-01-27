@@ -1,0 +1,787 @@
+<div class="skill-recommendations">
+  <div class="skill-content">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon critical">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Critical Gaps</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon training">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Need Training</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon completed">
+          <i class="fas fa-award"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Completed Trainings</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon productivity">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">0%</div>
+          <div class="stat-label">Avg Productivity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="skill-grid">
+      <!-- Critical Skill Gaps -->
+      <div class="skill-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-bullseye"></i>
+            Critical Skill Gaps
+          </div>
+          <p class="card-description">Skills needed across active projects with low team coverage</p>
+        </div>
+        <div class="card-content">
+          <div class="skill-gaps-list">
+            <div class="empty-state">
+              <i class="fas fa-bullseye"></i>
+              <h4>No Skill Gaps</h4>
+              <p>All required skills are covered by your team</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Recommendations -->
+      <div class="skill-card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fas fa-book-open"></i>
+            Training Recommendations
+          </div>
+          <p class="card-description">Personalized training suggestions for team members</p>
+        </div>
+        <div class="card-content">
+          <div class="training-list">
+            <div class="empty-state">
+              <i class="fas fa-book-open"></i>
+              <h4>No Recommendations</h4>
+              <p>All team members have the required skills</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Skill Insights -->
+    <div class="skill-card">
+      <div class="card-header">
+        <div class="card-title">Team Skill Insights</div>
+        <p class="card-description">Overview of your team's skill distribution and development opportunities</p>
+      </div>
+      <div class="card-content">
+        <div class="insights-grid">
+          <div class="insight-item">
+            <div class="insight-value">0</div>
+            <div class="insight-label">Unique Skills in Team</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-value">0</div>
+            <div class="insight-label">Multi-skilled Members (5+ skills)</div>
+          </div>
+          <div class="insight-item">
+            <div class="insight-value">0</div>
+            <div class="insight-label">Avg Skills per Member</div>
+          </div>
+        </div>
+        
+        <div class="top-skills-section">
+          <h4>Top Skills in Team:</h4>
+          <div class="skills-tags">
+            <!-- Skills tags will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Skill Recommendations Data and Functions
+let employees = [];
+let projects = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadSkillData();
+});
+
+function loadSkillData() {
+  // Mock data for demonstration
+  employees = [
+    {
+      id: '1',
+      fullName: 'John Smith',
+      department: 'Development',
+      skills: ['JavaScript', 'React', 'Node.js'],
+      skillGaps: ['TypeScript', 'AWS'],
+      completedTrainings: 3,
+      productivity: 85
+    },
+    {
+      id: '2', 
+      fullName: 'Sarah Johnson',
+      department: 'Design',
+      skills: ['UI/UX', 'Figma', 'Photoshop'],
+      skillGaps: ['Illustrator', 'Animation'],
+      completedTrainings: 2,
+      productivity: 92
+    }
+  ];
+
+  projects = [
+    {
+      id: '1',
+      name: 'Website Redesign',
+      requiredSkills: ['UI/UX', 'Figma', 'JavaScript'],
+      teamMembers: ['1', '2'],
+      status: 'active'
+    }
+  ];
+
+  updateSkillDisplay();
+}
+
+function updateSkillDisplay() {
+  updateStatistics();
+  updateSkillGaps();
+  updateTrainingRecommendations();
+  updateTeamInsights();
+}
+
+function updateStatistics() {
+  const skillGapAnalysis = analyzeSkillGaps();
+  const highPriorityGaps = skillGapAnalysis.filter(gap => gap.priority === 'high');
+  const trainingRecommendations = getTrainingRecommendations();
+  
+  document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = highPriorityGaps.length;
+  document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = trainingRecommendations.length;
+  document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = 
+    employees.reduce((sum, emp) => sum + (emp.completedTrainings || 0), 0);
+  document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = 
+    employees.length > 0 ? 
+      Math.round(employees.reduce((sum, emp) => sum + (emp.productivity || 0), 0) / employees.length) + '%' : 
+      '0%';
+}
+
+function analyzeSkillGaps() {
+  const allRequiredSkills = projects
+    .filter(project => project.status === 'active' || project.status === 'planning')
+    .flatMap(project => project.requiredSkills || []);
+
+  const uniqueRequiredSkills = [...new Set(allRequiredSkills)];
+  
+  if (uniqueRequiredSkills.length === 0) {
+    return [];
+  }
+  
+  const skillGapAnalysis = uniqueRequiredSkills.map(skill => {
+    const employeesWithSkill = employees.filter(emp => 
+      (emp.skills || []).includes(skill)
+    ).length;
+    
+    const coveragePercentage = employees.length > 0 ? 
+      (employeesWithSkill / employees.length) * 100 : 0;
+    
+    const priority = coveragePercentage < 50 ? 'high' : coveragePercentage < 75 ? 'medium' : 'low';
+
+    const projectsUsing = projects.filter(p => 
+      (p.requiredSkills || []).includes(skill)
+    ).length;
+
+    return {
+      skill,
+      coveragePercentage,
+      employeesWithSkill,
+      totalEmployees: employees.length,
+      priority,
+      projectsUsing
+    };
+  });
+
+  return skillGapAnalysis.sort((a, b) => a.coveragePercentage - b.coveragePercentage);
+}
+
+function getTrainingRecommendations() {
+  const recommendations = [];
+  const highPriorityGaps = analyzeSkillGaps().filter(gap => gap.priority === 'high');
+
+  employees.forEach(employee => {
+    const recommendedSkills = [];
+    let reason = '';
+    let urgency = 'low';
+
+    const employeeSkills = employee.skills || [];
+
+    // Check current projects for skill requirements
+    const employeeProjects = projects.filter(project => {
+      const teamMembers = project.teamMembers || [];
+      return teamMembers.includes(employee.id) && 
+             (project.status === 'active' || project.status === 'planning');
+    });
+
+    employeeProjects.forEach(project => {
+      const requiredSkills = project.requiredSkills || [];
+      requiredSkills.forEach(skill => {
+        if (!employeeSkills.includes(skill) && !recommendedSkills.includes(skill)) {
+          recommendedSkills.push(skill);
+          reason = `Required for project: ${project.name}`;
+          urgency = 'high';
+        }
+      });
+    });
+
+    // Check for critical team skill gaps
+    highPriorityGaps.forEach(gap => {
+      if (!employeeSkills.includes(gap.skill) && !recommendedSkills.includes(gap.skill)) {
+        recommendedSkills.push(gap.skill);
+        reason = reason || 'Critical team skill gap';
+        urgency = urgency === 'high' ? 'high' : 'medium';
+      }
+    });
+
+    if (recommendedSkills.length > 0) {
+      recommendations.push({
+        employee,
+        recommendedSkills,
+        reason,
+        urgency
+      });
+    }
+  });
+
+  return recommendations.sort((a, b) => {
+    const urgencyOrder = { high: 3, medium: 2, low: 1 };
+    return urgencyOrder[b.urgency] - urgencyOrder[a.urgency];
+  });
+}
+
+function updateSkillGaps() {
+  const skillGapAnalysis = analyzeSkillGaps();
+  const container = document.querySelector('.skill-gaps-list');
+  
+  if (skillGapAnalysis.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-bullseye"></i>
+        <h4>No Skill Gaps</h4>
+        <p>All required skills are covered by your team</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = skillGapAnalysis.slice(0, 5).map(gap => `
+    <div class="skill-gap-item">
+      <div class="gap-header">
+        <div class="gap-info">
+          <span class="skill-name">${gap.skill}</span>
+          <span class="badge ${getPriorityClass(gap.priority)}">${gap.priority}</span>
+        </div>
+        <span class="coverage-count">${gap.employeesWithSkill}/${gap.totalEmployees} employees</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${gap.coveragePercentage}%"></div>
+      </div>
+      <div class="gap-footer">
+        <span>${gap.coveragePercentage.toFixed(0)}% coverage</span>
+        <span>${gap.projectsUsing} project${gap.projectsUsing !== 1 ? 's' : ''} need${gap.projectsUsing !== 1 ? '' : 's'} this</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateTrainingRecommendations() {
+  const recommendations = getTrainingRecommendations();
+  const container = document.querySelector('.training-list');
+  
+  if (recommendations.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-book-open"></i>
+        <h4>No Recommendations</h4>
+        <p>All team members have the required skills</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = recommendations.slice(0, 4).map(rec => `
+    <div class="training-item">
+      <div class="training-header">
+        <div class="employee-info">
+          <div class="employee-avatar">
+            ${rec.employee.fullName.split(' ').map(n => n[0]).join('')}
+          </div>
+          <div class="employee-details">
+            <div class="employee-name">${rec.employee.fullName}</div>
+            <div class="employee-department">${rec.employee.department}</div>
+          </div>
+        </div>
+        <span class="badge ${getUrgencyClass(rec.urgency)}">${rec.urgency}</span>
+      </div>
+      <div class="recommended-skills">
+        <div class="skills-label">Recommended Skills:</div>
+        <div class="skills-tags">
+          ${rec.recommendedSkills.map(skill => `
+            <span class="skill-tag">${skill}</span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="training-reason">${rec.reason}</div>
+    </div>
+  `).join('');
+}
+
+function updateTeamInsights() {
+  const totalSkillsInTeam = new Set(
+    employees.flatMap(emp => emp.skills || [])
+  ).size;
+
+  const multiSkilledMembers = employees.filter(emp => (emp.skills || []).length >= 5).length;
+  const avgSkillsPerMember = employees.length > 0 ? 
+    Math.round(employees.reduce((sum, emp) => sum + (emp.skills || []).length, 0) / employees.length) : 0;
+
+  // Update insight values
+  document.querySelectorAll('.insight-value')[0].textContent = totalSkillsInTeam;
+  document.querySelectorAll('.insight-value')[1].textContent = multiSkilledMembers;
+  document.querySelectorAll('.insight-value')[2].textContent = avgSkillsPerMember;
+
+  // Update top skills
+  const skillCounts = {};
+  employees.forEach(emp => {
+    (emp.skills || []).forEach(skill => {
+      skillCounts[skill] = (skillCounts[skill] || 0) + 1;
+    });
+  });
+
+  const topSkills = Object.entries(skillCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 8);
+
+  const skillsContainer = document.querySelector('.skills-tags');
+  skillsContainer.innerHTML = topSkills.map(([skill, count]) => `
+    <span class="skill-tag">${skill} (${count})</span>
+  `).join('');
+}
+
+function getPriorityClass(priority) {
+  switch (priority) {
+    case 'high': return 'badge-danger';
+    case 'medium': return 'badge-warning';
+    default: return 'badge-success';
+  }
+}
+
+function getUrgencyClass(urgency) {
+  switch (urgency) {
+    case 'high': return 'badge-danger';
+    case 'medium': return 'badge-warning';
+    default: return 'badge-info';
+  }
+}
+</script>
+
+<style>
+.skill-recommendations {
+  padding: 1.5rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.skill-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.stat-icon.critical { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.stat-icon.training { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-icon.completed { background: linear-gradient(135deg, #10b981, #047857); }
+.stat-icon.productivity { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Skill Grid */
+.skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.skill-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+/* Skill Gaps */
+.skill-gaps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.skill-gap-item {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.gap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.gap-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.skill-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.coverage-count {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.gap-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+/* Training Recommendations */
+.training-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.training-item {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.training-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.employee-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.employee-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.employee-details {
+  flex: 1;
+}
+
+.employee-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.employee-department {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.recommended-skills {
+  margin-bottom: 0.75rem;
+}
+
+.skills-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skill-tag {
+  padding: 0.25rem 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.training-reason {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Team Insights */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.insight-item {
+  text-align: center;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.insight-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.insight-label {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.top-skills-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-danger {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Progress Bar */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #64748b;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.empty-state p {
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .skill-recommendations {
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .gap-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .training-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

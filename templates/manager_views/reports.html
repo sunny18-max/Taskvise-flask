@@ -1,0 +1,550 @@
+<div class="view-container">
+    <!-- Reports Content -->
+    <div class="reports-content">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3 class="chart-title">Employee Performance Overview</h3>
+                <div class="chart-actions">
+                    <button class="btn btn-outline" onclick="exportReport()">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <button class="btn btn-outline" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="performanceChart" class="chart"></div>
+            </div>
+            
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-color productivity"></div>
+                    <span>Productivity %</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color completed-tasks"></div>
+                    <span>Completed Tasks</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="avgProductivity">0%</div>
+                    <div class="stat-label">Average Productivity</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="totalTasks">0</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="completionRate">0%</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="activeEmployees">0</div>
+                    <div class="stat-label">Active Employees</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real employee performance data
+let employeePerformance = [];
+
+// Initialize chart when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadReportsData();
+});
+
+async function loadReportsData() {
+    try {
+        // Fetch employees and tasks from API
+        const [employeesRes, tasksRes] = await Promise.all([
+            fetch('/api/manager/employees', { credentials: 'same-origin' }),
+            fetch('/api/manager/tasks', { credentials: 'same-origin' })
+        ]);
+        
+        if (!employeesRes.ok || !tasksRes.ok) throw new Error('Failed to fetch data');
+        
+        const employees = await employeesRes.json();
+        const tasks = await tasksRes.json();
+        
+        // Calculate performance metrics for each employee
+        employeePerformance = employees.map(emp => {
+            const empTasks = tasks.filter(t => String(t.employee_id || t.employeeId) === String(emp.id));
+            const completedTasks = empTasks.filter(t => (t.status || '').toLowerCase() === 'completed').length;
+            const totalTasks = empTasks.length;
+            const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            
+            return {
+                id: emp.id,
+                fullName: emp.fullName || emp.name || 'Unknown',
+                productivity: productivity,
+                completedTasks: completedTasks,
+                totalTasks: totalTasks
+            };
+        });
+        
+        renderChart();
+        updateStats();
+    } catch (error) {
+        console.error('Error loading reports data:', error);
+        showNotification('Failed to load reports data', 'error');
+    }
+}
+
+function renderChart() {
+    if (!employeePerformance || employeePerformance.length === 0) {
+        document.getElementById('performanceChart').innerHTML = '<div style="text-align:center;padding:2rem;color:#64748b;">No employee data available</div>';
+        return;
+    }
+    
+    const chart = document.getElementById('performanceChart');
+    chart.innerHTML = '';
+    
+    const chartBars = document.createElement('div');
+    chartBars.className = 'chart-bars';
+    
+    const maxProductivity = Math.max(...employeePerformance.map(emp => emp.productivity), 1);
+    const maxTasks = Math.max(...employeePerformance.map(emp => emp.completedTasks), 1);
+    
+    employeePerformance.forEach(employee => {
+        const barGroup = document.createElement('div');
+        barGroup.className = 'bar-group';
+        
+        const employeeName = document.createElement('div');
+        employeeName.className = 'employee-name';
+        employeeName.textContent = employee.fullName;
+        
+        const barsContainer = document.createElement('div');
+        barsContainer.className = 'bars-container';
+        
+        // Productivity bar
+        const productivityBar = document.createElement('div');
+        productivityBar.className = 'bar productivity-bar';
+        productivityBar.style.height = `${(employee.productivity / maxProductivity) * 80}%`;
+        productivityBar.title = `Productivity: ${employee.productivity}%`;
+        
+        // Tasks bar
+        const tasksBar = document.createElement('div');
+        tasksBar.className = 'bar tasks-bar';
+        tasksBar.style.height = `${(employee.completedTasks / maxTasks) * 80}%`;
+        tasksBar.title = `Completed Tasks: ${employee.completedTasks}`;
+        
+        barsContainer.appendChild(productivityBar);
+        barsContainer.appendChild(tasksBar);
+        
+        barGroup.appendChild(employeeName);
+        barGroup.appendChild(barsContainer);
+        chartBars.appendChild(barGroup);
+    });
+    
+    chart.appendChild(chartBars);
+}
+
+function updateStats() {
+    if (!employeePerformance || employeePerformance.length === 0) {
+        document.getElementById('avgProductivity').textContent = '0%';
+        document.getElementById('totalTasks').textContent = '0';
+        document.getElementById('completionRate').textContent = '0%';
+        document.getElementById('activeEmployees').textContent = '0';
+        return;
+    }
+    
+    const totalCompleted = employeePerformance.reduce((sum, emp) => sum + emp.completedTasks, 0);
+    const totalAssigned = employeePerformance.reduce((sum, emp) => sum + emp.totalTasks, 0);
+    const avgProductivity = employeePerformance.reduce((sum, emp) => sum + emp.productivity, 0) / employeePerformance.length;
+    const completionRate = totalAssigned > 0 ? (totalCompleted / totalAssigned) * 100 : 0;
+    
+    document.getElementById('avgProductivity').textContent = `${Math.round(avgProductivity)}%`;
+    document.getElementById('totalTasks').textContent = totalCompleted;
+    document.getElementById('completionRate').textContent = `${Math.round(completionRate)}%`;
+    document.getElementById('activeEmployees').textContent = employeePerformance.length;
+}
+
+function exportReport() {
+    showNotification('Export feature coming soon', 'info');
+}
+
+function refreshData() {
+    showNotification('Refreshing data...', 'success');
+    loadReportsData().then(() => {
+        showNotification('Data refreshed successfully', 'success');
+    }).catch(() => {
+        showNotification('Failed to refresh data', 'error');
+    });
+}
+
+function showNotification(message, type = 'info') {
+    if (window.managerDashboard) {
+        window.managerDashboard.showNotification(message, type);
+    } else {
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
+}
+</script>
+
+<style>
+.view-container {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Reports Content */
+.reports-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Chart Card */
+.chart-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-outline {
+    background: white;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.btn-outline:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Chart Container */
+.chart-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.chart {
+    height: 400px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 2rem 1rem 1rem 1rem;
+    position: relative;
+}
+
+.chart-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    gap: 2.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 1rem;
+}
+
+.bar-group {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    min-width: 100px;
+}
+
+.employee-name {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-align: center;
+    font-weight: 600;
+    max-width: 100px;
+    word-wrap: break-word;
+    line-height: 1.2;
+}
+
+.bars-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    height: 280px;
+    justify-content: center;
+}
+
+.bar {
+    width: 32px;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 15px;
+    cursor: pointer;
+}
+
+.bar:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.productivity-bar {
+    background: linear-gradient(to top, #8884d8, #a5a2e6);
+    box-shadow: 0 2px 8px rgba(136, 132, 216, 0.3);
+}
+
+.tasks-bar {
+    background: linear-gradient(to top, #82ca9d, #9cd8b3);
+    box-shadow: 0 2px 8px rgba(130, 202, 157, 0.3);
+}
+
+/* Chart Legend */
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.legend-color.productivity {
+    background: linear-gradient(135deg, #8884d8, #a5a2e6);
+}
+
+.legend-color.completed-tasks {
+    background: linear-gradient(135deg, #82ca9d, #9cd8b3);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: #e2e8f0;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .chart-bars {
+        gap: 1rem;
+    }
+    
+    .bar-group {
+        max-width: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .view-container {
+        padding: 1rem;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .chart-actions {
+        justify-content: center;
+    }
+    
+    .chart {
+        height: 300px;
+    }
+    
+    .chart-bars {
+        gap: 0.5rem;
+    }
+    
+    .bar-group {
+        max-width: 80px;
+    }
+    
+    .employee-name {
+        font-size: 0.7rem;
+    }
+    
+    .bar {
+        width: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    
+    .stat-card {
+        padding: 1.25rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-number {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-card {
+        padding: 1.25rem;
+    }
+    
+    .chart-container {
+        padding: 1rem;
+    }
+    
+    .chart {
+        height: 250px;
+    }
+    
+    .bars-container {
+        gap: 0.25rem;
+    }
+    
+    .bar {
+        width: 16px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-legend {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+}
+</style>

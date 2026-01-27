@@ -1,0 +1,164 @@
+<div class="view-content">
+    <!-- Stats Cards for Projects -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="total-projects">{{ stats.total_projects|default(0) }}</div>
+                    <div class="stat-label">Total Projects</div>
+                </div>
+                <div class="stat-icon blue">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="active-projects-count">{{ stats.active_projects_count|default(0) }}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-icon green">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="completed-projects">{{ stats.completed_projects|default(0) }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-icon purple">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div>
+                    <div class="stat-value" id="on-hold-projects">{{ stats.on_hold_projects|default(0) }}</div>
+                    <div class="stat-label">On Hold</div>
+                </div>
+                <div class="stat-icon orange">
+                    <i class="fas fa-pause-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-projects" placeholder="Search projects...">
+        </div>
+        <div class="filter-group">
+            <select id="status-filter" class="form-select">
+                <option value="all">All Status</option>
+                <option value="planning">Planning</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="on-hold">On Hold</option>
+            </select>
+            <select id="department-filter" class="form-select">
+                <option value="all">All Departments</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Design">Design</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Sales">Sales</option>
+                <option value="HR">Human Resources</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="projects-grid" id="projects-grid">
+        {% if projects %}
+            {% for project in projects %}
+            <div class="project-card">
+                <div class="project-header">
+                    <div>
+                        <div class="project-name">{{ project.name }}</div>
+                    </div>
+                    <div class="project-status {{ project.status }}">{{ project.status }}</div>
+                </div>
+                <div class="project-description">{{ project.description or 'No description provided' }}</div>
+                <div class="project-meta">
+                    <div class="project-meta-item">
+                        <i class="fas fa-building"></i>
+                        <span>{{ project.department }}</span>
+                    </div>
+                    <div class="project-meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{ project.deadline }}</span>
+                    </div>
+                </div>
+                <div class="project-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: {{ project.progress }};"></div>
+                    </div>
+                    <div class="progress-text">{{ project.progress }}%</div>
+                </div>
+                <div class="project-actions">
+                    <button class="btn btn-outline" onclick="editProject('{{ project.id }}')">
+                        <i class="fas fa-edit"></i>
+                        Edit
+                    </button>
+                    <button class="btn btn-primary" onclick="viewProject('{{ project.id }}')">
+                        <i class="fas fa-eye"></i>
+                        View
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <h3>No Projects Found</h3>
+                <p>Create your first project to get started</p>
+                <button class="btn btn-primary" onclick="createProjectDialog.open()">
+                    <i class="fas fa-plus"></i>
+                    Create Project
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function editProject(projectId) {
+    if (!window.openEditProjectDialog) {
+        return window.adminDashboard && window.adminDashboard.showNotification('Edit project dialog not loaded', 'error');
+    }
+    const projects = (window.adminDashboard && window.adminDashboard.projects) ? window.adminDashboard.projects : [];
+    const employees = (window.adminDashboard && window.adminDashboard.employees) ? window.adminDashboard.employees : [];
+
+    const updateProjectCallback = async (id, updated) => {
+        try {
+            // TODO: Replace with real API call
+            console.log('Update project', id, updated);
+            if (window.adminDashboard) {
+                await window.adminDashboard.refreshData();
+            }
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
+    window.openEditProjectDialog(projectId, projects, employees, updateProjectCallback);
+}
+
+function viewProject(projectId) {
+    if (window.adminDashboard) {
+        window.adminDashboard.showNotification('View project functionality coming soon', 'info');
+    }
+}
+</script>
