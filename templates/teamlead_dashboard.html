@@ -1,16 +1,36 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/manager_dashboard.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+(() => {
+    const storedTheme = localStorage.getItem('taskvise_teamlead_theme') || 'system';
+    const resolvedTheme = storedTheme === 'system'
+        ? ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light')
+        : storedTheme;
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    document.documentElement.setAttribute('data-theme-mode', storedTheme);
+})();
+</script>
+{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+{% set dashboard_prefix = '/teamlead' %}
+<div class="dashboard-container role-teamlead" data-dashboard-scope="teamlead">
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">
-                <div class="logo">
-                    <i class="fas fa-users-cog"></i>
-                </div>
+                <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
                 <span class="brand-text">TaskVise</span>
             </div>
             <div class="nav-actions">
+                <!-- MongoDB Status Indicator -->
+                <div class="db-status" id="dbStatus" title="Database Connection Status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span class="status-text" id="statusText">Checking...</span>
+                </div>
                 <div class="user-dropdown">
                     <button class="nav-btn user-menu-toggle" id="userMenuToggle">
                         <div class="user-avatar-small">
@@ -23,6 +43,10 @@
                         <a href="/teamlead/profile" class="dropdown-item" data-view="profile">
                             <i class="fas fa-user"></i>
                             <span>Profile</span>
+                        </a>
+                        <a href="/teamlead/settings" class="dropdown-item" data-view="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
                         </a>
                         <div class="dropdown-divider"></div>
                         <a href="{{ url_for('logout') }}" class="dropdown-item logout">
@@ -70,6 +94,26 @@
                     <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
+                <a href="/teamlead/workload-balancer" class="nav-item {% if current_view == 'workload-balancer' %}active{% endif %}">
+                    <i class="fas fa-balance-scale"></i>
+                    <span>Workload</span>
+                </a>
+                <a href="/teamlead/skill-recommendations" class="nav-item {% if current_view == 'skill-recommendations' %}active{% endif %}">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Skill Development</span>
+                </a>
+                <a href="/teamlead/notifications" class="nav-item {% if current_view == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+                <a href="/teamlead/profile" class="nav-item {% if current_view == 'profile' %}active{% endif %}">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="/teamlead/settings" class="nav-item {% if current_view == 'settings' %}active{% endif %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
             </nav>
 
             <div class="workload-indicator">
@@ -102,7 +146,11 @@
                         {% elif current_view == 'projects' %}Projects
                         {% elif current_view == 'tasks' %}Tasks
                         {% elif current_view == 'reports' %}Reports
+                        {% elif current_view == 'workload-balancer' %}Workload Balancer
+                        {% elif current_view == 'skill-recommendations' %}Skill Development
+                        {% elif current_view == 'notifications' %}Notifications
                         {% elif current_view == 'profile' %}Profile
+                        {% elif current_view == 'settings' %}Settings
                         {% else %}Team Lead Dashboard{% endif %}
                     </h1>
                     <p id="page-subtitle">
@@ -111,6 +159,11 @@
                         {% elif current_view == 'projects' %}Track projects you lead.
                         {% elif current_view == 'tasks' %}Assign and monitor tasks.
                         {% elif current_view == 'reports' %}View team performance.
+                        {% elif current_view == 'workload-balancer' %}Balance workload using live task and capacity data.
+                        {% elif current_view == 'skill-recommendations' %}Track live skill gaps and development needs.
+                        {% elif current_view == 'notifications' %}Stay on top of team progress and updates.
+                        {% elif current_view == 'profile' %}Review and update your account profile inside the team lead dashboard.
+                        {% elif current_view == 'settings' %}Manage your account preferences without leaving the dashboard shell.
                         {% else %}Team Lead workspace{% endif %}
                     </p>
                 </div>
@@ -128,8 +181,16 @@
                         {% include 'teamlead_views/tasks.html' %}
                     {% elif current_view == 'reports' %}
                         {% include 'teamlead_views/reports.html' %}
+                    {% elif current_view == 'workload-balancer' %}
+                        {% include 'teamlead_views/workload_balancer.html' %}
+                    {% elif current_view == 'skill-recommendations' %}
+                        {% include 'teamlead_views/skill_recommendations.html' %}
+                    {% elif current_view == 'notifications' %}
+                        {% include 'teamlead_views/notifications.html' %}
                     {% elif current_view == 'profile' %}
                         {% include 'teamlead_views/profile.html' %}
+                    {% elif current_view == 'settings' %}
+                        {% include 'teamlead_views/settings.html' %}
                     {% else %}
                         {% include 'teamlead_views/overview.html' %}
                     {% endif %}
@@ -141,15 +202,24 @@
     <div id="dialog-container"></div>
 </div>
 
+<script id="initial-teamlead-data" type="application/json">{{ ({'employees': employees or [], 'projects': projects or [], 'tasks': tasks or [], 'stats': stats or {}, 'current_user_id': session.get('user_id'), 'role': role or session.get('role')} )|tojson|safe }}</script>
 <script src="{{ url_for('static', filename='js/teamlead_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/dashboardHelpers.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/teamlead/assignTaskDialog.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/teamlead/createProjectDialog.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/teamlead/teamMemberDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editTaskDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProjectDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/projectDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/taskDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/employeeDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProfileDialog.js') }}"></script>
 <script>
   // Compat shims so reused manager partials work without changes
-  window.managerDashboard = window.teamLeadDashboard;
   window.openAssignTaskDialog = window.openTLAssignTaskDialog;
   window.openCreateProjectDialog = window.openTLCreateProjectDialog;
-  window.openEmployeeDetailsDialog = window.openTLMemberDetailsDialog;
+  if (window.openEmployeeDetails) {
+    window.openEmployeeDetailsDialog = window.openEmployeeDetails;
+  }
 </script>
 {% endblock %}

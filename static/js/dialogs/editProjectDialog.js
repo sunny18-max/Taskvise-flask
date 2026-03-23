@@ -1,53 +1,111 @@
-// Minimal, robust Edit Project Dialog
-// Usage: openEditProjectDialog(projectId, projects, _employeesIgnored, updateProjectCallback)
-// updateProjectCallback(projectId, { name, description, status, deadline, progress })
+(function () {
+  const helpers = () => window.TaskViseDashboardHelpers;
 
-(function(){
-  function openEditProjectDialog(projectId, projects, _employeesIgnored, updateProjectCallback) {
-    try {
-      const project = (projects || []).find(p => String(p.id) === String(projectId));
-      if (!project) {
-        showNotification(`Project not found: ${projectId}`, 'error');
-        return;
-      }
+  function normalizeProjectArgs(projectId, projects, employees, updateProjectCallback) {
+    let projectList = Array.isArray(projects) ? projects : null;
+    let employeeList = Array.isArray(employees) ? employees : null;
+    let callback = typeof updateProjectCallback === 'function' ? updateProjectCallback : null;
 
-      // Normalize fields
-      const deadlineStr = (project.deadline || project.endDate || project.end_date || '').toString().split('T')[0];
-      const edited = {
-        name: project.name || '',
-        description: project.description || '',
-        status: (project.status || 'planning').toLowerCase(),
-        deadline: deadlineStr,
-        progress: parseInt(project.progress || 0) || 0
-      };
+    if (!projectList || !employeeList) {
+      const h = helpers();
+      projectList = projectList || h.getDashboardCollection('projects');
+      employeeList = employeeList || h.getDashboardCollection('employees');
+    }
 
-      // Build modal
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
-      const modal = document.createElement('div');
-      modal.style.cssText = 'background:#fff;border-radius:12px;box-shadow:0 20px 45px rgba(2,6,23,.16);width:92%;max-width:640px;max-height:90vh;overflow:auto;';
-      modal.innerHTML = `
-        <div style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:#111827;">Edit Project</h3>
-          <button id="epx" style="background:none;border:0;font-size:1.25rem;color:#64748b;cursor:pointer">×</button>
+    return { projectId, projectList, employeeList, callback };
+  }
+
+  function closeEditProjectDialog() {
+    const modal = document.getElementById('edit-project-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  function renderTeamMembers(selectedIds, employees) {
+    const h = helpers();
+    const employeeMap = h.buildEmployeeMap(employees);
+    const container = document.getElementById('ep-selected-members');
+    if (!container) {
+      return;
+    }
+    if (!selectedIds.length) {
+      container.innerHTML = '<p class="detail-empty">No team members selected.</p>';
+      return;
+    }
+    container.innerHTML = selectedIds
+      .map((memberId) => {
+        const employee = employeeMap.get(String(memberId));
+        const label = employee ? employee.name : memberId;
+        return `
+          <span class="member-tag">
+            ${h.escapeHtml(label)}
+            <button type="button" class="tag-remove" data-member-id="${h.escapeHtml(memberId)}" aria-label="Remove ${h.escapeHtml(label)}">&times;</button>
+          </span>
+        `;
+      })
+      .join('');
+
+    container.querySelectorAll('.tag-remove').forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextValue = (document.getElementById('ep-team-data').value || '').split(',').filter(Boolean);
+        const filtered = nextValue.filter((memberId) => memberId !== button.dataset.memberId);
+        document.getElementById('ep-team-data').value = filtered.join(',');
+        renderTeamMembers(filtered, employees);
+      });
+    });
+  }
+
+  async function openEditProjectDialog(projectId, projects, employees, updateProjectCallback) {
+    const h = helpers();
+    const context = h.getDashboardContext();
+    const args = normalizeProjectArgs(projectId, projects, employees, updateProjectCallback);
+    if ((!args.projectList || !args.projectList.length) && context.dashboard && typeof context.dashboard.getProjects === 'function') {
+      args.projectList = await context.dashboard.getProjects();
+    }
+    if ((!args.employeeList || !args.employeeList.length) && context.dashboard && typeof context.dashboard.getEmployees === 'function') {
+      args.employeeList = await context.dashboard.getEmployees();
+    }
+    const project = (args.projectList || []).find((item) => String(item.id) === String(args.projectId));
+    if (!project) {
+      h.notify('Project not found', 'error');
+      return;
+    }
+
+    const selectedMembers = h.parseTeamMembers(project);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'edit-project-modal';
+    overlay.innerHTML = `
+      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="edit-project-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="edit-project-title">Edit Project</h3>
+            <p class="modal-subtitle">Update scope, owner, delivery date, and team.</p>
+          </div>
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
         </div>
-        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-          <div>
-            <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Project Name *</label>
-            <input id="ep-name" class="form-input" value="${escapeHtml(edited.name)}" placeholder="Enter project name">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="ep-name">Project Name *</label>
+            <input id="ep-name" class="form-input" type="text" value="${h.escapeHtml(project.name || '')}">
           </div>
-          <div>
-            <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Description</label>
-            <textarea id="ep-desc" class="form-input" style="min-height:96px;">${escapeHtml(edited.description)}</textarea>
+          <div class="form-group">
+            <label for="ep-description">Description</label>
+            <textarea id="ep-description" class="form-textarea">${h.escapeHtml(project.description || '')}</textarea>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div>
-              <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Deadline *</label>
-              <input type="date" id="ep-deadline" class="form-input" value="${escapeHtml(edited.deadline)}">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ep-company">Company</label>
+              <input id="ep-company" class="form-input" type="text" value="${h.escapeHtml(project.company || h.getDefaultCompanyName())}">
             </div>
-            <div>
-              <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Status</label>
-              <select id="ep-status" class="form-input">
+            <div class="form-group">
+              <label for="ep-deadline">Deadline *</label>
+              <input id="ep-deadline" class="form-input" type="date" value="${h.escapeHtml(project.deadline || project.end_date || '')}">
+            </div>
+            <div class="form-group">
+              <label for="ep-status">Status</label>
+              <select id="ep-status" class="form-select">
                 <option value="planning">Planning</option>
                 <option value="active">Active</option>
                 <option value="on-hold">On Hold</option>
@@ -55,63 +113,114 @@
               </select>
             </div>
           </div>
-          <div>
-            <label style="display:block;margin:0 0 6px 0;font-weight:500;color:#374151;">Progress</label>
-            <input type="range" id="ep-progress" min="0" max="100" value="${edited.progress}" style="width:100%;accent-color:#3b82f6;">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ep-owner">Owner</label>
+              <select id="ep-owner" class="form-select">
+                <option value="">Select project owner</option>
+                ${args.employeeList
+                  .map((employee) => `<option value="${h.escapeHtml(employee.id)}">${h.escapeHtml(employee.name)} - ${h.escapeHtml(employee.position || employee.role || '')}</option>`)
+                  .join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ep-progress">Progress</label>
+              <input id="ep-progress" class="form-input" type="number" min="0" max="100" value="${h.escapeHtml(String(project.progress || 0))}">
+            </div>
           </div>
-          <div id="ep-err" style="display:none;color:#b91c1c;font-size:.875rem;"></div>
+          <div class="form-group">
+            <label for="ep-team-members">Team Members</label>
+            <select id="ep-team-members" class="form-select">
+              <option value="">Add team member</option>
+              ${args.employeeList
+                .map((employee) => `<option value="${h.escapeHtml(employee.id)}">${h.escapeHtml(employee.name)} - ${h.escapeHtml(employee.position || employee.role || '')}</option>`)
+                .join('')}
+            </select>
+            <input id="ep-team-data" type="hidden" value="${h.escapeHtml(selectedMembers.join(','))}">
+            <div id="ep-selected-members" class="tag-list" style="margin-top:0.75rem;"></div>
+          </div>
         </div>
-        <div style="padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">
-          <button id="ep-cancel" class="btn btn-outline" style="padding:.6rem 1rem;border-radius:8px;">Cancel</button>
-          <button id="ep-save" class="btn btn-primary" style="padding:.6rem 1rem;border-radius:8px;">Update Project</button>
+        <div class="modal-footer">
+          <button class="btn btn-outline" type="button">Cancel</button>
+          <button class="btn btn-primary" type="button" id="ep-save">Save Changes</button>
         </div>
-      `;
-      overlay.appendChild(modal);
-      document.body.appendChild(overlay);
+      </div>
+    `;
 
-      // Set selects
-      modal.querySelector('#ep-status').value = edited.status;
+    document.body.appendChild(overlay);
 
-      function close(){ document.body.removeChild(overlay); }
-      modal.querySelector('#epx').onclick = close;
-      modal.querySelector('#ep-cancel').onclick = (e)=>{ e.preventDefault(); close(); };
-      overlay.addEventListener('click', (e)=>{ if (e.target===overlay) close(); });
-      modal.addEventListener('keydown', (e)=>{ if (e.key==='Escape') close(); });
+    const statusSelect = document.getElementById('ep-status');
+    const ownerSelect = document.getElementById('ep-owner');
+    statusSelect.value = String(project.status || 'planning').toLowerCase();
+    ownerSelect.value = String(project.owner_id || '');
+    renderTeamMembers(selectedMembers, args.employeeList);
 
-      modal.querySelector('#ep-save').onclick = async (e)=>{
-        e.preventDefault();
-        const err = modal.querySelector('#ep-err');
-        err.style.display='none'; err.textContent='';
-        const payload = {
-          name: modal.querySelector('#ep-name').value.trim(),
-          description: modal.querySelector('#ep-desc').value.trim(),
-          status: modal.querySelector('#ep-status').value,
-          deadline: modal.querySelector('#ep-deadline').value,
-          progress: parseInt(modal.querySelector('#ep-progress').value)||0
-        };
-        if (!payload.name || !payload.deadline) { err.textContent='Please fill required fields'; err.style.display='block'; return; }
-        try {
-          const ok = await (updateProjectCallback && updateProjectCallback(projectId, payload));
-          if (!ok) throw new Error('Update failed');
-          if (window.managerDashboard && window.managerDashboard.showNotification) {
-            window.managerDashboard.showNotification('Project updated successfully','success');
-          }
-          close();
-        } catch (ex) {
-          if (window.managerDashboard && window.managerDashboard.showNotification) {
-            window.managerDashboard.showNotification('Failed to update project','error');
-          }
-        }
+    const teamSelect = document.getElementById('ep-team-members');
+    teamSelect.addEventListener('change', (event) => {
+      const nextMemberId = String(event.target.value || '').trim();
+      if (!nextMemberId) {
+        return;
+      }
+      const current = (document.getElementById('ep-team-data').value || '').split(',').filter(Boolean);
+      const next = h.uniqueStrings([...current, nextMemberId]);
+      document.getElementById('ep-team-data').value = next.join(',');
+      event.target.value = '';
+      renderTeamMembers(next, args.employeeList);
+    });
+
+    const close = () => closeEditProjectDialog();
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+    overlay.querySelector('.btn-outline').addEventListener('click', close);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        close();
+      }
+    });
+
+    document.getElementById('ep-save').addEventListener('click', async () => {
+      const payload = {
+        name: document.getElementById('ep-name').value.trim(),
+        description: document.getElementById('ep-description').value.trim(),
+        company: document.getElementById('ep-company').value.trim(),
+        deadline: document.getElementById('ep-deadline').value,
+        status: document.getElementById('ep-status').value,
+        owner_id: document.getElementById('ep-owner').value,
+        progress: document.getElementById('ep-progress').value,
+        teamMembers: (document.getElementById('ep-team-data').value || '').split(',').filter(Boolean),
       };
-    } catch (e) {
-      try { window.managerDashboard && window.managerDashboard.showNotification('Failed to open edit project dialog','error'); } catch(_) {}
-    }
-  }
+      if (!payload.name || !payload.deadline) {
+        h.notify('Project name and deadline are required.', 'error');
+        return;
+      }
 
-  function escapeHtml(s){
-    return String(s||'').replace(/[&<>"]+/g, c=>({"&":"&amp;","<":"&lt;",
-    ">":"&gt;","\"":"&quot;"}[c]));
+      const saveButton = document.getElementById('ep-save');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+
+      try {
+        if (args.callback) {
+          const ok = await args.callback(args.projectId, payload);
+          if (!ok) {
+            throw new Error('Failed to update project');
+          }
+        } else {
+          await h.requestJson(`${context.apiBase}/projects/${encodeURIComponent(args.projectId)}`, {
+            method: 'PUT',
+            body: payload,
+          });
+        }
+        h.notify('Project updated successfully', 'success');
+        close();
+        await h.refreshView();
+      } catch (error) {
+        console.error(error);
+        h.notify(error.message || 'Failed to update project', 'error');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Changes';
+      }
+    });
   }
 
   window.openEditProjectDialog = openEditProjectDialog;
-  })();
+})();

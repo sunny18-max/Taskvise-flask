@@ -1,0 +1,256 @@
+{% set payroll_total = namespace(value=0, bonus=0, scheduled=0) %}
+{% set visible_teams = teams if teams is defined and teams else stats.teamSummaries %}
+{% for payment in payments %}
+    {% set payroll_total.value = payroll_total.value + (payment.base_salary|int) %}
+    {% set payroll_total.bonus = payroll_total.bonus + (payment.bonus|int) %}
+    {% if payment.payment_status == 'scheduled' %}
+        {% set payroll_total.scheduled = payroll_total.scheduled + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="view-container hr-payments-view">
+    <div class="payments-summary-grid">
+        <div class="payment-stat-card">
+            <span class="payment-stat-label">Monthly Payroll Base</span>
+            <strong class="payment-stat-value">INR {{ "{:,.0f}".format(payroll_total.value) }}</strong>
+        </div>
+        <div class="payment-stat-card">
+            <span class="payment-stat-label">Performance Bonus Pool</span>
+            <strong class="payment-stat-value">INR {{ "{:,.0f}".format(payroll_total.bonus) }}</strong>
+        </div>
+        <div class="payment-stat-card">
+            <span class="payment-stat-label">Scheduled Payouts</span>
+            <strong class="payment-stat-value">{{ payroll_total.scheduled }}</strong>
+        </div>
+        <div class="payment-stat-card">
+            <span class="payment-stat-label">{{ 'Teams Under Review' if role == 'hr' else 'Your Payroll Teams' }}</span>
+            <strong class="payment-stat-value">{{ visible_teams|length }}</strong>
+        </div>
+    </div>
+
+    <div class="payments-layout">
+        <div class="payments-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-building-columns"></i>
+                    {{ 'Team Payroll Snapshot' if role == 'hr' else 'Managed Team Payroll' }}
+                </h3>
+            </div>
+            <div class="card-content">
+                <div class="team-payroll-list">
+                    {% for team in visible_teams %}
+                    {% set team_payment = namespace(total=0) %}
+                    {% for payment in payments if payment.team_id == team.id %}
+                        {% set team_payment.total = team_payment.total + (payment.base_salary|int) + (payment.bonus|int) %}
+                    {% endfor %}
+                    <div class="team-payroll-item">
+                        <div>
+                            <strong>{{ team.name }}</strong>
+                            <p>{{ team.tagline }}</p>
+                        </div>
+                        <div class="team-payroll-meta">
+                            <span>{{ team.manager_name }}</span>
+                            <strong>INR {{ "{:,.0f}".format(team_payment.total) }}</strong>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state compact">
+                        <i class="fas fa-wallet"></i>
+                        <p>No payroll teams available.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="payments-card wide">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-receipt"></i>
+                    Employee Payments Ledger
+                </h3>
+                <p class="card-subtitle">
+                    {{ 'Managers, team leads, and employees are all visible here for HR review.' if role == 'hr' else 'Compensation visibility for the team you manage, including your lead and direct reports.' }}
+                </p>
+            </div>
+            <div class="payments-table-wrap">
+                <table class="payments-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Role</th>
+                            <th>Team</th>
+                            <th>Base</th>
+                            <th>Bonus</th>
+                            <th>Next Pay</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>
+                                <div class="payment-person">
+                                    <strong>{{ payment.employee_name }}</strong>
+                                    <span>{{ payment.employee_id }}</span>
+                                </div>
+                            </td>
+                            <td>{{ payment.role|replace('_', ' ')|title }}</td>
+                            <td>{{ payment.team_name or 'Shared Services' }}</td>
+                            <td>INR {{ "{:,.0f}".format(payment.base_salary|int) }}</td>
+                            <td>INR {{ "{:,.0f}".format(payment.bonus|int) }}</td>
+                            <td>{{ payment.next_pay_date }}</td>
+                            <td><span class="payment-status {{ payment.payment_status }}">{{ payment.payment_status|title }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state compact">
+                                    <i class="fas fa-wallet"></i>
+                                    <p>No payments recorded.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hr-payments-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.payments-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.payment-stat-card,
+.payments-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.payment-stat-card {
+    padding: 1rem 1.15rem;
+}
+
+.payment-stat-label {
+    display: block;
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-bottom: 0.4rem;
+}
+
+.payment-stat-value {
+    font-size: 1.6rem;
+    color: var(--primary);
+}
+
+.payments-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 1.5rem;
+}
+
+.payments-card {
+    padding: 1.25rem;
+}
+
+.payments-card.wide {
+    padding-bottom: 0.85rem;
+}
+
+.card-subtitle,
+.team-payroll-item p,
+.payment-person span {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.team-payroll-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.team-payroll-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.team-payroll-item:last-child {
+    border-bottom: none;
+}
+
+.team-payroll-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.payments-table-wrap {
+    overflow-x: auto;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table th,
+.payments-table td {
+    padding: 0.9rem 0.8rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.payments-table th {
+    font-size: 0.78rem;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.payment-person {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.payment-status {
+    display: inline-flex;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.payment-status.scheduled {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.payment-status.hold {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+@media (max-width: 980px) {
+    .payments-layout {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

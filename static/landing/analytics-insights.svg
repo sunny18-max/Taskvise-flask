@@ -1,0 +1,53 @@
+<svg width="960" height="600" viewBox="0 0 960 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg4" x1="120" y1="70" x2="860" y2="530" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF6FF"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+    <linearGradient id="bar1" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="bar2" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="bar3" x1="0" y1="1" x2="0" y2="0">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect x="22" y="22" width="916" height="556" rx="30" fill="url(#bg4)"/>
+  <rect x="96" y="86" width="768" height="428" rx="22" fill="#FFFFFF" stroke="#C7D2FE"/>
+
+  <rect x="142" y="132" width="240" height="130" rx="14" fill="#F8FAFC" stroke="#E2E8F0"/>
+  <rect x="404" y="132" width="194" height="130" rx="14" fill="#F8FAFC" stroke="#E2E8F0"/>
+  <rect x="620" y="132" width="198" height="130" rx="14" fill="#F8FAFC" stroke="#E2E8F0"/>
+
+  <rect x="142" y="286" width="676" height="182" rx="16" fill="#F8FAFC" stroke="#E2E8F0"/>
+
+  <rect x="182" y="402" width="58" height="38" rx="10" fill="url(#bar1)"/>
+  <rect x="258" y="368" width="58" height="72" rx="10" fill="url(#bar2)"/>
+  <rect x="334" y="326" width="58" height="114" rx="10" fill="url(#bar3)"/>
+  <rect x="410" y="290" width="58" height="150" rx="10" fill="url(#bar1)"/>
+  <rect x="486" y="342" width="58" height="98" rx="10" fill="url(#bar2)"/>
+  <rect x="562" y="314" width="58" height="126" rx="10" fill="url(#bar3)"/>
+  <rect x="638" y="356" width="58" height="84" rx="10" fill="url(#bar1)"/>
+
+  <path d="M182 352C224 330 250 344 287 324C332 298 360 310 399 284C440 256 468 270 509 246C548 224 584 244 620 220C646 203 670 200 696 206"
+        stroke="#6366F1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="287" cy="324" r="7" fill="#4F46E5"/>
+  <circle cx="399" cy="284" r="7" fill="#4F46E5"/>
+  <circle cx="509" cy="246" r="7" fill="#4F46E5"/>
+  <circle cx="620" cy="220" r="7" fill="#4F46E5"/>
+
+  <rect x="176" y="164" width="72" height="14" rx="7" fill="#BFDBFE"/>
+  <rect x="176" y="188" width="178" height="12" rx="6" fill="#DBEAFE"/>
+
+  <rect x="438" y="164" width="72" height="14" rx="7" fill="#C4B5FD"/>
+  <rect x="438" y="188" width="126" height="12" rx="6" fill="#EDE9FE"/>
+
+  <rect x="652" y="164" width="72" height="14" rx="7" fill="#86EFAC"/>
+  <rect x="652" y="188" width="130" height="12" rx="6" fill="#DCFCE7"/>
+</svg>

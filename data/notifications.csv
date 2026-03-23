@@ -1,0 +1,23 @@
+id,user_id,title,message,type,is_read,created_at
+NOT0001,EMP001,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-23 06:00:00
+NOT0002,EMP002,Project milestone updated,A project milestone changed status and needs attention.,project,false,2026-03-23 03:00:00
+NOT0003,EMP004,Task assignment posted,A new task was assigned in one of your active projects.,task,true,2026-03-23 00:00:00
+NOT0004,EMP005,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-22 21:00:00
+NOT0005,EMP007,Project milestone updated,A project milestone changed status and needs attention.,project,false,2026-03-22 18:00:00
+NOT0006,EMP008,Task assignment posted,A new task was assigned in one of your active projects.,task,true,2026-03-22 15:00:00
+NOT0007,EMP009,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-22 12:00:00
+NOT0008,EMP010,Project milestone updated,A project milestone changed status and needs attention.,project,false,2026-03-22 09:00:00
+NOT0009,EMP011,Task assignment posted,A new task was assigned in one of your active projects.,task,true,2026-03-22 06:00:00
+NOT0010,EMP012,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-22 03:00:00
+NOT0011,EMP013,Project milestone updated,A project milestone changed status and needs attention.,project,false,2026-03-22 00:00:00
+NOT0012,EMP014,Task assignment posted,A new task was assigned in one of your active projects.,task,true,2026-03-21 21:00:00
+NOT0013,EMP015,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-21 18:00:00
+NOT0014,EMP016,Project milestone updated,A project milestone changed status and needs attention.,project,true,2026-03-21 15:00:00
+NOT0015,EMP018,Task assignment posted,A new task was assigned in one of your active projects.,task,true,2026-03-21 12:00:00
+NOT0016,EMP023,Weekly review ready,The latest dashboard metrics have been refreshed for your team.,system,false,2026-03-21 09:00:00
+NOT0017,EMP032,Project milestone updated,A project milestone changed status and needs attention.,project,false,2026-03-21 06:00:00
+ee09b34e-3261-426c-848a-eca82ca63cca,EMP021,Leave Request Approved,Your Casual leave request (2026-03-24 to 2026-03-26) was approved.,leave,false,2026-03-23 23:22:26
+93d37445-8d8a-4245-ad2d-151cc591aae9,EMP028,Leave Request Approved,Your Personal leave request (2026-03-21 to 2026-03-23) was approved.,leave,false,2026-03-23 23:22:31
+e7322063-5723-49a0-9464-996e5250287b,EMP016,Leave Request Approved,Your Sick leave request (2026-03-21 to 2026-03-23) was approved.,leave,true,2026-03-23 23:22:37
+b19cf421-897d-480f-b39d-c98613720af8,EMP032,Leave Request Approved,Your Earned leave request (2026-03-24 to 2026-03-26) was approved.,leave,false,2026-03-23 23:22:40
+4bc7684d-d05e-4ed8-b24e-877dac76f212,EMP041,Leave Request Approved,Your Casual leave request (2026-03-24 to 2026-03-26) was approved.,leave,false,2026-03-23 23:22:48

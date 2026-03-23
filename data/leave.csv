@@ -1,1 +1,19 @@
-id,employee_id,start_date,end_date,reason,status,applied_at
+id,employee_id,start_date,end_date,reason,type,status,applied_at
+LEV0001,EMP016,2026-03-21,2026-03-23,Leave request for John Doe covering planned personal or health commitments.,sick,approved,2026-03-14 08:00:00
+LEV0002,EMP017,2026-03-22,2026-03-25,Leave request for Jane Smith covering planned personal or health commitments.,earned,rejected,2026-03-15 07:00:00
+LEV0003,EMP019,2026-03-23,2026-03-24,Leave request for Amit Patel covering planned personal or health commitments.,personal,approved,2026-03-16 06:00:00
+LEV0004,EMP021,2026-03-24,2026-03-26,Leave request for Vikram Verma covering planned personal or health commitments.,casual,approved,2026-03-17 09:00:00
+LEV0005,EMP023,2026-03-25,2026-03-28,Leave request for Pooja Iyer covering planned personal or health commitments.,sick,rejected,2026-03-13 08:00:00
+LEV0006,EMP027,2026-03-20,2026-03-21,Leave request for Ritika Agarwal covering planned personal or health commitments.,earned,approved,2026-03-14 07:00:00
+LEV0007,EMP028,2026-03-21,2026-03-23,Leave request for Nikhil Pandey covering planned personal or health commitments.,personal,approved,2026-03-15 06:00:00
+LEV0008,EMP029,2026-03-22,2026-03-25,Leave request for Swati Mishra covering planned personal or health commitments.,casual,rejected,2026-03-16 09:00:00
+LEV0009,EMP031,2026-03-23,2026-03-24,Leave request for Ananya Bose covering planned personal or health commitments.,sick,approved,2026-03-17 08:00:00
+LEV0010,EMP032,2026-03-24,2026-03-26,Leave request for Harsh Vardhan covering planned personal or health commitments.,earned,approved,2026-03-13 07:00:00
+LEV0011,EMP033,2026-03-25,2026-03-28,Leave request for Ishita Sen covering planned personal or health commitments.,personal,rejected,2026-03-14 06:00:00
+LEV0012,EMP034,2026-03-20,2026-03-21,Leave request for Devika Nair covering planned personal or health commitments.,casual,approved,2026-03-15 09:00:00
+LEV0013,EMP037,2026-03-21,2026-03-23,Leave request for Mohit Saini covering planned personal or health commitments.,sick,pending,2026-03-16 08:00:00
+LEV0014,EMP038,2026-03-22,2026-03-25,Leave request for Farah Khan covering planned personal or health commitments.,earned,rejected,2026-03-17 07:00:00
+LEV0015,EMP040,2026-03-23,2026-03-24,Leave request for Parul Jain covering planned personal or health commitments.,personal,approved,2026-03-13 06:00:00
+LEV0016,EMP041,2026-03-24,2026-03-26,Leave request for Zoya Merchant covering planned personal or health commitments.,casual,approved,2026-03-14 09:00:00
+LEV0017,EMP043,2026-03-25,2026-03-28,Leave request for Leena Philip covering planned personal or health commitments.,sick,rejected,2026-03-15 08:00:00
+LEV0018,EMP045,2026-03-20,2026-03-21,Leave request for Charu Desai covering planned personal or health commitments.,earned,approved,2026-03-16 07:00:00

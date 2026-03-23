@@ -1,211 +1,235 @@
-// Create Project Dialog
-let createProjectDialog = null;
-let selectedTeamMembers = [];
+(function () {
+  const helpers = () => window.TaskViseDashboardHelpers;
 
-function openCreateProjectDialog() {
-    if (!createProjectDialog) {
-        createCreateProjectDialog();
+  class CreateProjectDialog {
+    constructor() {
+      this.modalId = 'create-project-modal';
+      this.selectedTeamMembers = [];
     }
-    selectedTeamMembers = [];
-    createProjectDialog.style.display = 'flex';
-    loadCreateProjectDialogData();
-}
 
-function createCreateProjectDialog() {
-    createProjectDialog = document.createElement('div');
-    createProjectDialog.className = 'dialog-overlay';
-    createProjectDialog.innerHTML = `
-        <div class="dialog create-project-dialog">
-            <div class="dialog-header">
-                <h2 class="dialog-title">Create New Project</h2>
-                <p class="dialog-description">Set up a new project and assign team members</p>
-                <button class="dialog-close" onclick="closeCreateProjectDialog()">×</button>
-            </div>
-            
-            <div class="dialog-content">
-                <div class="form-group">
-                    <label for="projectName" class="form-label">Project Name *</label>
-                    <input type="text" id="projectName" class="form-input" placeholder="Enter project name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="projectDescription" class="form-label">Description</label>
-                    <textarea id="projectDescription" class="form-textarea" placeholder="Enter project description"></textarea>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="projectDeadline" class="form-label">Deadline *</label>
-                        <input type="date" id="projectDeadline" class="form-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="projectStatus" class="form-label">Status</label>
-                        <select id="projectStatus" class="form-select">
-                            <option value="planning">Planning</option>
-                            <option value="active">Active</option>
-                            <option value="on-hold">On Hold</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="teamMembers" class="form-label">Team Members</label>
-                    <select id="teamMembers" class="form-select">
-                        <option value="">Add team members</option>
-                    </select>
-                    <div id="selectedMembers" class="selected-members"></div>
-                </div>
-            </div>
-            
-            <div class="dialog-actions">
-                <button class="btn btn-outline" onclick="closeCreateProjectDialog()">Cancel</button>
-                <button class="btn btn-primary" onclick="createProject()" id="createProjectBtn">Create Project</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(createProjectDialog);
-    
-    // Add event listener for team members select
-    setTimeout(() => {
-        const teamMembersSelect = document.getElementById('teamMembers');
-        if (teamMembersSelect) {
-            teamMembersSelect.addEventListener('change', function() {
-                if (this.value) {
-                    addTeamMember(this.value);
-                    this.value = '';
-                }
-            });
-        }
-    }, 100);
-}
-
-function closeCreateProjectDialog() {
-    if (createProjectDialog) {
-        createProjectDialog.style.display = 'none';
-        // Reset form
-        document.getElementById('projectName').value = '';
-        document.getElementById('projectDescription').value = '';
-        document.getElementById('projectDeadline').value = '';
-        document.getElementById('projectStatus').value = 'planning';
-        selectedTeamMembers = [];
-        updateSelectedMembersDisplay();
+    open() {
+      this.selectedTeamMembers = [];
+      this.render();
+      this.bind();
+      this.populate();
     }
-}
 
-async function loadCreateProjectDialogData() {
-    try {
-        const employeesResponse = await fetch('/api/manager/employees');
-        const employees = await employeesResponse.json();
-        
-        const teamMembersSelect = document.getElementById('teamMembers');
-        teamMembersSelect.innerHTML = '<option value="">Add team members</option>' +
-            employees.map(emp => 
-                `<option value="${emp.id}">${emp.name} - ${emp.position}</option>`
-            ).join('');
-    } catch (error) {
-        console.error('Error loading dialog data:', error);
-        showNotification('Error loading dialog data', 'error');
+    close() {
+      const modal = document.getElementById(this.modalId);
+      if (modal) {
+        modal.remove();
+      }
     }
-}
 
-function addTeamMember(memberId) {
-    if (!memberId || selectedTeamMembers.includes(memberId)) return;
-    
-    selectedTeamMembers.push(memberId);
-    updateSelectedMembersDisplay();
-}
-
-function removeTeamMember(memberId) {
-    selectedTeamMembers = selectedTeamMembers.filter(id => id !== memberId);
-    updateSelectedMembersDisplay();
-}
-
-async function updateSelectedMembersDisplay() {
-    const container = document.getElementById('selectedMembers');
-    
-    try {
-        const employeesResponse = await fetch('/api/manager/employees');
-        const employees = await employeesResponse.json();
-        
-        const selectedMembers = employees.filter(emp => 
-            selectedTeamMembers.includes(emp.id)
-        );
-        
-        container.innerHTML = selectedMembers.map(emp => `
-            <span class="member-tag">
-                ${emp.name}
-                <button type="button" onclick="removeTeamMember('${emp.id}')" class="tag-remove">×</button>
-            </span>
-        `).join('');
-    } catch (error) {
-        console.error('Error updating selected members:', error);
-    }
-}
-
-async function createProject() {
-    const projectData = {
-        name: document.getElementById('projectName').value,
-        description: document.getElementById('projectDescription').value,
-        deadline: document.getElementById('projectDeadline').value,
-        teamMembers: selectedTeamMembers,
-        status: document.getElementById('projectStatus').value
-    };
-
-    // Validate required fields
-    if (!projectData.name || !projectData.deadline) {
-        showNotification('Please fill in all required fields', 'error');
+    render() {
+      const h = helpers();
+      if (!h) {
         return;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = this.modalId;
+      overlay.innerHTML = `
+        <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
+          <div class="modal-header">
+            <div>
+              <h3 id="create-project-title">Create Project</h3>
+              <p class="modal-subtitle">Set up a project, owner, timeline, and team.</p>
+            </div>
+            <button class="modal-close" type="button" aria-label="Close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="cp-name">Project Name *</label>
+              <input id="cp-name" class="form-input" type="text" placeholder="Enter project name">
+            </div>
+            <div class="form-group">
+              <label for="cp-description">Description</label>
+              <textarea id="cp-description" class="form-textarea" placeholder="Summarize the project scope"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cp-company">Company</label>
+                <input id="cp-company" class="form-input" type="text" value="${h.escapeHtml(h.getDefaultCompanyName())}">
+              </div>
+              <div class="form-group">
+                <label for="cp-deadline">Deadline *</label>
+                <input id="cp-deadline" class="form-input" type="date">
+              </div>
+              <div class="form-group">
+                <label for="cp-status">Status</label>
+                <select id="cp-status" class="form-select">
+                  <option value="planning">Planning</option>
+                  <option value="active">Active</option>
+                  <option value="on-hold">On Hold</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cp-owner">Owner</label>
+                <select id="cp-owner" class="form-select">
+                  <option value="">Select project owner</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cp-progress">Initial Progress</label>
+                <input id="cp-progress" class="form-input" type="number" min="0" max="100" value="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="cp-team-members">Team Members</label>
+              <select id="cp-team-members" class="form-select">
+                <option value="">Add team member</option>
+              </select>
+              <div id="cp-selected-members" class="tag-list" style="margin-top:0.75rem;"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" type="button">Cancel</button>
+            <button class="btn btn-primary" type="button" id="cp-save">Create Project</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
     }
 
-    const createBtn = document.getElementById('createProjectBtn');
-    createBtn.disabled = true;
-    createBtn.textContent = 'Creating...';
+    bind() {
+      const modal = document.getElementById(this.modalId);
+      if (!modal) {
+        return;
+      }
 
-    try {
-        const response = await fetch('/api/manager/projects/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(projectData)
+      modal.querySelector('.modal-close').addEventListener('click', () => this.close());
+      modal.querySelector('.btn-outline').addEventListener('click', () => this.close());
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          this.close();
+        }
+      });
+      modal.querySelector('#cp-save').addEventListener('click', () => this.submit());
+      modal.querySelector('#cp-team-members').addEventListener('change', (event) => {
+        const memberId = String(event.target.value || '').trim();
+        if (!memberId) {
+          return;
+        }
+        this.selectedTeamMembers = helpers().uniqueStrings([...this.selectedTeamMembers, memberId]);
+        event.target.value = '';
+        this.renderSelectedMembers();
+      });
+    }
+
+    async populate() {
+      const h = helpers();
+      const context = h.getDashboardContext();
+      let employees = h.getDashboardCollection('employees');
+      if (!employees.length && context.dashboard && typeof context.dashboard.getEmployees === 'function') {
+        employees = await context.dashboard.getEmployees();
+      }
+      const ownerSelect = document.getElementById('cp-owner');
+      const teamSelect = document.getElementById('cp-team-members');
+      const deadlineInput = document.getElementById('cp-deadline');
+      if (deadlineInput) {
+        deadlineInput.min = new Date().toISOString().split('T')[0];
+      }
+      if (!ownerSelect || !teamSelect) {
+        return;
+      }
+
+      const ownerOptions = employees
+        .map((employee) => `<option value="${h.escapeHtml(employee.id)}">${h.escapeHtml(employee.name)} - ${h.escapeHtml(employee.position || employee.role || '')}</option>`)
+        .join('');
+
+      ownerSelect.innerHTML = `<option value="">Select project owner</option>${ownerOptions}`;
+      if (context.dashboard && context.dashboard.currentUserId) {
+        ownerSelect.value = context.dashboard.currentUserId;
+      }
+      teamSelect.innerHTML = `<option value="">Add team member</option>${ownerOptions}`;
+      this.renderSelectedMembers();
+    }
+
+    renderSelectedMembers() {
+      const h = helpers();
+      const employees = h.getDashboardCollection('employees');
+      const employeeMap = h.buildEmployeeMap(employees);
+      const container = document.getElementById('cp-selected-members');
+      if (!container) {
+        return;
+      }
+      if (!this.selectedTeamMembers.length) {
+        container.innerHTML = '<p class="detail-empty">No team members selected yet.</p>';
+        return;
+      }
+      container.innerHTML = this.selectedTeamMembers
+        .map((memberId) => {
+          const employee = employeeMap.get(String(memberId));
+          const label = employee ? employee.name : memberId;
+          return `
+            <span class="member-tag">
+              ${h.escapeHtml(label)}
+              <button type="button" class="tag-remove" data-member-id="${h.escapeHtml(memberId)}" aria-label="Remove ${h.escapeHtml(label)}">&times;</button>
+            </span>
+          `;
+        })
+        .join('');
+
+      container.querySelectorAll('.tag-remove').forEach((button) => {
+        button.addEventListener('click', () => {
+          this.selectedTeamMembers = this.selectedTeamMembers.filter((memberId) => memberId !== button.dataset.memberId);
+          this.renderSelectedMembers();
         });
-
-        if (!response.ok) {
-            throw new Error('Failed to create project');
-        }
-
-        const result = await response.json();
-        showNotification('Project created successfully', 'success');
-        closeCreateProjectDialog();
-        
-        // Refresh data if manager dashboard is initialized
-        if (window.managerDashboard) {
-            window.managerDashboard.refreshData();
-        }
-    } catch (error) {
-        console.error('Error creating project:', error);
-        showNotification('Error creating project', 'error');
-    } finally {
-        createBtn.disabled = false;
-        createBtn.textContent = 'Create Project';
+      });
     }
-}
 
-function showNotification(message, type = 'info') {
-    if (window.managerDashboard) {
-        window.managerDashboard.showNotification(message, type);
-    } else {
-        // Fallback notification
-        alert(`${type.toUpperCase()}: ${message}`);
+    async submit() {
+      const h = helpers();
+      const context = h.getDashboardContext();
+      const name = document.getElementById('cp-name').value.trim();
+      const deadline = document.getElementById('cp-deadline').value;
+      if (!name || !deadline) {
+        h.notify('Project name and deadline are required.', 'error');
+        return;
+      }
+
+      const payload = {
+        name,
+        description: document.getElementById('cp-description').value.trim(),
+        company: document.getElementById('cp-company').value.trim(),
+        deadline,
+        status: document.getElementById('cp-status').value,
+        owner_id: document.getElementById('cp-owner').value,
+        progress: document.getElementById('cp-progress').value,
+        teamMembers: this.selectedTeamMembers,
+      };
+
+      const saveButton = document.getElementById('cp-save');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Creating...';
+
+      try {
+        const endpoint = context.scope === 'manager' ? '/api/manager/projects/create' : `${context.apiBase}/projects`;
+        await h.requestJson(endpoint, { method: 'POST', body: payload });
+        h.notify('Project created successfully', 'success');
+        this.close();
+        await h.refreshView();
+      } catch (error) {
+        console.error(error);
+        h.notify(error.message || 'Failed to create project', 'error');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Create Project';
+      }
     }
-}
+  }
 
-// Make functions globally available
-window.openCreateProjectDialog = openCreateProjectDialog;
-window.closeCreateProjectDialog = closeCreateProjectDialog;
-window.createProject = createProject;
-window.addTeamMember = addTeamMember;
-window.removeTeamMember = removeTeamMember;
+  const dialog = new CreateProjectDialog();
+  window.createProjectDialog = dialog;
+  window.openCreateProjectDialog = function () {
+    dialog.open();
+  };
+  window.closeCreateProjectDialog = function () {
+    dialog.close();
+  };
+})();

@@ -3,7 +3,7 @@
     <div class="reports-content">
         <div class="chart-card">
             <div class="chart-header">
-                <h3 class="chart-title">Employee Performance Overview</h3>
+                <h3 class="chart-title">{{ 'Workforce Performance Overview' if role == 'hr' else 'Team Performance Overview' if role == 'teamlead' else 'Employee Performance Overview' }}</h3>
                 <div class="chart-actions">
                     <button class="btn btn-outline" onclick="exportReport()">
                         <i class="fas fa-download"></i>
@@ -18,6 +18,7 @@
             
             <div class="chart-container">
                 <div id="performanceChart" class="chart"></div>
+                <div id="chartTooltip" class="chart-tooltip"></div>
             </div>
             
             <div class="chart-legend">
@@ -78,48 +79,114 @@
 </div>
 
 <script>
-// Real employee performance data
 let employeePerformance = [];
+let latestManagerAnalytics = null;
 
-// Initialize chart when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadReportsData();
+    window.addEventListener('managerDataRefreshed', loadReportsData);
 });
+
+function normalizeReportTaskStatus(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'in_progress' || raw === 'in progress') return 'in-progress';
+    if (raw === 'done') return 'completed';
+    if (raw === 'todo' || raw === 'to do') return 'pending';
+    return raw || 'pending';
+}
+
+function buildFallbackAnalytics() {
+    const dashboardApi = window.managerDashboard || window.teamLeadDashboard;
+    const employees = (dashboardApi && Array.isArray(dashboardApi.employees))
+        ? dashboardApi.employees
+        : [];
+    const tasks = (dashboardApi && Array.isArray(dashboardApi.tasks))
+        ? dashboardApi.tasks
+        : [];
+
+    const tasksByEmployee = new Map();
+    tasks.forEach(task => {
+        const assigneeId = String(task.assignee_id || task.assigneeId || task.assignedTo || '').trim();
+        if (!tasksByEmployee.has(assigneeId)) {
+            tasksByEmployee.set(assigneeId, []);
+        }
+        tasksByEmployee.get(assigneeId).push(task);
+    });
+
+    const performance = employees.map(emp => {
+        const empTasks = tasksByEmployee.get(String(emp.id || '').trim()) || [];
+        const completedTasks = empTasks.filter(t => normalizeReportTaskStatus(t.status) === 'completed').length;
+        const totalTasks = empTasks.length;
+        const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        const productivity = Number(emp.productivity || completionRate || 0);
+        return {
+            employee_id: emp.id,
+            name: emp.fullName || emp.name || 'Unknown',
+            role: emp.role || 'employee',
+            teamName: emp.team_name || '',
+            productivity,
+            completedTasks,
+            totalTasks,
+            completionRate,
+            overdueTasks: empTasks.filter(t => normalizeReportTaskStatus(t.status) !== 'completed' && !!t.due_date && new Date(t.due_date) < new Date()).length,
+        };
+    }).sort((a, b) => (b.productivity - a.productivity) || (b.completedTasks - a.completedTasks));
+
+    const completedTasks = tasks.filter(t => normalizeReportTaskStatus(t.status) === 'completed').length;
+    const activeEmployees = employees.filter(emp => {
+        const empTasks = tasksByEmployee.get(String(emp.id || '').trim()) || [];
+        return empTasks.length || String(emp.last_login || '').trim();
+    }).length;
+    const avgProductivity = performance.length
+        ? Math.round(performance.reduce((sum, item) => sum + Number(item.productivity || 0), 0) / performance.length)
+        : 0;
+
+    return {
+        employeePerformance: performance,
+        avgProductivity,
+        totalTasks: tasks.length,
+        completedTasks,
+        completionRate: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
+        activeEmployees,
+    };
+}
+
+function getAnalyticsEndpoint() {
+    if (window.location.pathname.indexOf('/teamlead/') === 0) {
+        return '/api/teamlead/analytics';
+    }
+    const helpers = window.TaskViseDashboardHelpers;
+    const context = helpers && typeof helpers.getDashboardContext === 'function'
+        ? helpers.getDashboardContext()
+        : null;
+    if (context && context.scope === 'teamlead') {
+        return '/api/teamlead/analytics';
+    }
+    return '/api/manager/analytics';
+}
 
 async function loadReportsData() {
     try {
-        // Fetch employees and tasks from API
-        const [employeesRes, tasksRes] = await Promise.all([
-            fetch('/api/manager/employees', { credentials: 'same-origin' }),
-            fetch('/api/manager/tasks', { credentials: 'same-origin' })
-        ]);
-        
-        if (!employeesRes.ok || !tasksRes.ok) throw new Error('Failed to fetch data');
-        
-        const employees = await employeesRes.json();
-        const tasks = await tasksRes.json();
-        
-        // Calculate performance metrics for each employee
-        employeePerformance = employees.map(emp => {
-            const empTasks = tasks.filter(t => String(t.employee_id || t.employeeId) === String(emp.id));
-            const completedTasks = empTasks.filter(t => (t.status || '').toLowerCase() === 'completed').length;
-            const totalTasks = empTasks.length;
-            const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            
-            return {
-                id: emp.id,
-                fullName: emp.fullName || emp.name || 'Unknown',
-                productivity: productivity,
-                completedTasks: completedTasks,
-                totalTasks: totalTasks
-            };
-        });
-        
+        const response = await fetch(getAnalyticsEndpoint(), { credentials: 'same-origin' });
+        if (!response.ok) {
+            throw new Error('Failed to fetch analytics');
+        }
+
+        latestManagerAnalytics = await response.json();
+        if (!latestManagerAnalytics || !Array.isArray(latestManagerAnalytics.employeePerformance)) {
+            latestManagerAnalytics = buildFallbackAnalytics();
+        }
+
+        employeePerformance = latestManagerAnalytics.employeePerformance || [];
         renderChart();
-        updateStats();
+        updateStats(latestManagerAnalytics);
     } catch (error) {
         console.error('Error loading reports data:', error);
-        showNotification('Failed to load reports data', 'error');
+        latestManagerAnalytics = buildFallbackAnalytics();
+        employeePerformance = latestManagerAnalytics.employeePerformance || [];
+        renderChart();
+        updateStats(latestManagerAnalytics);
+        showNotification('Loaded fallback report data', 'info');
     }
 }
 
@@ -130,7 +197,11 @@ function renderChart() {
     }
     
     const chart = document.getElementById('performanceChart');
+    const tooltip = document.getElementById('chartTooltip');
     chart.innerHTML = '';
+    if (tooltip) {
+        tooltip.classList.remove('visible');
+    }
     
     const chartBars = document.createElement('div');
     chartBars.className = 'chart-bars';
@@ -144,7 +215,7 @@ function renderChart() {
         
         const employeeName = document.createElement('div');
         employeeName.className = 'employee-name';
-        employeeName.textContent = employee.fullName;
+        employeeName.textContent = employee.name || employee.fullName || 'Unknown';
         
         const barsContainer = document.createElement('div');
         barsContainer.className = 'bars-container';
@@ -153,13 +224,17 @@ function renderChart() {
         const productivityBar = document.createElement('div');
         productivityBar.className = 'bar productivity-bar';
         productivityBar.style.height = `${(employee.productivity / maxProductivity) * 80}%`;
-        productivityBar.title = `Productivity: ${employee.productivity}%`;
         
         // Tasks bar
         const tasksBar = document.createElement('div');
         tasksBar.className = 'bar tasks-bar';
         tasksBar.style.height = `${(employee.completedTasks / maxTasks) * 80}%`;
-        tasksBar.title = `Completed Tasks: ${employee.completedTasks}`;
+
+        [productivityBar, tasksBar].forEach((bar) => {
+            bar.addEventListener('mouseenter', (event) => showChartTooltip(event, employee));
+            bar.addEventListener('mousemove', (event) => showChartTooltip(event, employee));
+            bar.addEventListener('mouseleave', hideChartTooltip);
+        });
         
         barsContainer.appendChild(productivityBar);
         barsContainer.appendChild(tasksBar);
@@ -172,28 +247,94 @@ function renderChart() {
     chart.appendChild(chartBars);
 }
 
-function updateStats() {
-    if (!employeePerformance || employeePerformance.length === 0) {
+function showChartTooltip(event, employee) {
+    const tooltip = document.getElementById('chartTooltip');
+    if (!tooltip || !employee) return;
+    tooltip.innerHTML = `
+        <strong>${employee.name || 'Unknown'}</strong>
+        <span>${employee.role ? employee.role.replace('_', ' ') : 'employee'}${employee.teamName ? ` | ${employee.teamName}` : ''}</span>
+        <span>Productivity: ${Number(employee.productivity || 0)}%</span>
+        <span>Completed Tasks: ${Number(employee.completedTasks || 0)} / ${Number(employee.totalTasks || 0)}</span>
+        <span>Completion Rate: ${Number(employee.completionRate || 0)}%</span>
+        <span>Overdue Tasks: ${Number(employee.overdueTasks || 0)}</span>
+    `;
+    tooltip.classList.add('visible');
+    const containerRect = event.currentTarget.closest('.chart-container').getBoundingClientRect();
+    tooltip.style.left = `${event.clientX - containerRect.left + 16}px`;
+    tooltip.style.top = `${event.clientY - containerRect.top - 12}px`;
+}
+
+function hideChartTooltip() {
+    const tooltip = document.getElementById('chartTooltip');
+    if (tooltip) {
+        tooltip.classList.remove('visible');
+    }
+}
+
+function updateStats(analytics) {
+    if (!analytics || !employeePerformance || employeePerformance.length === 0) {
         document.getElementById('avgProductivity').textContent = '0%';
         document.getElementById('totalTasks').textContent = '0';
         document.getElementById('completionRate').textContent = '0%';
         document.getElementById('activeEmployees').textContent = '0';
         return;
     }
-    
-    const totalCompleted = employeePerformance.reduce((sum, emp) => sum + emp.completedTasks, 0);
-    const totalAssigned = employeePerformance.reduce((sum, emp) => sum + emp.totalTasks, 0);
-    const avgProductivity = employeePerformance.reduce((sum, emp) => sum + emp.productivity, 0) / employeePerformance.length;
-    const completionRate = totalAssigned > 0 ? (totalCompleted / totalAssigned) * 100 : 0;
-    
-    document.getElementById('avgProductivity').textContent = `${Math.round(avgProductivity)}%`;
-    document.getElementById('totalTasks').textContent = totalCompleted;
-    document.getElementById('completionRate').textContent = `${Math.round(completionRate)}%`;
-    document.getElementById('activeEmployees').textContent = employeePerformance.length;
+
+    document.getElementById('avgProductivity').textContent = `${Math.round(Number(analytics.avgProductivity || 0))}%`;
+    document.getElementById('totalTasks').textContent = String(Number(analytics.totalTasks || 0));
+    document.getElementById('completionRate').textContent = `${Math.round(Number(analytics.completionRate || 0))}%`;
+    document.getElementById('activeEmployees').textContent = String(Number(analytics.activeEmployees || employeePerformance.length || 0));
+}
+
+function csvCell(value) {
+    const text = String(value == null ? '' : value);
+    if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
 }
 
 function exportReport() {
-    showNotification('Export feature coming soon', 'info');
+    const analytics = latestManagerAnalytics || buildFallbackAnalytics();
+    const scope = window.location.pathname.indexOf('/teamlead/') === 0
+        ? 'teamlead'
+        : window.location.pathname.indexOf('/hr/') === 0
+            ? 'hr'
+            : 'manager';
+    const generatedAt = analytics.generatedAt || new Date().toISOString();
+    const summaryRows = [
+        ['Metric', 'Value'],
+        ['Generated At', generatedAt],
+        ['Average Productivity', `${Math.round(Number(analytics.avgProductivity || 0))}%`],
+        ['Total Tasks', Number(analytics.totalTasks || 0)],
+        ['Completed Tasks', Number(analytics.completedTasks || 0)],
+        ['Completion Rate', `${Math.round(Number(analytics.completionRate || 0))}%`],
+        ['Active Employees', Number(analytics.activeEmployees || employeePerformance.length || 0)],
+        [''],
+        ['Employee', 'Role', 'Team', 'Productivity', 'Completed Tasks', 'Total Tasks', 'Completion Rate', 'Overdue Tasks']
+    ];
+    const employeeRows = (employeePerformance || []).map((employee) => ([
+        employee.name || 'Unknown',
+        employee.role || 'employee',
+        employee.teamName || '',
+        `${Number(employee.productivity || 0)}%`,
+        Number(employee.completedTasks || 0),
+        Number(employee.totalTasks || 0),
+        `${Number(employee.completionRate || 0)}%`,
+        Number(employee.overdueTasks || 0)
+    ]));
+    const csv = [...summaryRows, ...employeeRows]
+        .map((row) => row.map(csvCell).join(','))
+        .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `taskvise-${scope}-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showNotification('Report exported successfully', 'success');
 }
 
 function refreshData() {
@@ -273,15 +414,15 @@ function showNotification(message, type = 'info') {
 
 .btn-outline {
     background: white;
-    color: #3b82f6;
-    border-color: #3b82f6;
+    color: var(--primary);
+    border-color: var(--primary);
 }
 
 .btn-outline:hover {
-    background: #3b82f6;
+    background: var(--primary);
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Chart Container */
@@ -291,6 +432,40 @@ function showNotification(message, type = 'info') {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     border: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.chart-tooltip {
+    position: absolute;
+    min-width: 220px;
+    max-width: 280px;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.94);
+    color: #fff;
+    border-radius: 14px;
+    padding: 0.85rem 0.95rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.26);
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    z-index: 5;
+}
+
+.chart-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.chart-tooltip strong {
+    font-size: 0.92rem;
+}
+
+.chart-tooltip span {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.84);
 }
 
 .chart {
@@ -356,8 +531,8 @@ function showNotification(message, type = 'info') {
 }
 
 .productivity-bar {
-    background: linear-gradient(to top, #8884d8, #a5a2e6);
-    box-shadow: 0 2px 8px rgba(136, 132, 216, 0.3);
+    background: linear-gradient(to top, var(--accent-secondary), var(--accent-secondary-dark));
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.22);
 }
 
 .tasks-bar {
@@ -388,7 +563,7 @@ function showNotification(message, type = 'info') {
 }
 
 .legend-color.productivity {
-    background: linear-gradient(135deg, #8884d8, #a5a2e6);
+    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-dark));
 }
 
 .legend-color.completed-tasks {
@@ -424,7 +599,7 @@ function showNotification(message, type = 'info') {
     width: 60px;
     height: 60px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, var(--gradient-start), var(--accent-secondary));
     display: flex;
     align-items: center;
     justify-content: center;

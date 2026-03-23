@@ -1,0 +1,47 @@
+id,employee_id,employee_name,role,team_id,team_name,department,base_salary,bonus,currency,payment_status,last_paid_date,next_pay_date,pay_cycle,updated_at
+PAY-EMP001,EMP001,Aisha Mehta,admin,,,IT,250000,19200,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP002,EMP002,Kavya Narang,hr,,,HR,145000,10440,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP003,EMP003,Meera Thomas,hr,,,HR,145000,11252,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP004,EMP004,Rohan Kapoor,manager,TEAM001,Code Comets,Engineering,195000,11856,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP005,EMP005,Priya Singh,manager,TEAM002,Feature Falcons,Product,195000,12948,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP006,EMP006,Anjali Menon,manager,TEAM003,Audit Avengers,Finance,195000,14040,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP007,EMP007,Divya Gupta,manager,TEAM004,Pixel Pulse,Marketing,195000,15132,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP008,EMP008,Arjun Reddy,manager,TEAM005,Quota Crushers,Sales,195000,11856,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP009,EMP009,Omar Farooq,manager,TEAM006,Ops Oddballs,Operations,195000,12948,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP010,EMP010,Aryan Joshi,teamlead,TEAM001,Code Comets,Engineering,158000,11376,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP011,EMP011,Simran Kohli,teamlead,TEAM004,Pixel Pulse,Design,158000,12261,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP012,EMP012,Varun Saxena,teamlead,TEAM003,Audit Avengers,IT,158000,9606,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP013,EMP013,Nidhi Rao,teamlead,TEAM002,Feature Falcons,Product,158000,10491,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP014,EMP014,Rahul Bansal,teamlead,TEAM005,Quota Crushers,Quality Assurance,158000,11376,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP015,EMP015,Sana Mirza,teamlead,TEAM006,Ops Oddballs,Operations,158000,12261,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP016,EMP016,John Doe,employee,TEAM001,Code Comets,Engineering,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP017,EMP017,Jane Smith,employee,TEAM002,Feature Falcons,Design,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP018,EMP018,Rajesh Kumar,employee,TEAM001,Code Comets,Engineering,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP019,EMP019,Amit Patel,employee,TEAM001,Code Comets,Engineering,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP020,EMP020,Neha Sharma,employee,TEAM002,Feature Falcons,Design,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP021,EMP021,Vikram Verma,employee,TEAM001,Code Comets,IT,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP022,EMP022,Rohan Dasgupta,employee,TEAM003,Audit Avengers,Quality Assurance,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP023,EMP023,Pooja Iyer,employee,TEAM002,Feature Falcons,Product,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP024,EMP024,Sanjay Rao,employee,TEAM002,Feature Falcons,Product,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP025,EMP025,Kavya Bhat,employee,TEAM004,Pixel Pulse,Design,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP026,EMP026,Aryan Malhotra,employee,TEAM004,Pixel Pulse,Marketing,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP027,EMP027,Ritika Agarwal,employee,TEAM004,Pixel Pulse,Marketing,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP028,EMP028,Nikhil Pandey,employee,TEAM005,Quota Crushers,Sales,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP029,EMP029,Swati Mishra,employee,TEAM005,Quota Crushers,Sales,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP030,EMP030,Karan Chopra,employee,TEAM003,Audit Avengers,Finance,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP031,EMP031,Ananya Bose,employee,TEAM003,Audit Avengers,Finance,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP032,EMP032,Harsh Vardhan,employee,TEAM006,Ops Oddballs,Operations,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP033,EMP033,Ishita Sen,employee,TEAM006,Ops Oddballs,Operations,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP034,EMP034,Devika Nair,employee,TEAM003,Audit Avengers,IT,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP035,EMP035,Manoj Kulkarni,employee,TEAM003,Audit Avengers,Quality Assurance,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP036,EMP036,Tania Roy,employee,TEAM006,Ops Oddballs,Operations,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP037,EMP037,Mohit Saini,employee,TEAM005,Quota Crushers,Engineering,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP038,EMP038,Farah Khan,employee,TEAM004,Pixel Pulse,Design,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP039,EMP039,Suresh Iyer,employee,TEAM005,Quota Crushers,Sales,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP040,EMP040,Parul Jain,employee,TEAM006,Ops Oddballs,HR,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP041,EMP041,Zoya Merchant,employee,TEAM002,Feature Falcons,Product,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP042,EMP042,Gaurav Tiwari,employee,TEAM001,Code Comets,IT,92000,6035,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP043,EMP043,Leena Philip,employee,TEAM004,Pixel Pulse,Marketing,92000,6550,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP044,EMP044,Abhishek Sen,employee,TEAM006,Ops Oddballs,Operations,92000,5005,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP045,EMP045,Charu Desai,employee,TEAM005,Quota Crushers,Quality Assurance,92000,5520,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36
+PAY-EMP046,EMP046,Sunny,employee,TEAM001,Code Comets,Engineering,92000,5594,INR,scheduled,2026-03-01,2026-04-01,monthly,2026-03-23 23:35:36

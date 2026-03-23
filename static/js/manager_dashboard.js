@@ -6,13 +6,23 @@ class ManagerDashboard {
         this.tasks = [];
         this.projects = [];
         this.stats = {};
+        this.notifications = [];
+        this.currentUserId = null;
+        this.role = 'manager';
         this.init();
     }
 
     init() {
+        this.seedFromScriptTags();
+        window.managerDashboard = this;
         this.loadInitialData();
         this.setupEventListeners();
         this.setupNavigation();
+        this.handleResponsiveSidebar();
+        this.checkDatabaseStatus();
+        // Check database status every 30 seconds
+        setInterval(() => this.checkDatabaseStatus(), 30000);
+        window.addEventListener('resize', () => this.handleResponsiveSidebar());
     }
 
     async loadInitialData() {
@@ -23,10 +33,43 @@ class ManagerDashboard {
                 this.loadProjects(),
                 this.loadStats()
             ]);
-            this.updateCurrentView();
+            this.dispatchRefresh();
         } catch (error) {
             console.error('Error loading initial data:', error);
             this.showNotification('Error loading dashboard data', 'error');
+        }
+    }
+
+    seedFromScriptTags() {
+        try {
+            const dataTag = document.getElementById('initial-manager-data');
+            if (!dataTag) return false;
+            const json = JSON.parse(dataTag.textContent || '{}');
+            if (Array.isArray(json.employees) && json.employees.length && !this.employees.length) {
+                this.employees = json.employees;
+            }
+            if (Array.isArray(json.tasks) && json.tasks.length && !this.tasks.length) {
+                this.tasks = json.tasks;
+            }
+            if (Array.isArray(json.projects) && json.projects.length && !this.projects.length) {
+                this.projects = json.projects;
+            }
+            if (json.stats && typeof json.stats === 'object' && !Object.keys(this.stats).length) {
+                this.stats = json.stats;
+            }
+            if (Array.isArray(json.notifications) && json.notifications.length && !this.notifications.length) {
+                this.notifications = json.notifications;
+            }
+            if (json.current_user_id) {
+                this.currentUserId = json.current_user_id;
+            }
+            if (json.role) {
+                this.role = json.role;
+            }
+            return true;
+        } catch (error) {
+            console.warn('Failed to parse initial manager data:', error);
+            return false;
         }
     }
 
@@ -49,27 +92,42 @@ class ManagerDashboard {
         }
     }
 
+    async deleteProject(projectId) {
+        try {
+            await this.makeAuthenticatedRequest(`/api/manager/projects/${projectId}`, {
+                method: 'DELETE'
+            });
+            await this.loadProjects();
+            await this.loadTasks();
+            this.renderRecentTasks();
+            return true;
+        } catch (e) {
+            console.error('deleteProject failed', e);
+            return false;
+        }
+    }
+
     async loadEmployees() {
         const response = await this.makeAuthenticatedRequest('/api/manager/employees');
-        this.employees = response || [];
+        this.employees = Array.isArray(response) ? response : [];
         return this.employees;
     }
 
     async loadTasks() {
         const response = await this.makeAuthenticatedRequest('/api/manager/tasks');
-        this.tasks = response || [];
+        this.tasks = Array.isArray(response) ? response : [];
         return this.tasks;
     }
 
     async loadProjects() {
         const response = await this.makeAuthenticatedRequest('/api/manager/projects');
-        this.projects = response || [];
+        this.projects = Array.isArray(response) ? response : [];
         return this.projects;
     }
 
     async loadStats() {
         const response = await this.makeAuthenticatedRequest('/api/manager/stats');
-        this.stats = response || {};
+        this.stats = response && typeof response === 'object' ? response : {};
         return this.stats;
     }
 
@@ -96,6 +154,20 @@ class ManagerDashboard {
             return true;
         } catch (e) {
             console.error('updateTask failed', e);
+            return false;
+        }
+    }
+
+    async deleteTask(taskId) {
+        try {
+            await this.makeAuthenticatedRequest(`/api/manager/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            await this.loadTasks();
+            this.renderRecentTasks();
+            return true;
+        } catch (e) {
+            console.error('deleteTask failed', e);
             return false;
         }
     }
@@ -137,6 +209,22 @@ class ManagerDashboard {
         });
     }
 
+    handleResponsiveSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (!sidebar) return;
+
+        const isMobile = window.innerWidth <= 1024;
+        if (isMobile) {
+            sidebar.classList.remove('collapsed');
+            if (mainContent) mainContent.classList.remove('full-width');
+        } else {
+            sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        }
+    }
+
     toggleNavSection(section) {
         const submenu = document.getElementById(`${section}-submenu`);
         const icon = document.querySelector(`[data-toggle="${section}"] .dropdown-icon`);
@@ -151,7 +239,8 @@ class ManagerDashboard {
 
     navigateToView(view) {
         // Update URL without page reload
-        const url = `/manager/${view === 'overview' ? 'dashboard' : view}`;
+        const basePath = this.role === 'hr' ? '/hr' : '/manager';
+        const url = `${basePath}/${view === 'overview' ? 'dashboard' : view}`;
         window.history.pushState({ view }, '', url);
         this.updateView(view);
     }
@@ -177,24 +266,25 @@ class ManagerDashboard {
         this.renderRecentTasks();
     }
 
+    dispatchRefresh() {
+        this.updateCurrentView();
+        window.dispatchEvent(new CustomEvent('managerDataRefreshed', {
+            detail: {
+                employees: this.employees,
+                tasks: this.tasks,
+                projects: this.projects,
+                stats: this.stats,
+                notifications: this.notifications,
+            }
+        }));
+    }
+
     async refreshData() {
         this.showNotification('Refreshing data...', 'info');
         
         try {
             await this.loadInitialData();
             this.showNotification('Data refreshed successfully', 'success');
-            // Update overview widgets immediately if visible
-            this.renderRecentTasks();
-            
-            // Dispatch custom event for views to listen to
-            window.dispatchEvent(new CustomEvent('managerDataRefreshed', {
-                detail: {
-                    employees: this.employees,
-                    tasks: this.tasks,
-                    projects: this.projects,
-                    stats: this.stats
-                }
-            }));
         } catch (error) {
             console.error('Error refreshing data:', error);
             this.showNotification('Error refreshing data', 'error');
@@ -238,6 +328,7 @@ class ManagerDashboard {
 
     async makeAuthenticatedRequest(endpoint, options = {}) {
         const config = {
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers
@@ -247,12 +338,22 @@ class ManagerDashboard {
 
         try {
             const response = await fetch(endpoint, config);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+
+            let payload = null;
+            try {
+                payload = await response.json();
+            } catch (_error) {
+                payload = null;
             }
-            
-            return await response.json();
+
+            if (!response.ok) {
+                const message =
+                    (payload && (payload.error || payload.message)) ||
+                    `HTTP error! status: ${response.status}`;
+                throw new Error(message);
+            }
+
+            return payload;
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
@@ -260,6 +361,9 @@ class ManagerDashboard {
     }
 
     showNotification(message, type = 'info') {
+        const accent = getComputedStyle(
+            document.querySelector('.dashboard-container') || document.documentElement
+        ).getPropertyValue('--primary').trim() || '#0f766e';
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
@@ -282,7 +386,7 @@ class ManagerDashboard {
                     background: white;
                     border-radius: 8px;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    border-left: 4px solid #3b82f6;
+                    border-left: 4px solid ${accent};
                     z-index: 1000;
                     max-width: 350px;
                     animation: slideInRight 0.3s ease-out;
@@ -290,7 +394,7 @@ class ManagerDashboard {
                 .notification-success { border-left-color: #10b981; }
                 .notification-error { border-left-color: #ef4444; }
                 .notification-warning { border-left-color: #f59e0b; }
-                .notification-info { border-left-color: #3b82f6; }
+                .notification-info { border-left-color: ${accent}; }
                 .notification-content {
                     padding: 1rem;
                     display: flex;
@@ -353,6 +457,31 @@ class ManagerDashboard {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
 
+    async checkDatabaseStatus() {
+        try {
+            const response = await fetch('/api/system/health');
+            const health = await response.json();
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (statusDot && statusText) {
+                if (health.mongodb.connected) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'MongoDB Connected';
+                } else {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'MongoDB Disconnected';
+                }
+            }
+        } catch (error) {
+            console.warn('Could not check database status:', error);
+            const statusText = document.getElementById('statusText');
+            if (statusText) {
+                statusText.textContent = 'Status Unknown';
+            }
+        }
+    }
+
     calculateProductivityLevel(productivity) {
         if (productivity >= 80) return { level: 'excellent', label: 'Excellent' };
         if (productivity >= 60) return { level: 'good', label: 'Good' };
@@ -383,7 +512,13 @@ class ManagerDashboard {
 let managerDashboard;
 
 function initManagerDashboard() {
+    if (window.managerDashboard) {
+        managerDashboard = window.managerDashboard;
+        return managerDashboard;
+    }
     managerDashboard = new ManagerDashboard();
+    window.managerDashboard = managerDashboard;
+    return managerDashboard;
 }
 
 function refreshManagerData() {
@@ -392,12 +527,45 @@ function refreshManagerData() {
     }
 }
 
+function isMobileSidebarViewport() {
+    return window.innerWidth <= 1024;
+}
+
+function setSidebarOpen(isOpen) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('active', !!isOpen);
+    if (overlay) {
+        overlay.classList.toggle('active', !!isOpen);
+    }
+}
+
+function closeSidebar() {
+    setSidebarOpen(false);
+}
+
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    if (!sidebar) return;
+
+    if (isMobileSidebarViewport()) {
+        setSidebarOpen(!sidebar.classList.contains('active'));
+        return;
+    }
+
+    closeSidebar();
     sidebar.classList.toggle('collapsed');
+    if (mainContent) {
+        mainContent.classList.toggle('full-width', sidebar.classList.contains('collapsed'));
+    }
 }
 
 // Make functions globally available
 window.initManagerDashboard = initManagerDashboard;
 window.refreshManagerData = refreshManagerData;
 window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+initManagerDashboard();

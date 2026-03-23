@@ -1,16 +1,31 @@
 <!-- tasks.html -->
 <div class="view-container">
+    {% set active_task_filter = (request.args.get('filter') or 'all')|lower %}
     <!-- Header Actions -->
-    <div class="view-actions" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+    <div class="view-actions">
         <div class="search-input-wrap">
             <i class="fas fa-search search-input-icon" aria-hidden="true"></i>
             <input id="manager-task-search" class="search-input" type="text" placeholder="Search tasks by title...">
         </div>
         <div class="action-group">
-            <button class="btn btn-outline">
-                <i class="fas fa-filter"></i>
-                Filter
-            </button>
+            <div class="filter-menu-wrap">
+                <button class="btn btn-outline" id="manager-task-filter-toggle" type="button" aria-expanded="false">
+                    <i class="fas fa-filter"></i>
+                    <span class="filter-label">Filter</span>
+                    <i class="fas fa-chevron-down filter-caret"></i>
+                </button>
+                <div class="filter-dropdown" id="manager-task-filter-menu">
+                    <button class="filter-option" type="button" data-filter="all">All Tasks</button>
+                    <button class="filter-option" type="button" data-filter="pending">Pending</button>
+                    <button class="filter-option" type="button" data-filter="in-progress">In Progress</button>
+                    <button class="filter-option" type="button" data-filter="completed">Completed</button>
+                    <button class="filter-option" type="button" data-filter="overdue">Overdue</button>
+                    <button class="filter-option" type="button" data-filter="high">High Priority</button>
+                    <button class="filter-option" type="button" data-filter="medium">Medium Priority</button>
+                    <button class="filter-option" type="button" data-filter="low">Low Priority</button>
+                    <button class="filter-option" type="button" data-filter="unassigned">Unassigned</button>
+                </div>
+            </div>
             <button class="btn btn-primary" onclick="openAssignTaskDialog()">
                 <i class="fas fa-plus"></i>
                 Assign Task
@@ -21,7 +36,12 @@
     <!-- Tasks Grid -->
     <div class="tasks-grid">
         {% for task in tasks %}
-        <div class="task-card">
+        <div class="task-card"
+             data-title="{{ (task.title or '')|lower }}"
+             data-status="{{ (task.status or 'pending')|lower }}"
+             data-priority="{{ (task.priority or 'medium')|lower }}"
+             data-due-date="{{ task.dueDate or task.due_date or '' }}"
+             data-assignee-id="{{ task.assignee_id or '' }}">
             <div class="task-header">
                 <h3 class="task-title">{{ task.title }}</h3>
                 <div class="task-actions">
@@ -41,15 +61,7 @@
                     <div class="detail-item">
                         <i class="fas fa-user"></i>
                         <span class="detail-label">Assigned To:</span>
-                        <span class="detail-value">
-                            {% for employee in employees %}
-                                {% if employee.id == task.assignee_id %}
-                                    {{ employee.fullName or employee.name }}
-                                {% endif %}
-                            {% else %}
-                                Unassigned
-                            {% endfor %}
-                        </span>
+                        <span class="detail-value">{{ task.assignee_name or 'Unassigned' }}</span>
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-calendar-day"></i>
@@ -114,6 +126,13 @@
             </button>
         </div>
         {% endfor %}
+    </div>
+    <div class="empty-state" id="manager-task-filter-empty" style="display: none;">
+        <div class="empty-icon">
+            <i class="fas fa-filter"></i>
+        </div>
+        <h3>No Tasks Match</h3>
+        <p>Try clearing the current search or filter.</p>
     </div>
 </div>
 
@@ -191,6 +210,7 @@ function deleteTask(taskId) {
                 .then(success => {
                     if (success) {
                         showNotification('Task deleted successfully', 'success');
+                        window.location.reload();
                     } else {
                         showNotification('Failed to delete task', 'error');
                     }
@@ -216,19 +236,116 @@ function showNotification(message, type = 'info') {
 // Preload dialog (non-blocking)
 ensureTaskDialogLoaded().catch(()=>{});
 
-// Task title search filter
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('manager-task-search');
-    if (!input) return;
-    input.addEventListener('input', function() {
-        const q = (this.value || '').trim().toLowerCase();
-        const cards = document.querySelectorAll('.tasks-grid .task-card');
-        cards.forEach(card => {
-            const titleEl = card.querySelector('.task-title');
-            const title = titleEl ? (titleEl.textContent || '').toLowerCase() : '';
-            card.style.display = !q || title.includes(q) ? '' : 'none';
+    const filterToggle = document.getElementById('manager-task-filter-toggle');
+    const filterMenu = document.getElementById('manager-task-filter-menu');
+    const filterEmpty = document.getElementById('manager-task-filter-empty');
+    const taskCards = Array.from(document.querySelectorAll('.tasks-grid .task-card'));
+    const urlFilter = new URLSearchParams(window.location.search).get('filter');
+    let activeFilter = (urlFilter || '{{ active_task_filter }}' || 'all').toLowerCase();
+
+    const filterLabels = {
+        all: 'All Tasks',
+        pending: 'Pending',
+        'in-progress': 'In Progress',
+        completed: 'Completed',
+        overdue: 'Overdue',
+        high: 'High Priority',
+        medium: 'Medium Priority',
+        low: 'Low Priority',
+        unassigned: 'Unassigned'
+    };
+
+    function cardMatchesFilter(card) {
+        if (!card) return false;
+        const status = String(card.dataset.status || '').toLowerCase();
+        const priority = String(card.dataset.priority || '').toLowerCase();
+        const assigneeId = String(card.dataset.assigneeId || '').trim();
+        const dueDateText = String(card.dataset.dueDate || '').trim();
+        let isOverdue = false;
+        if (dueDateText && status !== 'completed' && status !== 'cancelled') {
+            const dueDate = new Date(`${dueDateText}T00:00:00`);
+            if (!Number.isNaN(dueDate.getTime())) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                isOverdue = dueDate < today;
+            }
+        }
+
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'overdue') return isOverdue;
+        if (activeFilter === 'unassigned') return !assigneeId;
+        if (['pending', 'in-progress', 'completed'].includes(activeFilter)) {
+            return status === activeFilter;
+        }
+        if (['high', 'medium', 'low'].includes(activeFilter)) {
+            return priority === activeFilter;
+        }
+        return true;
+    }
+
+    function applyTaskViewFilters() {
+        const searchQuery = (input ? input.value : '').trim().toLowerCase();
+        let visibleCount = 0;
+
+        taskCards.forEach((card) => {
+            const title = String(card.dataset.title || '').toLowerCase();
+            const matchesSearch = !searchQuery || title.includes(searchQuery);
+            const matchesFilter = cardMatchesFilter(card);
+            const showCard = matchesSearch && matchesFilter;
+            card.style.display = showCard ? '' : 'none';
+            if (showCard) visibleCount += 1;
         });
-    });
+
+        if (filterToggle) {
+            const labelNode = filterToggle.querySelector('.filter-label');
+            if (labelNode) {
+                labelNode.textContent = filterLabels[activeFilter] || 'Filter';
+            }
+        }
+
+        if (filterMenu) {
+            filterMenu.querySelectorAll('.filter-option').forEach((button) => {
+                button.classList.toggle('active', button.dataset.filter === activeFilter);
+            });
+        }
+
+        if (filterEmpty && taskCards.length) {
+            filterEmpty.style.display = visibleCount ? 'none' : '';
+        }
+    }
+
+    if (input) {
+        input.addEventListener('input', applyTaskViewFilters);
+    }
+
+    if (filterToggle && filterMenu) {
+        filterToggle.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const open = filterMenu.classList.toggle('show');
+            filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        filterMenu.addEventListener('click', function(event) {
+            const button = event.target.closest('.filter-option');
+            if (!button) return;
+            activeFilter = button.dataset.filter || 'all';
+            filterMenu.classList.remove('show');
+            filterToggle.setAttribute('aria-expanded', 'false');
+            applyTaskViewFilters();
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!filterMenu.contains(event.target) && !filterToggle.contains(event.target)) {
+                filterMenu.classList.remove('show');
+                filterToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    applyTaskViewFilters();
 });
 </script>
 
@@ -261,8 +378,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .search-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
 }
 /* View Actions */
 .view-actions {
@@ -273,6 +390,50 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
+}
+
+.filter-menu-wrap {
+    position: relative;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    display: none;
+    z-index: 20;
+}
+
+.filter-dropdown.show {
+    display: grid;
+    gap: 6px;
+}
+
+.filter-option {
+    border: none;
+    background: transparent;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #334155;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.filter-option:hover,
+.filter-option.active {
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-dark);
+}
+
+.filter-caret {
+    font-size: 0.85rem;
 }
 
 /* Tasks Grid */

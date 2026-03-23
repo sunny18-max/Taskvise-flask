@@ -3,12 +3,12 @@
     <!-- Header Actions -->
     <div class="header-actions">
       <div class="header-info">
-        <h2>Workload Balancer</h2>
-        <p>Optimize task assignments based on availability, skills, and workload</p>
+        <h2>{{ 'Capacity Planner' if role == 'hr' else 'Workload Balancer' }}</h2>
+        <p>{{ 'Balance staffing based on availability, skills, and workload signals.' if role == 'hr' else 'Optimize task assignments based on availability, skills, and workload' }}</p>
       </div>
       <button class="btn btn-primary auto-assign-btn">
         <i class="fas fa-bolt"></i>
-        Auto-Assign Tasks
+        {{ 'Balance Capacity' if role == 'hr' else 'Auto-Assign Tasks' }}
       </button>
     </div>
 
@@ -19,9 +19,9 @@
         <div class="card-header">
           <div class="card-title">
             <i class="fas fa-users"></i>
-            Team Workload Distribution
+            {{ 'Workforce Capacity Distribution' if role == 'hr' else 'Team Workload Distribution' }}
           </div>
-          <p class="card-description">Current workload and capacity of your team members</p>
+          <p class="card-description">{{ 'Current workload and capacity across managers, leads, and employees.' if role == 'hr' else 'Current workload and capacity of your team members' }}</p>
         </div>
         <div class="card-content">
           <div class="employee-workload-list">
@@ -83,68 +83,133 @@
 </div>
 
 <script>
-// Workload Balancer Data and Functions
 let employees = [];
 let tasks = [];
+let projects = [];
 
-// Initialize workload balancer
 document.addEventListener('DOMContentLoaded', function() {
   loadWorkloadData();
   setupWorkloadEventListeners();
+  window.addEventListener('managerDataRefreshed', loadWorkloadData);
 });
 
-function loadWorkloadData() {
-  // In a real implementation, this would fetch from API
-  // For demo purposes, we'll use mock data
-  employees = [
-    {
-      id: '1',
-      fullName: 'John Smith',
-      department: 'Development',
-      currentWorkload: 32,
-      maxCapacity: 40,
-      assignedTasks: 8,
-      completedTasks: 15,
-      productivity: 85,
-      skills: ['JavaScript', 'React', 'Node.js']
-    },
-    {
-      id: '2',
-      fullName: 'Sarah Johnson',
-      department: 'Design',
-      currentWorkload: 28,
-      maxCapacity: 40,
-      assignedTasks: 7,
-      completedTasks: 12,
-      productivity: 92,
-      skills: ['UI/UX', 'Figma', 'Photoshop']
-    }
-  ];
+function getDashboardData() {
+  const dashboard = window.managerDashboard || window.teamLeadDashboard || {};
+  return {
+    employees: Array.isArray(dashboard.employees) ? dashboard.employees : [],
+    tasks: Array.isArray(dashboard.tasks) ? dashboard.tasks : [],
+    projects: Array.isArray(dashboard.projects) ? dashboard.projects : [],
+  };
+}
 
-  tasks = [
-    {
-      id: '1',
-      title: 'Implement user authentication',
-      requiredSkills: ['JavaScript', 'Node.js'],
-      priority: 'high',
-      estimatedHours: 8,
-      status: 'pending'
-    },
-    {
-      id: '2',
-      title: 'Design dashboard UI',
-      requiredSkills: ['UI/UX', 'Figma'],
-      priority: 'medium',
-      estimatedHours: 6,
-      status: 'pending'
+function getTaskUpdateEndpoint(taskId) {
+  const helpers = window.TaskViseDashboardHelpers;
+  const context = helpers && typeof helpers.getDashboardContext === 'function'
+    ? helpers.getDashboardContext()
+    : null;
+  const base = context && context.scope === 'teamlead' ? '/api/teamlead/tasks' : '/api/manager/tasks';
+  return `${base}/${encodeURIComponent(taskId)}`;
+}
+
+async function refreshWorkloadSource() {
+  const dashboard = window.teamLeadDashboard || window.managerDashboard || null;
+  if (dashboard && typeof dashboard.refreshData === 'function') {
+    await dashboard.refreshData();
+    return;
+  }
+  if (dashboard) {
+    await Promise.all([
+      typeof dashboard.loadEmployees === 'function' ? dashboard.loadEmployees() : Promise.resolve(),
+      typeof dashboard.loadTasks === 'function' ? dashboard.loadTasks() : Promise.resolve(),
+      typeof dashboard.loadProjects === 'function' ? dashboard.loadProjects() : Promise.resolve(),
+    ]);
+  }
+}
+
+function parseSkills(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function inferTaskSkills(task, project) {
+  const text = `${task.title || ''} ${task.description || ''} ${project?.name || ''} ${project?.description || ''}`.toLowerCase();
+  const skillMap = {
+    'react': 'React',
+    'python': 'Python',
+    'flask': 'Flask',
+    'design': 'Design',
+    'ux': 'UX Research',
+    'figma': 'Figma',
+    'qa': 'Quality Assurance',
+    'automation': 'Automation',
+    'finance': 'Financial Analysis',
+    'sales': 'Sales Operations',
+    'marketing': 'Campaign Strategy',
+    'product': 'Product Strategy',
+    'ops': 'Operations',
+    'platform': 'Cloud Platforms',
+  };
+  const detected = Object.entries(skillMap)
+    .filter(([keyword]) => text.includes(keyword))
+    .map(([, label]) => label);
+  if (detected.length) return detected;
+  return parseSkills(project?.required_skills || task.required_skills || '').slice(0, 3);
+}
+
+function normalizeStatus(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'in progress' || raw === 'in_progress') return 'in-progress';
+  if (raw === 'done') return 'completed';
+  return raw || 'pending';
+}
+
+function loadWorkloadData() {
+  const dashboardData = getDashboardData();
+  projects = dashboardData.projects;
+  const projectMap = new Map(projects.map((project) => [String(project.id), project]));
+  tasks = dashboardData.tasks.map((task) => ({
+    ...task,
+    status: normalizeStatus(task.status),
+    estimatedHours: Number(task.estimated_hours || task.estimatedHours || 0),
+    assignedTo: String(task.assignee_id || task.assignedTo || '').trim(),
+    requiredSkills: inferTaskSkills(task, projectMap.get(String(task.project_id || ''))),
+  }));
+
+  const tasksByEmployee = new Map();
+  tasks.forEach((task) => {
+    const assigneeId = String(task.assignedTo || '').trim();
+    if (!assigneeId) return;
+    if (!tasksByEmployee.has(assigneeId)) {
+      tasksByEmployee.set(assigneeId, []);
     }
-  ];
+    tasksByEmployee.get(assigneeId).push(task);
+  });
+
+  employees = dashboardData.employees.map((employee) => {
+    const employeeTasks = tasksByEmployee.get(String(employee.id || '').trim()) || [];
+    const assignedTasks = employeeTasks.filter((task) => normalizeStatus(task.status) !== 'completed').length;
+    const completedTasks = employeeTasks.filter((task) => normalizeStatus(task.status) === 'completed').length;
+    const currentWorkload = employeeTasks
+      .filter((task) => normalizeStatus(task.status) !== 'completed')
+      .reduce((sum, task) => sum + Number(task.estimatedHours || 0), 0);
+    return {
+      id: employee.id,
+      fullName: employee.fullName || employee.name || 'Unknown',
+      department: employee.department || 'Operations',
+      skills: parseSkills(employee.skills),
+      productivity: Number(employee.productivity || 0),
+      assignedTasks,
+      completedTasks,
+      currentWorkload,
+      maxCapacity: 40,
+    };
+  });
 
   updateWorkloadDisplay();
 }
 
 function setupWorkloadEventListeners() {
-  document.querySelector('.auto-assign-btn').addEventListener('click', handleAutoAssign);
+  document.querySelector('.auto-assign-btn')?.addEventListener('click', handleAutoAssign);
 }
 
 function updateWorkloadDisplay() {
@@ -155,7 +220,8 @@ function updateWorkloadDisplay() {
 
 function updateEmployeeWorkload() {
   const container = document.querySelector('.employee-workload-list');
-  
+  if (!container) return;
+
   if (employees.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -167,16 +233,15 @@ function updateEmployeeWorkload() {
     return;
   }
 
-  container.innerHTML = employees.map(employee => {
-    const workloadPercentage = (employee.currentWorkload / employee.maxCapacity) * 100;
+  container.innerHTML = employees.map((employee) => {
+    const workloadPercentage = Math.min(100, (employee.currentWorkload / employee.maxCapacity) * 100);
     const workloadColor = getWorkloadColor(workloadPercentage);
     const workloadIcon = getWorkloadIcon(workloadPercentage);
-    
     return `
       <div class="employee-workload-item">
         <div class="employee-header">
           <div class="employee-avatar">
-            ${employee.fullName.split(' ').map(n => n[0]).join('')}
+            ${employee.fullName.split(' ').map((part) => part[0]).join('').slice(0, 2)}
           </div>
           <div class="employee-info">
             <div class="employee-name">${employee.fullName}</div>
@@ -191,7 +256,7 @@ function updateEmployeeWorkload() {
           <div class="progress-fill" style="width: ${workloadPercentage}%"></div>
         </div>
         <div class="task-stats">
-          <span>${employee.assignedTasks} tasks assigned</span>
+          <span>${employee.assignedTasks} active tasks</span>
           <span>${employee.completedTasks} completed</span>
         </div>
       </div>
@@ -199,21 +264,23 @@ function updateEmployeeWorkload() {
   }).join('');
 }
 
+function getUnassignedTasks() {
+  return tasks.filter((task) => !String(task.assignedTo || '').trim() && normalizeStatus(task.status) !== 'completed');
+}
+
 function updateUnassignedStats() {
-  const unassignedTasks = tasks.filter(task => !task.assignedTo && task.status === 'pending');
-  
+  const unassignedTasks = getUnassignedTasks();
   document.getElementById('unassignedCount').textContent = unassignedTasks.length;
   document.getElementById('totalUnassigned').textContent = unassignedTasks.length;
-  document.getElementById('highPriority').textContent = 
-    unassignedTasks.filter(t => t.priority === 'high').length;
-  document.getElementById('totalHours').textContent = 
-    unassignedTasks.reduce((sum, task) => sum + task.estimatedHours, 0);
+  document.getElementById('highPriority').textContent = unassignedTasks.filter((task) => String(task.priority || '').toLowerCase() === 'high').length;
+  document.getElementById('totalHours').textContent = unassignedTasks.reduce((sum, task) => sum + Number(task.estimatedHours || 0), 0);
 }
 
 function updateOptimalAssignments() {
   const assignments = getOptimalAssignments();
   const container = document.querySelector('.assignments-list');
-  
+  if (!container) return;
+
   if (assignments.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -225,86 +292,43 @@ function updateOptimalAssignments() {
     return;
   }
 
-  container.innerHTML = assignments.map(assignment => {
-    const confidenceClass = assignment.score > 80 ? 'badge-success' : 'badge-secondary';
-    
-    return `
-      <div class="assignment-item">
-        <div class="assignment-header">
-          <div class="assignment-info">
-            <div class="task-title">${assignment.task.title}</div>
-            <div class="task-skills">Requires: ${assignment.task.requiredSkills.join(', ')}</div>
-          </div>
-          <span class="badge ${confidenceClass}">${assignment.score.toFixed(0)}%</span>
+  container.innerHTML = assignments.map((assignment) => `
+    <div class="assignment-item">
+      <div class="assignment-header">
+        <div class="assignment-info">
+          <div class="task-title">${assignment.task.title}</div>
+          <div class="task-skills">Requires: ${assignment.task.requiredSkills.join(', ') || 'General execution'}</div>
         </div>
-        <div class="assignment-footer">
-          <div class="employee-assignment">
-            <div class="employee-avatar small">
-              ${assignment.employee.fullName.split(' ').map(n => n[0]).join('')}
-            </div>
-            <span class="employee-name">${assignment.employee.fullName}</span>
-          </div>
-          <button class="btn btn-sm assign-btn" 
-                  onclick="assignTask('${assignment.task.id}', '${assignment.employee.id}')"
-                  ${assignment.score < 60 ? 'disabled' : ''}>
-            Assign
-          </button>
-        </div>
-        ${assignment.score < 60 ? `
-          <div class="low-confidence-warning">
-            Low confidence score - manual review recommended
-          </div>
-        ` : ''}
+        <span class="badge ${assignment.score > 80 ? 'badge-success' : 'badge-secondary'}">${assignment.score.toFixed(0)}%</span>
       </div>
-    `;
-  }).join('');
+      <div class="assignment-footer">
+        <div class="employee-assignment">
+          <div class="employee-avatar small">${assignment.employee.fullName.split(' ').map((part) => part[0]).join('').slice(0, 2)}</div>
+          <span class="employee-name">${assignment.employee.fullName}</span>
+        </div>
+        <button class="btn btn-sm assign-btn" type="button" onclick="assignTask('${assignment.task.id}', '${assignment.employee.id}')">
+          Assign
+        </button>
+      </div>
+    </div>
+  `).join('');
 }
 
 function getOptimalAssignments() {
-  const unassignedTasks = tasks.filter(task => !task.assignedTo && task.status === 'pending');
-  const assignments = [];
-
-  unassignedTasks.forEach(task => {
-    const employeeScores = employees.map(employee => {
-      let score = 0;
-
-      // Workload factor (40% weight)
-      const workloadPercentage = (employee.currentWorkload / employee.maxCapacity) * 100;
-      const workloadScore = Math.max(0, 100 - workloadPercentage);
-      score += workloadScore * 0.4;
-
-      // Skill match factor (35% weight)
-      const skillMatch = task.requiredSkills.filter(skill => 
-        employee.skills.includes(skill)
-      ).length / task.requiredSkills.length;
-      score += skillMatch * 100 * 0.35;
-
-      // Productivity factor (25% weight)
-      score += employee.productivity * 0.25;
-
-      // Penalty for overload
-      if (workloadPercentage > 90) {
-        score *= 0.5;
-      }
-
-      return { employee, score };
-    });
-
-    const topCandidates = employeeScores
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
-
-    topCandidates.forEach(candidate => {
-      assignments.push({
-        task,
-        employee: candidate.employee,
-        score: candidate.score
-      });
-    });
-  });
-
-  return assignments;
+  return getUnassignedTasks().map((task) => {
+    const ranked = employees
+      .map((employee) => {
+        const workloadPercentage = Math.min(100, (employee.currentWorkload / employee.maxCapacity) * 100);
+        const matchingSkills = task.requiredSkills.filter((skill) => employee.skills.includes(skill)).length;
+        const skillScore = task.requiredSkills.length ? (matchingSkills / task.requiredSkills.length) * 100 : 50;
+        const workloadScore = Math.max(0, 100 - workloadPercentage);
+        const productivityScore = Number(employee.productivity || 0);
+        const score = (workloadScore * 0.4) + (skillScore * 0.35) + (productivityScore * 0.25);
+        return { employee, score };
+      })
+      .sort((left, right) => right.score - left.score);
+    return ranked[0] ? { task, employee: ranked[0].employee, score: ranked[0].score } : null;
+  }).filter(Boolean);
 }
 
 function getWorkloadColor(percentage) {
@@ -319,50 +343,52 @@ function getWorkloadIcon(percentage) {
   return '<i class="fas fa-exclamation-triangle text-danger"></i>';
 }
 
-function handleAutoAssign() {
+async function handleAutoAssign() {
   const assignments = getOptimalAssignments();
   let assignedCount = 0;
-
-  assignments.forEach(assignment => {
-    if (assignment.score > 70) {
-      assignTask(assignment.task.id, assignment.employee.id);
-      assignedCount++;
-    }
-  });
-
-  showNotification(`Auto-assigned ${assignedCount} tasks`, 'success');
+  for (const assignment of assignments) {
+    if (assignment.score < 65) continue;
+    const ok = await assignTask(assignment.task.id, assignment.employee.id, false, false);
+    if (ok) assignedCount += 1;
+  }
+  showNotification(`Auto-assigned ${assignedCount} tasks`, assignedCount ? 'success' : 'info');
+  if (assignedCount) {
+    await refreshWorkloadSource();
+    loadWorkloadData();
+  }
 }
 
-function assignTask(taskId, employeeId) {
-  // In real implementation, this would call an API
-  console.log(`Assigning task ${taskId} to employee ${employeeId}`);
-  showNotification('Task assigned successfully', 'success');
-  
-  // Update local state
-  const taskIndex = tasks.findIndex(t => t.id === taskId);
-  if (taskIndex !== -1) {
-    tasks[taskIndex].assignedTo = employeeId;
-    updateWorkloadDisplay();
+async function assignTask(taskId, employeeId, toast = true, refresh = true) {
+  try {
+    const response = await fetch(getTaskUpdateEndpoint(taskId), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignee_id: employeeId, status: 'pending' })
+    });
+    if (!response.ok) {
+      throw new Error('Assignment request failed');
+    }
+    if (toast) {
+      showNotification('Task assigned successfully', 'success');
+    }
+    if (refresh) {
+      await refreshWorkloadSource();
+      loadWorkloadData();
+    }
+    return true;
+  } catch (error) {
+    console.error('Task assignment failed:', error);
+    showNotification('Failed to assign task', 'error');
+    return false;
   }
 }
 
 function showNotification(message, type) {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.innerHTML = `
-    <div class="notification-content">
-      <i class="fas fa-${type === 'success' ? 'check' : 'info'}"></i>
-      <span>${message}</span>
-    </div>
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    notification.remove();
-  }, 3000);
+  if (window.managerDashboard && typeof window.managerDashboard.showNotification === 'function') {
+    window.managerDashboard.showNotification(message, type);
+    return;
+  }
+  alert(message);
 }
 </script>
 
@@ -399,7 +425,7 @@ function showNotification(message, type) {
 }
 
 .auto-assign-btn {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--gradient-start), var(--accent-secondary));
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -414,7 +440,7 @@ function showNotification(message, type) {
 
 .auto-assign-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Workload Grid */
@@ -482,7 +508,7 @@ function showNotification(message, type) {
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -539,7 +565,7 @@ function showNotification(message, type) {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -632,12 +658,12 @@ function showNotification(message, type) {
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: var(--primary);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--primary-dark);
 }
 
 .btn:disabled {
@@ -722,7 +748,7 @@ function showNotification(message, type) {
 }
 
 .notification.info {
-  background: #3b82f6;
+  background: var(--primary);
 }
 
 .notification-content {

@@ -1,80 +1,402 @@
-<div class="view-content">
-    <div class="action-bar">
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" class="form-input" id="employee-search" placeholder="Search employees...">
+{% set workforce = namespace(managers=0, teamleads=0, active=0, teams=[]) %}
+{% for employee in employees %}
+    {% if employee.role == 'manager' %}
+        {% set workforce.managers = workforce.managers + 1 %}
+    {% elif employee.role == 'teamlead' %}
+        {% set workforce.teamleads = workforce.teamleads + 1 %}
+    {% endif %}
+    {% if employee.status == 'active' %}
+        {% set workforce.active = workforce.active + 1 %}
+    {% endif %}
+    {% if employee.team_name and employee.team_name not in workforce.teams %}
+        {% set workforce.teams = workforce.teams + [employee.team_name] %}
+    {% endif %}
+{% endfor %}
+
+<div class="admin-employees-view">
+    <div class="employee-summary-grid">
+        <div class="summary-card">
+            <span class="summary-label">Total People</span>
+            <strong class="summary-value">{{ employees|length }}</strong>
         </div>
-        <button class="btn btn-primary" onclick="addEmployeeDialog.open()">
-            <i class="fas fa-plus"></i>
-            Add Employee
-        </button>
+        <div class="summary-card">
+            <span class="summary-label">Managers & Leads</span>
+            <strong class="summary-value">{{ workforce.managers + workforce.teamleads }}</strong>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Active Profiles</span>
+            <strong class="summary-value">{{ workforce.active }}</strong>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Teams Covered</span>
+            <strong class="summary-value">{{ workforce.teams|length }}</strong>
+        </div>
     </div>
 
-    <div class="employees-grid" id="employees-list">
-        {% if employees %}
-            {% for employee in employees %}
-            <div class="employee-card">
-                <div class="employee-header">
-                    <div class="employee-avatar">
-                        {{ employee.name.split(' ')|map('first')|join('')|upper }}
-                    </div>
-                    <div class="employee-info">
-                        <div class="employee-name">{{ employee.name }}</div>
-                        <div class="employee-position">{{ employee.position }}</div>
-                    </div>
-                    <div class="employee-actions">
-                        <button class="btn btn-icon" data-employee='{{ employee|tojson }}' onclick="editEmployeeDialog.open(JSON.parse(this.dataset.employee))">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-icon btn-danger" data-id="{{ employee.id }}" onclick="deleteEmployee(this.dataset.id)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="employee-details">
-                    <div class="employee-detail">
-                        <i class="fas fa-envelope"></i>
-                        <span>{{ employee.email }}</span>
-                    </div>
-                    <div class="employee-detail">
-                        <i class="fas fa-building"></i>
-                        <span>{{ employee.department }}</span>
-                    </div>
-                    <div class="employee-detail">
-                        <i class="fas fa-user-tag"></i>
-                        <span class="badge badge-{{ 'primary' if employee.role == 'admin' else 'outline' }}">
-                            {{ employee.role|title }}
-                        </span>
-                    </div>
-                </div>
+    <div class="employee-toolbar">
+        <div class="search-input-wrap">
+            <i class="fas fa-search search-input-icon" aria-hidden="true"></i>
+            <input id="admin-employee-search" class="search-input" type="text" placeholder="Search by ID, name, email, team, or role...">
+        </div>
+        <select id="admin-role-filter" class="form-select">
+            <option value="all">All Roles</option>
+            <option value="manager">Managers</option>
+            <option value="teamlead">Team Leads</option>
+            <option value="hr">HR</option>
+            <option value="employee">Employees</option>
+            <option value="admin">Admins</option>
+        </select>
+        <select id="admin-status-filter" class="form-select">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+    </div>
+
+    <div class="employee-list-card">
+        <div class="employee-list-header">
+            <div>
+                <h3>Workforce Directory</h3>
+                <p>IDs, roles, teams, reporting lines, and quick actions are available here.</p>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <h3>No Employees Found</h3>
-                <p>Add your first employee to get started</p>
-                <button class="btn btn-primary" onclick="addEmployeeDialog.open()">
-                    <i class="fas fa-plus"></i>
-                    Add Employee
-                </button>
-            </div>
-        {% endif %}
+            <span class="directory-count">{{ employees|length }} profiles</span>
+        </div>
+
+        <div class="employee-table-wrap">
+            <table class="employee-table" id="admin-employee-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Team</th>
+                        <th>Reports To</th>
+                        <th>Status</th>
+                        <th>Productivity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr
+                        data-search="{{ (employee.id ~ ' ' ~ employee.name ~ ' ' ~ employee.email ~ ' ' ~ employee.role ~ ' ' ~ employee.team_name ~ ' ' ~ employee.department)|lower }}"
+                        data-role="{{ employee.role|lower }}"
+                        data-status="{{ employee.status|lower }}"
+                    >
+                        <td>
+                            <div class="cell-id">
+                                <strong>{{ employee.id }}</strong>
+                                <span>{{ employee.department or 'Unassigned' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-person">
+                                <div class="avatar-pill">{{ employee.initials or employee.name[:1] }}</div>
+                                <div>
+                                    <strong>{{ employee.name }}</strong>
+                                    <span>{{ employee.email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-pill role-{{ employee.role|lower }}">{{ employee.role|replace('_', ' ')|title }}</span>
+                        </td>
+                        <td>
+                            <div class="team-meta">
+                                <strong>{{ employee.team_name or 'Shared Services' }}</strong>
+                                <span>{{ employee.team_id or 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="reports-meta">
+                                <span>Mgr: {{ employee.manager_id or 'N/A' }}</span>
+                                <span>Lead: {{ employee.teamlead_id or 'N/A' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-pill {{ employee.status|lower }}">{{ employee.status|title }}</span>
+                        </td>
+                        <td>
+                            <div class="productivity-cell">
+                                <strong>{{ employee.productivity }}%</strong>
+                                <div class="mini-progress">
+                                    <span style="width: {{ employee.productivity }}%"></span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn btn-outline btn-sm" type="button" onclick="viewAdminEmployee('{{ employee.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </button>
+                                <button class="btn btn-primary btn-sm" type="button" onclick="editAdminEmployee('{{ employee.id }}')">
+                                    <i class="fas fa-pen"></i>
+                                    Edit
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state compact">
+                                <i class="fas fa-users"></i>
+                                <p>No employees available.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-function deleteEmployee(employeeId) {
-    if (confirm('Are you sure you want to delete this employee?')) {
-        // Simulate API call
-        setTimeout(() => {
-            if (window.adminDashboard) {
-                window.adminDashboard.showNotification('Employee deleted successfully', 'success');
-                window.adminDashboard.refreshData();
-            }
-        }, 1000);
+function getAdminEmployeeById(employeeId) {
+    const list = (window.adminDashboard && Array.isArray(window.adminDashboard.employees))
+        ? window.adminDashboard.employees
+        : [];
+    return list.find((employee) => String(employee.id) === String(employeeId));
+}
+
+function viewAdminEmployee(employeeId) {
+    const employee = getAdminEmployeeById(employeeId);
+    if (!employee) {
+        showNotification('Employee details not found', 'error');
+        return;
+    }
+    if (window.openEmployeeDetails) {
+        window.openEmployeeDetails(employeeId, window.adminDashboard.employees, window.adminDashboard.tasks);
     }
 }
+
+function editAdminEmployee(employeeId) {
+    const employee = getAdminEmployeeById(employeeId);
+    if (!employee) {
+        showNotification('Employee profile not found', 'error');
+        return;
+    }
+    const dialog = (typeof editEmployeeDialog !== 'undefined') ? editEmployeeDialog : window.editEmployeeDialog;
+    if (dialog) {
+        dialog.open(employee);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const search = document.getElementById('admin-employee-search');
+    const role = document.getElementById('admin-role-filter');
+    const status = document.getElementById('admin-status-filter');
+    const rows = () => Array.from(document.querySelectorAll('#admin-employee-table tbody tr[data-search]'));
+
+    function applyFilters() {
+        const query = String(search?.value || '').trim().toLowerCase();
+        const roleValue = String(role?.value || 'all').toLowerCase();
+        const statusValue = String(status?.value || 'all').toLowerCase();
+        rows().forEach((row) => {
+            const matchesQuery = !query || String(row.dataset.search || '').includes(query);
+            const matchesRole = roleValue === 'all' || String(row.dataset.role || '') === roleValue;
+            const matchesStatus = statusValue === 'all' || String(row.dataset.status || '') === statusValue;
+            row.style.display = matchesQuery && matchesRole && matchesStatus ? '' : 'none';
+        });
+    }
+
+    search?.addEventListener('input', applyFilters);
+    role?.addEventListener('change', applyFilters);
+    status?.addEventListener('change', applyFilters);
+});
 </script>
+
+<style>
+.admin-employees-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.employee-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.summary-card,
+.employee-list-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.summary-card {
+    padding: 1rem 1.15rem;
+}
+
+.summary-label {
+    display: block;
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-bottom: 0.35rem;
+}
+
+.summary-value {
+    font-size: 1.8rem;
+    color: #1e3a8a;
+}
+
+.employee-toolbar {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) 180px 180px;
+    gap: 0.9rem;
+    align-items: center;
+}
+
+.employee-list-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.25rem 1.25rem 0;
+}
+
+.employee-list-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+}
+
+.employee-list-header p,
+.directory-count,
+.cell-id span,
+.cell-person span,
+.team-meta span,
+.reports-meta span {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.employee-table-wrap {
+    overflow-x: auto;
+    padding: 1rem 1.25rem 1.25rem;
+}
+
+.employee-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.employee-table th,
+.employee-table td {
+    padding: 0.95rem 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.employee-table th {
+    color: #475569;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cell-id,
+.team-meta,
+.reports-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.cell-person {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.avatar-pill {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    color: #fff;
+    font-weight: 700;
+}
+
+.role-pill,
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.role-pill {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.role-pill.role-manager {
+    background: #ecfeff;
+    color: #0f766e;
+}
+
+.role-pill.role-teamlead {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.role-pill.role-hr {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.status-pill.active {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.status-pill.inactive {
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.productivity-cell {
+    min-width: 120px;
+}
+
+.mini-progress {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    margin-top: 0.35rem;
+    overflow: hidden;
+}
+
+.mini-progress span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #38bdf8);
+    border-radius: inherit;
+}
+
+.row-actions {
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+    .employee-toolbar {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

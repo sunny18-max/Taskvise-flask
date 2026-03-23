@@ -1,217 +1,535 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+{% endblock %}
 {% block content %}
 <div class="app-container">
-  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-brand">
         <div class="logo">
-          <i class="fas fa-tasks"></i>
+          <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
         </div>
         <span class="brand-text">TaskVise</span>
       </div>
+      <button type="button" class="mobile-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="nav-actions">
-        <button class="nav-btn secondary" onclick="window.location.href='{{ url_for('login') }}'">
-          <i class="fas fa-sign-in-alt"></i>
-          Sign In
-        </button>
-        <button class="nav-btn primary" onclick="window.location.href='{{ url_for('signup') }}'">
-          <i class="fas fa-user-plus"></i>
-          Sign Up
-        </button>
+        <a class="nav-btn secondary" href="{{ url_for('login') }}" target="_top">
+          <span class="nav-btn-icon"><i class="fas fa-sign-in-alt"></i></span>
+          <span>Sign In</span>
+        </a>
+        <a class="nav-btn primary" href="{{ url_for('signup') }}" target="_top">
+          <span class="nav-btn-icon"><i class="fas fa-user-plus"></i></span>
+          <span>Sign Up</span>
+        </a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-background"></div>
     <div class="container">
-      <div class="hero-content" data-aos="fade-up" data-aos-duration="1000">
+      <div class="hero-content" data-aos="fade-up" data-aos-duration="900">
         <div class="hero-badge">
           <i class="fas fa-briefcase"></i>
-          Professional Workforce Management
+          Ethical Workforce Operations Platform
         </div>
         <h1 class="hero-title">
           Optimize Your <span class="gradient-text">Workforce</span> with TaskVise
         </h1>
         <p class="hero-description">
-          Streamline resource allocation, track projects efficiently, and maximize team productivity with our comprehensive manpower planning solution.
+          Plan capacity, assign work with clarity, and track delivery in one transparent system for managers and teams.
         </p>
         <div class="hero-actions">
-          <button class="btn btn-primary btn-large" onclick="window.location.href='{{ url_for('signup') }}'">
+          <a class="btn btn-primary btn-large" href="{{ url_for('signup') }}" target="_top">
             Get Started
             <i class="fas fa-arrow-right"></i>
-          </button>
-          <button class="btn btn-outline btn-large">
-            <i class="fas fa-play-circle"></i>
-            View Demo
+          </a>
+          <button class="btn btn-outline btn-large" onclick="document.getElementById('modules').scrollIntoView({behavior:'smooth'})">
+            <i class="fas fa-layer-group"></i>
+            Explore Modules
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Floating Elements -->
     <div class="floating-card card-1" data-aos="fade-right" data-aos-delay="200">
       <div class="card-icon success">
         <i class="fas fa-check-circle"></i>
       </div>
-      <span>Task Completed</span>
+      <span>Transparent Task Ownership</span>
     </div>
     <div class="floating-card card-2" data-aos="fade-left" data-aos-delay="400">
       <div class="card-icon primary">
-        <i class="fas fa-bullseye"></i>
+        <i class="fas fa-balance-scale"></i>
       </div>
-      <span>98% Efficiency</span>
+      <span>Fair Workload Distribution</span>
     </div>
   </section>
 
-  <!-- Features Section -->
-  <section class="section features-section">
+  <section class="section platform-overview-section" id="about-app">
     <div class="container">
       <div class="section-header" data-aos="fade-up">
-        <h2 class="section-title">Everything You Need for Workforce Management</h2>
+        <h2 class="section-title">Built for Daily Workforce Decisions</h2>
         <p class="section-description">
-          Comprehensive tools designed to optimize your team's performance and productivity.
+          TaskVise connects people, projects, leave planning, and reporting so decisions are practical, explainable, and fast.
         </p>
       </div>
-      
-      <div class="features-grid">
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="100">
-          <div class="feature-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <h3>Resource Management</h3>
-          <p>Efficiently manage employees, interns, and track skills, availability, and workload.</p>
-        </div>
-        
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="200">
-          <div class="feature-icon">
-            <i class="fas fa-project-diagram"></i>
-          </div>
-          <h3>Project & Task Tracking</h3>
-          <p>Organize projects with task dependencies, priorities, and automated progress tracking.</p>
-        </div>
-        
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="300">
-          <div class="feature-icon">
-            <i class="fas fa-calendar-alt"></i>
-          </div>
-          <h3>Leave Management</h3>
-          <p>Handle leave requests with conflict detection and workload optimization.</p>
-        </div>
-        
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="100">
-          <div class="feature-icon">
-            <i class="fas fa-chart-bar"></i>
-          </div>
-          <h3>Advanced Analytics</h3>
-          <p>Real-time dashboards, utilization reports, and exportable analytics.</p>
-        </div>
-        
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="200">
-          <div class="feature-icon">
-            <i class="fas fa-clock"></i>
-          </div>
-          <h3>Smart Scheduling</h3>
-          <p>AI-powered recommendations for optimal employee-task assignments.</p>
-        </div>
-        
-        <div class="feature-card" data-aos="zoom-in" data-aos-delay="300">
-          <div class="feature-icon">
-            <i class="fas fa-shield-alt"></i>
-          </div>
-          <h3>Role-Based Access</h3>
-          <p>Secure access control for Admin, Manager, and Employee roles.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- Benefits Section -->
-  <section class="section benefits-section">
-    <div class="container">
-      <div class="benefits-grid">
-        <div class="benefits-content" data-aos="fade-right">
-          <h2 class="section-title">Proven Results for Modern Teams</h2>
-          <p class="section-description">
-            Join hundreds of organizations that have transformed their workforce management with TaskVise.
+      <div class="overview-stage">
+        <article class="overview-copy-card" data-aos="fade-right" data-aos-delay="120">
+          <h3>One Platform. Clear Operations.</h3>
+          <p>
+            TaskVise gives managers and teams a shared operating picture: who is available, what matters now, and where delivery risk is building.
           </p>
-          <div class="benefits-list">
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>50% reduction in resource conflicts</span>
+          <div class="overview-badges">
+            <span class="overview-badge"><i class="fas fa-check"></i> Role-based views</span>
+            <span class="overview-badge"><i class="fas fa-check"></i> Trackable ownership</span>
+            <span class="overview-badge"><i class="fas fa-check"></i> Fair workload signals</span>
+          </div>
+          <div class="overview-metrics">
+            <div class="metric-chip">
+              <strong>Tasks</strong>
+              <span>Assignment and progress flow</span>
             </div>
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>Improved task completion rates</span>
+            <div class="metric-chip">
+              <strong>People</strong>
+              <span>Skills, roles, and availability</span>
             </div>
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>Reduced missed deadlines by 80%</span>
-            </div>
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>Real-time workload visibility</span>
-            </div>
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>Automated conflict detection</span>
-            </div>
-            <div class="benefit-item">
-              <i class="fas fa-check-circle success"></i>
-              <span>Comprehensive reporting suite</span>
+            <div class="metric-chip">
+              <strong>Insights</strong>
+              <span>Reports for better decisions</span>
             </div>
           </div>
-          <button class="btn btn-primary" onclick="window.location.href='{{ url_for('signup') }}'">
-            Start Your Free Trial
-          </button>
+        </article>
+
+        <div class="overview-media-stack" data-aos="fade-left" data-aos-delay="160">
+          <figure class="overview-main-visual">
+            <img src="{{ url_for('static', filename='landing/command-center.svg') }}" alt="TaskVise command center view" loading="lazy">
+          </figure>
+          <div class="overview-mini-visuals">
+            <figure class="mini-visual-card">
+              <img src="{{ url_for('static', filename='landing/team-operations.svg') }}" alt="Team operations overview" loading="lazy">
+              <figcaption>Team alignment</figcaption>
+            </figure>
+            <figure class="mini-visual-card">
+              <img src="{{ url_for('static', filename='landing/workload-balance.svg') }}" alt="Workload balancing view" loading="lazy">
+              <figcaption>Balanced assignments</figcaption>
+            </figure>
+            <figure class="mini-visual-card">
+              <img src="{{ url_for('static', filename='landing/analytics-insights.svg') }}" alt="Analytics insights view" loading="lazy">
+              <figcaption>Performance visibility</figcaption>
+            </figure>
+          </div>
         </div>
-        
-        <div class="benefits-stats" data-aos="fade-left" data-aos-delay="200">
-          <div class="stats-card">
-            <div class="stat-item">
-              <span class="stat-label">Team Efficiency</span>
-              <span class="stat-value success">+85%</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Project Delivery</span>
-              <span class="stat-value primary">+92%</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Resource Utilization</span>
-              <span class="stat-value warning">+78%</span>
-            </div>
+      </div>
+
+      <div class="snapshot-grid">
+        <article class="snapshot-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="snapshot-thumb">
+            <img src="{{ url_for('static', filename='landing/team-operations.svg') }}" alt="People and skills module preview" loading="lazy">
           </div>
+          <div class="snapshot-copy">
+            <div class="snapshot-icon"><i class="fas fa-users"></i></div>
+            <h3>People and Skills</h3>
+            <p>Maintain accurate employee profiles, role data, and skill coverage across teams.</p>
+          </div>
+        </article>
+        <article class="snapshot-card" data-aos="fade-up" data-aos-delay="180">
+          <div class="snapshot-thumb">
+            <img src="{{ url_for('static', filename='landing/command-center.svg') }}" alt="Execution tracking module preview" loading="lazy">
+          </div>
+          <div class="snapshot-copy">
+            <div class="snapshot-icon"><i class="fas fa-tasks"></i></div>
+            <h3>Execution Tracking</h3>
+            <p>Monitor task status, due dates, and ownership with clear accountability.</p>
+          </div>
+        </article>
+        <article class="snapshot-card" data-aos="fade-up" data-aos-delay="260">
+          <div class="snapshot-thumb">
+            <img src="{{ url_for('static', filename='landing/workload-balance.svg') }}" alt="Leave and availability module preview" loading="lazy">
+          </div>
+          <div class="snapshot-copy">
+            <div class="snapshot-icon"><i class="fas fa-calendar-check"></i></div>
+            <h3>Leave and Availability</h3>
+            <p>Handle leave requests while preserving delivery timelines and team balance.</p>
+          </div>
+        </article>
+        <article class="snapshot-card" data-aos="fade-up" data-aos-delay="340">
+          <div class="snapshot-thumb">
+            <img src="{{ url_for('static', filename='landing/analytics-insights.svg') }}" alt="Performance insights module preview" loading="lazy">
+          </div>
+          <div class="snapshot-copy">
+            <div class="snapshot-icon"><i class="fas fa-chart-column"></i></div>
+            <h3>Performance Insights</h3>
+            <p>Use practical reporting dashboards for performance, workload, and risk visibility.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section workflow-section">
+    <div class="container">
+      <div class="workflow-layout">
+        <div class="workflow-copy" data-aos="fade-right">
+          <h2 class="section-title">How Teams Use TaskVise</h2>
+          <p class="section-description">
+            A simple operating flow from planning through execution and review, designed for real teams and real constraints.
+          </p>
+        </div>
+        <div class="workflow-steps">
+          <article class="workflow-step" data-aos="fade-left" data-aos-delay="120">
+            <span class="workflow-index">01</span>
+            <div>
+              <h3>Plan Capacity</h3>
+              <p>View team availability, current workload, and skills before assigning work.</p>
+            </div>
+          </article>
+          <article class="workflow-step" data-aos="fade-left" data-aos-delay="200">
+            <span class="workflow-index">02</span>
+            <div>
+              <h3>Assign Responsibly</h3>
+              <p>Distribute tasks based on role fit, workload health, and delivery priorities.</p>
+            </div>
+          </article>
+          <article class="workflow-step" data-aos="fade-left" data-aos-delay="280">
+            <span class="workflow-index">03</span>
+            <div>
+              <h3>Track and Adapt</h3>
+              <p>Watch progress in real time and respond early to bottlenecks or conflicts.</p>
+            </div>
+          </article>
+          <article class="workflow-step" data-aos="fade-left" data-aos-delay="360">
+            <span class="workflow-index">04</span>
+            <div>
+              <h3>Review and Improve</h3>
+              <p>Use reports to improve team performance, predict risk, and guide skill growth.</p>
+            </div>
+          </article>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <section class="section cta-section">
+  <section class="section carousel-section" id="modules">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2 class="section-title">Application Modules</h2>
+        <p class="section-description">Browse the core capabilities that power day-to-day workforce operations.</p>
+      </div>
+
+      <div class="info-carousel" data-carousel="modules" data-aos="zoom-in">
+        <button class="carousel-control prev" data-carousel-prev aria-label="Previous slide">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="info-carousel-viewport">
+          <div class="info-carousel-track">
+            <article class="info-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Team Management</h3>
+                    <p>Centralized employee records and active team structure.</p>
+                  </div>
+                  <div class="slide-feature-grid">
+                    <div class="slide-feature"><i class="fas fa-id-badge"></i><span>Role and profile management</span></div>
+                    <div class="slide-feature"><i class="fas fa-screwdriver-wrench"></i><span>Skill mapping and gap visibility</span></div>
+                    <div class="slide-feature"><i class="fas fa-user-check"></i><span>Live team status tracking</span></div>
+                  </div>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/team-operations.svg') }}" alt="Team management visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+
+            <article class="info-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Project and Task Control</h3>
+                    <p>Operational control for planning, assigning, and delivery.</p>
+                  </div>
+                  <div class="slide-feature-grid">
+                    <div class="slide-feature"><i class="fas fa-list-check"></i><span>Priority-based task assignment</span></div>
+                    <div class="slide-feature"><i class="fas fa-clock"></i><span>Deadline and effort tracking</span></div>
+                    <div class="slide-feature"><i class="fas fa-diagram-project"></i><span>Project-level progress monitoring</span></div>
+                  </div>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/command-center.svg') }}" alt="Project and task control visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+
+            <article class="info-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Leave and Workload Balancing</h3>
+                    <p>Keep commitments realistic while supporting team wellbeing.</p>
+                  </div>
+                  <div class="slide-feature-grid">
+                    <div class="slide-feature"><i class="fas fa-calendar-days"></i><span>Leave request review workflow</span></div>
+                    <div class="slide-feature"><i class="fas fa-scale-balanced"></i><span>Workload balancing recommendations</span></div>
+                    <div class="slide-feature"><i class="fas fa-triangle-exclamation"></i><span>Early conflict detection</span></div>
+                  </div>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/workload-balance.svg') }}" alt="Workload balancing visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+          </div>
+        </div>
+        <button class="carousel-control next" data-carousel-next aria-label="Next slide">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="carousel-dots" data-carousel-dots></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section carousel-section secondary">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2 class="section-title">Role-Based Workspaces</h2>
+        <p class="section-description">Each role gets focused tools while staying aligned through shared data.</p>
+      </div>
+
+      <div class="info-carousel" data-carousel="roles" data-aos="zoom-in">
+        <button class="carousel-control prev" data-carousel-prev aria-label="Previous slide">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="info-carousel-viewport">
+          <div class="info-carousel-track">
+            <article class="info-slide role-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Manager Workspace</h3>
+                    <p>Coordinate people, projects, and outcomes with full operational visibility.</p>
+                  </div>
+                  <ul class="role-points">
+                    <li>Team management and workforce allocation</li>
+                    <li>Project, task, and leave decision support</li>
+                    <li>Reports, notifications, and team notes</li>
+                  </ul>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/analytics-insights.svg') }}" alt="Manager workspace visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+
+            <article class="info-slide role-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Team Lead Workspace</h3>
+                    <p>Drive execution inside your team with day-to-day control.</p>
+                  </div>
+                  <ul class="role-points">
+                    <li>Assign and monitor task delivery</li>
+                    <li>Track project contributions and blockers</li>
+                    <li>Support team member growth and output</li>
+                  </ul>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/command-center.svg') }}" alt="Team lead workspace visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+
+            <article class="info-slide role-slide">
+              <div class="slide-layout">
+                <div class="slide-copy-pane">
+                  <div class="slide-head">
+                    <h3>Employee Workspace</h3>
+                    <p>Stay focused on assigned work, timelines, and personal progress.</p>
+                  </div>
+                  <ul class="role-points">
+                    <li>Clear priorities and task ownership</li>
+                    <li>Leave requests and workload visibility</li>
+                    <li>Progress reporting and skill tracking</li>
+                  </ul>
+                </div>
+                <figure class="slide-visual">
+                  <img src="{{ url_for('static', filename='landing/workload-balance.svg') }}" alt="Employee workspace visual" loading="lazy">
+                </figure>
+              </div>
+            </article>
+          </div>
+        </div>
+        <button class="carousel-control next" data-carousel-next aria-label="Next slide">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="carousel-dots" data-carousel-dots></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section ethics-section">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <h2 class="section-title">Ethical by Design</h2>
+        <p class="section-description">TaskVise emphasizes fairness, transparency, and accountable decision making.</p>
+      </div>
+      <div class="ethics-grid">
+        <article class="ethics-card" data-aos="fade-up" data-aos-delay="100">
+          <i class="fas fa-scale-balanced"></i>
+          <h3>Fair Allocation</h3>
+          <p>Assignments can be based on transparent workload and skill evidence, not assumptions.</p>
+        </article>
+        <article class="ethics-card" data-aos="fade-up" data-aos-delay="180">
+          <i class="fas fa-eye"></i>
+          <h3>Operational Transparency</h3>
+          <p>Role-based visibility keeps teams informed on ownership, progress, and decision context.</p>
+        </article>
+        <article class="ethics-card" data-aos="fade-up" data-aos-delay="260">
+          <i class="fas fa-shield-halved"></i>
+          <h3>Responsible Access</h3>
+          <p>Access control and separated dashboards help protect data and reduce accidental misuse.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section application-cta-section">
     <div class="container">
       <div class="cta-content" data-aos="zoom-in">
-        <h2 class="section-title">Ready to Transform Your Workforce Management?</h2>
+        <h2 class="section-title">Bring Clarity to Workforce Operations</h2>
         <p class="section-description">
-          Join thousands of teams already using TaskVise to optimize their operations.
+          Start managing teams, projects, and delivery with a practical and transparent workflow.
         </p>
-        <button class="btn btn-primary btn-large" onclick="window.location.href='{{ url_for('signup') }}'">
-          Get Started Today
+        <a class="btn btn-primary btn-large" href="{{ url_for('signup') }}" target="_top">
+          Create Your Workspace
           <i class="fas fa-arrow-right"></i>
-        </button>
+        </a>
       </div>
     </div>
   </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    AOS.init({
-      duration: 1000,
-      once: true,
-      offset: 100
+  function initCarousel(carousel) {
+    const track = carousel.querySelector('.info-carousel-track');
+    const slides = Array.from(carousel.querySelectorAll('.info-slide'));
+    const prevBtn = carousel.querySelector('[data-carousel-prev]');
+    const nextBtn = carousel.querySelector('[data-carousel-next]');
+    const dotsWrap = carousel.querySelector('[data-carousel-dots]');
+
+    if (!track || !slides.length || !dotsWrap) return;
+
+    let currentIndex = 0;
+    const dots = slides.map((_, index) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+      dot.addEventListener('click', () => goToSlide(index, true));
+      dotsWrap.appendChild(dot);
+      return dot;
     });
+
+    function updateDots() {
+      dots.forEach((dot, index) => dot.classList.toggle('active', index === currentIndex));
+    }
+
+    function applySlide(animated) {
+      const xPercent = -100 * currentIndex;
+      if (animated && typeof gsap !== 'undefined') {
+        gsap.to(track, {
+          xPercent,
+          duration: 0.65,
+          ease: 'power2.out'
+        });
+      } else {
+        track.style.transform = `translateX(${xPercent}%)`;
+      }
+      updateDots();
+    }
+
+    function goToSlide(nextIndex, animated) {
+      currentIndex = (nextIndex + slides.length) % slides.length;
+      applySlide(animated);
+    }
+
+    prevBtn?.addEventListener('click', () => goToSlide(currentIndex - 1, true));
+    nextBtn?.addEventListener('click', () => goToSlide(currentIndex + 1, true));
+
+    let autoRotate = null;
+    const restartAutoRotate = () => {
+      if (autoRotate) clearInterval(autoRotate);
+      autoRotate = setInterval(() => goToSlide(currentIndex + 1, true), 7000);
+    };
+
+    restartAutoRotate();
+    carousel.addEventListener('mouseenter', () => {
+      if (autoRotate) clearInterval(autoRotate);
+    });
+    carousel.addEventListener('mouseleave', restartAutoRotate);
+
+    applySlide(false);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+    const navActions = document.querySelector('.nav-actions');
+    const closeMobileNav = () => {
+      if (!mobileNavToggle || !navActions) return;
+      mobileNavToggle.classList.remove('active');
+      mobileNavToggle.setAttribute('aria-expanded', 'false');
+      navActions.classList.remove('open');
+    };
+    if (mobileNavToggle && navActions) {
+      mobileNavToggle.addEventListener('click', function(event) {
+        event.stopPropagation();
+        const open = !navActions.classList.contains('open');
+        navActions.classList.toggle('open', open);
+        mobileNavToggle.classList.toggle('active', open);
+        mobileNavToggle.setAttribute('aria-expanded', String(open));
+      });
+      document.addEventListener('click', function(event) {
+        if (!navActions.contains(event.target) && !mobileNavToggle.contains(event.target)) {
+          closeMobileNav();
+        }
+      });
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeMobileNav();
+        }
+      });
+    }
+
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        duration: 900,
+        once: true,
+        offset: 80
+      });
+    }
+
+    document.querySelectorAll('.info-carousel').forEach(initCarousel);
+
+    if (typeof gsap !== 'undefined') {
+      gsap.from('.hero-badge', { y: 22, opacity: 0, duration: 0.6, ease: 'power2.out' });
+      gsap.from('.hero-title', { y: 28, opacity: 0, duration: 0.7, delay: 0.12, ease: 'power2.out' });
+      gsap.from('.hero-description', { y: 20, opacity: 0, duration: 0.65, delay: 0.26, ease: 'power2.out' });
+      gsap.from('.hero-actions .btn', { y: 16, opacity: 0, duration: 0.6, stagger: 0.12, delay: 0.4, ease: 'power2.out' });
+      gsap.to('.floating-card.card-1', { y: -10, duration: 2.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      gsap.to('.floating-card.card-2', { y: -12, duration: 3.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      gsap.from('.snapshot-card', { y: 20, opacity: 0, duration: 0.65, stagger: 0.08, delay: 0.5, ease: 'power2.out' });
+    }
   });
 </script>
 {% endblock %}

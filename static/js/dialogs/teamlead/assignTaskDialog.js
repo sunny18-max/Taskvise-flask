@@ -1,25 +1,30 @@
-// Team Lead Assign Task Dialog
 let tlAssignTaskDialog = null;
 let tlEmployees = [];
 let tlProjects = [];
+let tlAssignEscHandlerBound = false;
 
-function openTLAssignTaskDialog(){
-  if(!tlAssignTaskDialog){ createTLAssignTaskDialog(); }
+function openTLAssignTaskDialog() {
+  if (!tlAssignTaskDialog) {
+    createTLAssignTaskDialog();
+  }
   tlAssignTaskDialog.style.display = 'flex';
   loadTLAssignTaskDialogData();
 }
 
-function createTLAssignTaskDialog(){
+function createTLAssignTaskDialog() {
   tlAssignTaskDialog = document.createElement('div');
-  tlAssignTaskDialog.className = 'dialog-overlay';
+  tlAssignTaskDialog.className = 'modal-overlay';
+  tlAssignTaskDialog.style.display = 'none';
   tlAssignTaskDialog.innerHTML = `
-    <div class="dialog assign-task-dialog">
-      <div class="dialog-header">
-        <h2 class="dialog-title">Assign New Task</h2>
-        <p class="dialog-description">Create and assign a new task to a team member</p>
-        <button class="dialog-close" onclick="closeTLAssignTaskDialog()">×</button>
+    <div class="modal modal-lg assign-task-dialog" role="dialog" aria-modal="true" aria-labelledby="tl-assign-task-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="tl-assign-task-title">Assign New Task</h3>
+          <p class="modal-subtitle">Create and assign a new task to a team member.</p>
+        </div>
+        <button class="modal-close" type="button" aria-label="Close" onclick="closeTLAssignTaskDialog()">&times;</button>
       </div>
-      <div class="dialog-content">
+      <div class="modal-body">
         <div class="form-group">
           <label class="form-label" for="tlTaskTitle">Task Title *</label>
           <input id="tlTaskTitle" class="form-input" />
@@ -53,36 +58,70 @@ function createTLAssignTaskDialog(){
           </div>
         </div>
       </div>
-      <div class="dialog-actions">
-        <button class="btn btn-outline" onclick="closeTLAssignTaskDialog()">Cancel</button>
-        <button class="btn btn-primary" onclick="tlAssignTask()" id="tlAssignTaskBtn">Assign Task</button>
+      <div class="modal-footer">
+        <button class="btn btn-outline" type="button" onclick="closeTLAssignTaskDialog()">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="tlAssignTask()" id="tlAssignTaskBtn">Assign Task</button>
       </div>
     </div>`;
   document.body.appendChild(tlAssignTaskDialog);
-}
 
-function closeTLAssignTaskDialog(){
-  if(tlAssignTaskDialog){ tlAssignTaskDialog.style.display = 'none'; }
-}
+  tlAssignTaskDialog.addEventListener('click', (e) => {
+    if (e.target === tlAssignTaskDialog) closeTLAssignTaskDialog();
+  });
 
-async function loadTLAssignTaskDialogData(){
-  try{
-    const employeesResponse = await fetch('/api/teamlead/employees');
-    tlEmployees = await employeesResponse.json();
-    const assignedTo = document.getElementById('tlAssignedTo');
-    assignedTo.innerHTML = '<option value="">Select employee</option>' + tlEmployees.map(e=>`<option value="${e.id}">${e.name} - ${e.position}</option>`).join('');
-
-    const projectsResponse = await fetch('/api/teamlead/projects');
-    tlProjects = await projectsResponse.json();
-    const projectSelect = document.getElementById('tlProject');
-    projectSelect.innerHTML = '<option value="">Select project</option>' + tlProjects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  }catch(err){
-    console.error(err);
-    if(window.teamLeadDashboard) window.teamLeadDashboard.showNotification('Error loading dialog data','error');
+  if (!tlAssignEscHandlerBound) {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tlAssignTaskDialog && tlAssignTaskDialog.style.display === 'flex') {
+        closeTLAssignTaskDialog();
+      }
+    });
+    tlAssignEscHandlerBound = true;
   }
 }
 
-async function tlAssignTask(){
+function closeTLAssignTaskDialog() {
+  if (!tlAssignTaskDialog) return;
+  tlAssignTaskDialog.style.display = 'none';
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function loadTLAssignTaskDialogData() {
+  try {
+    const dueDate = document.getElementById('tlDueDate');
+    if (dueDate) dueDate.min = new Date().toISOString().split('T')[0];
+
+    const employeesResponse = await fetch('/api/teamlead/employees');
+    if (!employeesResponse.ok) throw new Error('Failed to load employees');
+    tlEmployees = await employeesResponse.json();
+    const assignedTo = document.getElementById('tlAssignedTo');
+    if (assignedTo) {
+      assignedTo.innerHTML = '<option value="">Select employee</option>' +
+        tlEmployees.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)} - ${escapeHtml(e.position)}</option>`).join('');
+    }
+
+    const projectsResponse = await fetch('/api/teamlead/projects');
+    if (!projectsResponse.ok) throw new Error('Failed to load projects');
+    tlProjects = await projectsResponse.json();
+    const projectSelect = document.getElementById('tlProject');
+    if (projectSelect) {
+      projectSelect.innerHTML = '<option value="">Select project</option>' +
+        tlProjects.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+    }
+  } catch (err) {
+    console.error(err);
+    if (window.teamLeadDashboard) window.teamLeadDashboard.showNotification('Error loading dialog data', 'error');
+  }
+}
+
+async function tlAssignTask() {
   const payload = {
     title: document.getElementById('tlTaskTitle').value,
     description: document.getElementById('tlTaskDescription').value,
@@ -91,22 +130,30 @@ async function tlAssignTask(){
     priority: document.getElementById('tlPriority').value,
     due_date: document.getElementById('tlDueDate').value
   };
-  if(!payload.title || !payload.assignedTo || !payload.due_date){
-    return window.teamLeadDashboard?.showNotification('Please fill required fields','error');
+
+  if (!payload.title || !payload.assignedTo || !payload.due_date) {
+    return window.teamLeadDashboard?.showNotification('Please fill required fields', 'error');
   }
+
   const btn = document.getElementById('tlAssignTaskBtn');
-  btn.disabled = true; btn.textContent = 'Assigning...';
-  try{
-    const res = await fetch('/api/teamlead/tasks/assign', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    if(!res.ok) throw new Error('Failed');
-    window.teamLeadDashboard?.showNotification('Task assigned','success');
+  btn.disabled = true;
+  btn.textContent = 'Assigning...';
+  try {
+    const res = await fetch('/api/teamlead/tasks/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed');
+    window.teamLeadDashboard?.showNotification('Task assigned', 'success');
     closeTLAssignTaskDialog();
     window.teamLeadDashboard?.refreshData();
-  }catch(e){
+  } catch (e) {
     console.error(e);
-    window.teamLeadDashboard?.showNotification('Error assigning task','error');
-  }finally{
-    btn.disabled = false; btn.textContent = 'Assign Task';
+    window.teamLeadDashboard?.showNotification('Error assigning task', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Assign Task';
   }
 }
 

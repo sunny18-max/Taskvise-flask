@@ -47,9 +47,9 @@
         <div class="section-header">
           <h3>My Leave Calendar</h3>
           <div class="calendar-actions">
-            <button class="nav-btn prev" id="cal-prev" aria-label="Previous Month"><i class="fas fa-chevron-left"></i></button>
+            <button class="calendar-nav-btn prev" id="cal-prev" aria-label="Previous Month"><i class="fas fa-chevron-left"></i></button>
             <div class="calendar-title" id="cal-title">Month YYYY</div>
-            <button class="nav-btn next" id="cal-next" aria-label="Next Month"><i class="fas fa-chevron-right"></i></button>
+            <button class="calendar-nav-btn next" id="cal-next" aria-label="Next Month"><i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
         <div class="calendar-container">
@@ -65,6 +65,7 @@
           <div class="calendar-days" id="calendar-days"></div>
         </div>
         <div class="calendar-legend">
+          <div class="legend-item"><div class="legend-color today"></div><span>Today</span></div>
           <div class="legend-item"><div class="legend-color approved"></div><span>Approved Leave</span></div>
           <div class="legend-item"><div class="legend-color pending"></div><span>Pending Approval</span></div>
           <div class="legend-item"><div class="legend-color rejected"></div><span>Rejected Leave</span></div>
@@ -82,11 +83,10 @@
           </div>
         </div>
         <div class="requests-container" id="requests-container">
-          <div class="empty-state" id="empty-state">
+            <div class="empty-state" id="empty-state">
             <i class="fas fa-inbox"></i>
             <h4>No leave requests found</h4>
             <p>Create your first request to get started.</p>
-            <button class="btn-primary" id="btn-create-first"><i class="fas fa-plus"></i> Create Request</button>
           </div>
         </div>
       </div>
@@ -94,14 +94,17 @@
   </div>
 
   <!-- Modal -->
-  <div class="modal" id="leave-modal" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="leave-modal-title">
+  <div class="modal-overlay" id="leave-modal" style="display:none;">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="leave-modal-title">
       <div class="modal-header">
-        <h3 id="leave-modal-title">New Leave Request</h3>
-        <button class="modal-close" id="close-leave-modal"><i class="fas fa-times"></i></button>
+        <div>
+          <h3 id="leave-modal-title">New Leave Request</h3>
+          <p class="modal-subtitle">Submit leave details for manager approval.</p>
+        </div>
+        <button class="modal-close" id="close-leave-modal" type="button" aria-label="Close">&times;</button>
       </div>
-      <div class="modal-body">
-        <form id="leave-request-form">
+      <form id="leave-request-form">
+        <div class="modal-body">
           <div class="form-group">
             <label for="leave-type">Leave Type</label>
             <select id="leave-type" class="form-input" required>
@@ -125,18 +128,18 @@
             <label for="leave-reason">Reason</label>
             <textarea id="leave-reason" class="form-input" rows="4" placeholder="Please provide a detailed reason..." required></textarea>
           </div>
-          <div class="modal-footer" style="justify-content:flex-end;">
-            <button type="submit" class="btn-primary">Submit Request</button>
-            <button type="button" class="filter-btn" id="cancel-leave-request">Cancel</button>
-          </div>
-        </form>
-      </div>
+        </div>
+        <div class="modal-footer" style="justify-content:flex-end;">
+          <button type="button" class="filter-btn" id="cancel-leave-request">Cancel</button>
+          <button type="submit" class="btn-primary">Submit Request</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
 <style>
-.leave-management { padding: 1.5rem; background: #f8fafc; }
+.leave-management { padding: 1.5rem; background: #f8fafc; font-family: inherit; }
 .leave-content { max-width: 1400px; margin: 0 auto; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
 .stat-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 1rem; }
@@ -151,23 +154,47 @@
 .section-actions { display:flex; gap:.5rem; align-items:center; }
 .filter-btn { padding:.5rem .9rem; border:1px solid #e2e8f0; background:#fff; border-radius:6px; font-size:.875rem; font-weight:500; cursor:pointer; }
 .filter-btn.active, .filter-btn:hover { background:#f8fafc; }
-.btn-primary { padding:.55rem 1rem; border:none; border-radius:8px; font-weight:600; font-size:.9rem; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; cursor:pointer; }
+.btn-primary { padding:.55rem 1rem; border:none; border-radius:8px; font-weight:600; font-size:.9rem; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:.45rem; font-family:inherit; }
+.btn-primary:hover { filter:brightness(.98); }
+.section-actions .btn-primary { min-height:36px; }
 .calendar-actions { display:flex; align-items:center; gap:.5rem; }
 .calendar-container { padding:1rem 1.25rem; }
 .calendar-title { font-size:1rem; font-weight:600; color:#1e293b; }
-.nav-btn { width:32px; height:32px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-.nav-btn:hover{ background:#f8fafc; border-color:#cbd5e1; }
+.calendar-nav-btn { width:32px; height:32px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.calendar-nav-btn:hover{ background:#f8fafc; border-color:#cbd5e1; }
 .calendar-weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin:.5rem 0; }
 .weekday{ text-align:center; font-size:.75rem; font-weight:600; color:#64748b; padding:.35rem 0; }
 .calendar-days{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-.calendar-day{ height:40px; display:flex; align-items:center; justify-content:center; font-size:.875rem; border-radius:6px; background:#fff; border:1px solid #e2e8f0; }
+.calendar-day{ height:40px; position:relative; display:flex; align-items:center; justify-content:center; font-size:.875rem; border-radius:6px; background:#fff; border:1px solid #e2e8f0; }
 .calendar-day.other-month{ color:#cbd5e1; background:#f8fafc; }
 .calendar-day.approved{ background:#dcfce7; color:#166534; border-color:#bbf7d0; font-weight:500; }
 .calendar-day.pending{ background:#fef3c7; color:#92400e; border-color:#fde68a; font-weight:500; }
 .calendar-day.rejected{ background:#fee2e2; color:#991b1b; border-color:#fecaca; font-weight:500; }
-.calendar-legend{ padding:.75rem 1.25rem; border-top:1px solid #e2e8f0; display:flex; gap:1rem; }
+.calendar-day.approved::after,
+.calendar-day.pending::after,
+.calendar-day.rejected::after{
+  content:'';
+  position:absolute;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  top:4px;
+  right:4px;
+  border:1px solid rgba(255,255,255,0.85);
+}
+.calendar-day.approved::after{ background:#22c55e; }
+.calendar-day.pending::after{ background:#f59e0b; }
+.calendar-day.rejected::after{ background:#ef4444; }
+.calendar-day.today{
+  outline:2px solid #2563eb;
+  outline-offset:-2px;
+  box-shadow:0 0 0 2px rgba(37,99,235,.15);
+  font-weight:700;
+}
+.calendar-legend{ padding:.75rem 1.25rem; border-top:1px solid #e2e8f0; display:flex; gap:1rem; flex-wrap:wrap; }
 .legend-item{ display:flex; align-items:center; gap:.5rem; color:#64748b; }
 .legend-color{ width:12px; height:12px; border-radius:2px; }
+.legend-color.today{ background:#dbeafe; border:1px solid #93c5fd; }
 .legend-color.approved{ background:#dcfce7; border:1px solid #bbf7d0; }
 .legend-color.pending{ background:#fef3c7; border:1px solid #fde68a; }
 .legend-color.rejected{ background:#fee2e2; border:1px solid #fecaca; }
@@ -181,16 +208,15 @@
 .request-type.pending{ background:#fef3c7; color:#92400e; }
 .request-type.rejected{ background:#fee2e2; color:#991b1b; }
 .request-dates{ font-size:.875rem; color:#64748b; margin-bottom:.5rem; }
-.modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000; padding:1rem; }
-.modal-content{ background:#fff; border-radius:12px; width:100%; max-width:520px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
-.modal-header{ display:flex; justify-content:space-between; align-items:center; padding:1rem 1.25rem; border-bottom:1px solid #e2e8f0; }
-.modal-header h3{ margin:0; color:#1e293b; }
-.modal-close{ background:none; border:none; font-size:1.2rem; color:#6c757d; cursor:pointer; padding:4px; }
 .modal-body{ padding:1rem 1.25rem; }
 .form-group{ margin-bottom:1rem; }
 .form-group label{ display:block; margin-bottom:6px; font-weight:600; color:#2d3748; }
 .form-input{ width:100%; padding:12px 16px; border:1px solid #d1d5db; border-radius:8px; font-size:.95rem; background:#fff; }
 .form-input:focus{ outline:none; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,.1); }
+.form-input{ font-family:inherit; }
+#leave-modal.modal-overlay { align-items:center; justify-content:center; }
+#leave-modal .modal { font-family:inherit; max-width:620px; }
+#leave-modal .modal-subtitle { margin:.25rem 0 0; color:#64748b; font-size:.9rem; }
 @media (max-width:1024px){ .main-grid{ grid-template-columns:1fr; } }
 @media (max-width:768px){ .stats-grid{ grid-template-columns:1fr; } }
 @keyframes slideUp {
@@ -243,8 +269,7 @@
         flex-wrap: wrap;
     }
     
-    .modal-content {
-        margin: 10% auto;
+    #leave-modal .modal {
         width: 95%;
     }
     
@@ -308,4 +333,307 @@
 }
 </style>
 
-<!-- legacy script removed -->
+<script>
+(() => {
+  const root = document.querySelector('.leave-management');
+  if (!root) return;
+
+  const state = {
+    leaves: [],
+    filter: (() => {
+      const q = new URLSearchParams(window.location.search).get('filter');
+      return q === 'pending' ? 'pending' : 'all';
+    })(),
+    month: new Date().getMonth(),
+    year: new Date().getFullYear()
+  };
+
+  const refs = {
+    stPending: root.querySelector('#st-pending'),
+    stApproved: root.querySelector('#st-approved'),
+    stRejected: root.querySelector('#st-rejected'),
+    stTotal: root.querySelector('#st-total'),
+    calTitle: root.querySelector('#cal-title'),
+    calDays: root.querySelector('#calendar-days'),
+    requests: root.querySelector('#requests-container'),
+    btnAll: root.querySelector('#btn-all'),
+    btnPending: root.querySelector('#btn-pending'),
+    btnPrev: root.querySelector('#cal-prev'),
+    btnNext: root.querySelector('#cal-next'),
+    btnNew: root.querySelector('#btn-new-request'),
+    modal: root.querySelector('#leave-modal'),
+    closeModal: root.querySelector('#close-leave-modal'),
+    cancelModal: root.querySelector('#cancel-leave-request'),
+    form: root.querySelector('#leave-request-form'),
+    type: root.querySelector('#leave-type'),
+    start: root.querySelector('#start-date'),
+    end: root.querySelector('#end-date'),
+    reason: root.querySelector('#leave-reason')
+  };
+
+  function notify(message, type = 'info') {
+    if (window.showNotification) {
+      window.showNotification(message, type);
+      return;
+    }
+    alert(message);
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function toDate(value) {
+    const raw = String(value || '').slice(0, 10);
+    const d = new Date(raw + 'T00:00:00');
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function toKey(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function monthLabel(month, year) {
+    return new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  function openModal() {
+    if (!refs.modal) return;
+    refs.modal.style.display = 'flex';
+    const today = new Date().toISOString().slice(0, 10);
+    if (refs.start) refs.start.min = today;
+    if (refs.end) refs.end.min = refs.start && refs.start.value ? refs.start.value : today;
+  }
+
+  function closeModal() {
+    if (!refs.modal) return;
+    refs.modal.style.display = 'none';
+    refs.form && refs.form.reset();
+  }
+
+  function syncFilterButtons() {
+    if (refs.btnAll) refs.btnAll.classList.toggle('active', state.filter !== 'pending');
+    if (refs.btnPending) refs.btnPending.classList.toggle('active', state.filter === 'pending');
+  }
+
+  function renderStats() {
+    const pending = state.leaves.filter(l => String(l.status || '').toLowerCase() === 'pending').length;
+    const approved = state.leaves.filter(l => String(l.status || '').toLowerCase() === 'approved').length;
+    const rejected = state.leaves.filter(l => String(l.status || '').toLowerCase() === 'rejected').length;
+    if (refs.stPending) refs.stPending.textContent = String(pending);
+    if (refs.stApproved) refs.stApproved.textContent = String(approved);
+    if (refs.stRejected) refs.stRejected.textContent = String(rejected);
+    if (refs.stTotal) refs.stTotal.textContent = String(state.leaves.length);
+  }
+
+  function dayStatus(day) {
+    const key = toKey(day);
+    let status = '';
+    for (const leave of state.leaves) {
+      const start = toDate(leave.start_date || leave.startDate);
+      const end = toDate(leave.end_date || leave.endDate);
+      if (!start || !end) continue;
+      const t = new Date(key + 'T00:00:00').getTime();
+      if (t < start.getTime() || t > end.getTime()) continue;
+      const leaveStatus = String(leave.status || '').toLowerCase();
+      if (leaveStatus === 'approved') return 'approved';
+      if (leaveStatus === 'pending' && status !== 'approved') status = 'pending';
+      if (leaveStatus === 'rejected' && !status) status = 'rejected';
+    }
+    return status;
+  }
+
+  function renderCalendar() {
+    if (!refs.calTitle || !refs.calDays) return;
+    refs.calTitle.textContent = monthLabel(state.month, state.year);
+    refs.calDays.innerHTML = '';
+    const todayKey = toKey(new Date());
+
+    const first = new Date(state.year, state.month, 1);
+    const startWeekday = first.getDay();
+    const daysInMonth = new Date(state.year, state.month + 1, 0).getDate();
+    const daysInPrev = new Date(state.year, state.month, 0).getDate();
+
+    for (let i = 0; i < startWeekday; i++) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day other-month';
+      day.textContent = String(daysInPrev - startWeekday + i + 1);
+      refs.calDays.appendChild(day);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(state.year, state.month, d);
+      const status = dayStatus(dateObj);
+      const key = toKey(dateObj);
+      const isToday = key === todayKey;
+      const day = document.createElement('div');
+      day.className = `calendar-day${status ? ' ' + status : ''}${isToday ? ' today' : ''}`;
+      day.textContent = String(d);
+      refs.calDays.appendChild(day);
+    }
+
+    const filled = startWeekday + daysInMonth;
+    const tail = (7 - (filled % 7)) % 7;
+    for (let i = 1; i <= tail; i++) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day other-month';
+      day.textContent = String(i);
+      refs.calDays.appendChild(day);
+    }
+  }
+
+  function renderRequests() {
+    if (!refs.requests) return;
+    syncFilterButtons();
+    let list = state.leaves.slice();
+    if (state.filter === 'pending') {
+      list = list.filter(l => String(l.status || '').toLowerCase() === 'pending');
+    }
+
+    list.sort((a, b) => String(b.applied_at || '').localeCompare(String(a.applied_at || '')));
+
+    if (!list.length) {
+      refs.requests.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <h4>No leave requests found</h4>
+          <p>Create your first request to get started.</p>
+        </div>
+      `;
+      return;
+    }
+
+    refs.requests.innerHTML = list.map(leave => {
+      const status = String(leave.status || 'pending').toLowerCase();
+      const type = String(leave.type || 'leave').replace('-', ' ');
+      const start = String(leave.start_date || leave.startDate || '').slice(0, 10);
+      const end = String(leave.end_date || leave.endDate || '').slice(0, 10);
+      return `
+        <article class="request-item">
+          <div class="request-header">
+            <span class="request-type ${esc(status)}">${esc(status)}</span>
+            <span class="request-dates">${esc(start)} to ${esc(end)}</span>
+          </div>
+          <div class="request-meta">Type: ${esc(type)}</div>
+          <p class="request-reason">${esc(leave.reason || 'No reason provided')}</p>
+        </article>
+      `;
+    }).join('');
+  }
+
+  async function loadLeaves() {
+    try {
+      const response = await fetch('/api/employee/leave');
+      if (!response.ok) throw new Error('Failed to load leave data');
+      state.leaves = await response.json();
+      renderStats();
+      renderCalendar();
+      renderRequests();
+    } catch (error) {
+      console.error(error);
+      state.leaves = [];
+      renderStats();
+      renderCalendar();
+      renderRequests();
+      notify('Failed to load leave data', 'error');
+    }
+  }
+
+  async function submitLeave(event) {
+    event.preventDefault();
+    const payload = {
+      type: refs.type ? refs.type.value : '',
+      startDate: refs.start ? refs.start.value : '',
+      endDate: refs.end ? refs.end.value : '',
+      reason: refs.reason ? refs.reason.value.trim() : ''
+    };
+
+    if (!payload.type || !payload.startDate || !payload.endDate || !payload.reason) {
+      notify('Please fill all fields', 'error');
+      return;
+    }
+    if (payload.endDate < payload.startDate) {
+      notify('End date must be on or after start date', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/employee/leave-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('Failed to submit leave request');
+      notify('Leave request submitted successfully', 'success');
+      closeModal();
+      await loadLeaves();
+    } catch (error) {
+      console.error(error);
+      notify('Failed to submit leave request', 'error');
+    }
+  }
+
+  refs.btnPrev && refs.btnPrev.addEventListener('click', () => {
+    state.month -= 1;
+    if (state.month < 0) {
+      state.month = 11;
+      state.year -= 1;
+    }
+    renderCalendar();
+  });
+
+  refs.btnNext && refs.btnNext.addEventListener('click', () => {
+    state.month += 1;
+    if (state.month > 11) {
+      state.month = 0;
+      state.year += 1;
+    }
+    renderCalendar();
+  });
+
+  refs.btnAll && refs.btnAll.addEventListener('click', () => {
+    state.filter = 'all';
+    refs.btnAll.classList.add('active');
+    refs.btnPending && refs.btnPending.classList.remove('active');
+    renderRequests();
+  });
+
+  refs.btnPending && refs.btnPending.addEventListener('click', () => {
+    state.filter = 'pending';
+    refs.btnPending.classList.add('active');
+    refs.btnAll && refs.btnAll.classList.remove('active');
+    renderRequests();
+  });
+
+  refs.btnNew && refs.btnNew.addEventListener('click', openModal);
+  refs.closeModal && refs.closeModal.addEventListener('click', closeModal);
+  refs.cancelModal && refs.cancelModal.addEventListener('click', closeModal);
+  refs.form && refs.form.addEventListener('submit', submitLeave);
+
+  refs.modal && refs.modal.addEventListener('click', (e) => {
+    if (e.target === refs.modal) closeModal();
+  });
+
+  refs.start && refs.start.addEventListener('change', () => {
+    if (!refs.end) return;
+    refs.end.min = refs.start.value || '';
+    if (refs.end.value && refs.start.value && refs.end.value < refs.start.value) {
+      refs.end.value = refs.start.value;
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadLeaves, { once: true });
+  } else {
+    loadLeaves();
+  }
+})();
+</script>

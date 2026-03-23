@@ -1,5 +1,84 @@
 // TaskVise App JavaScript
 
+function initMobileNav() {
+    const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+
+    const navToggle = navbar.querySelector('.mobile-nav-toggle');
+    const navActions = navbar.querySelector('.nav-actions');
+    if (!navToggle || !navActions) return;
+
+    const mobileBreakpoint = 900;
+    const isMobileView = () => window.innerWidth <= mobileBreakpoint;
+
+    if (!navActions.id) {
+        navActions.id = 'mobileNavActions';
+    }
+    navToggle.setAttribute('aria-controls', navActions.id);
+    navToggle.setAttribute('aria-expanded', 'false');
+
+    let backdrop = document.querySelector('.nav-backdrop[data-nav-backdrop="global"]');
+    if (!backdrop) {
+        backdrop = document.createElement('button');
+        backdrop.type = 'button';
+        backdrop.className = 'nav-backdrop';
+        backdrop.setAttribute('aria-label', 'Close navigation');
+        backdrop.setAttribute('data-nav-backdrop', 'global');
+        document.body.appendChild(backdrop);
+    }
+
+    const closeMenu = () => {
+        navActions.classList.remove('open');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+        backdrop.classList.remove('show');
+        document.body.classList.remove('mobile-nav-open');
+    };
+
+    const openMenu = () => {
+        if (!isMobileView()) return;
+        navActions.classList.add('open');
+        navToggle.classList.add('active');
+        navToggle.setAttribute('aria-expanded', 'true');
+        backdrop.classList.add('show');
+        document.body.classList.add('mobile-nav-open');
+    };
+
+    navToggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (navActions.classList.contains('open')) {
+            closeMenu();
+            return;
+        }
+        openMenu();
+    });
+
+    backdrop.addEventListener('click', closeMenu);
+
+    document.addEventListener('click', (event) => {
+        if (!navActions.classList.contains('open')) return;
+        if (navActions.contains(event.target) || navToggle.contains(event.target)) return;
+        closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
+    });
+
+    navActions.querySelectorAll('a, button').forEach((item) => {
+        item.addEventListener('click', () => {
+            if (isMobileView()) closeMenu();
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if (!isMobileView()) closeMenu();
+    });
+}
+
 // Initialize AOS animations
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof AOS !== 'undefined') {
@@ -9,9 +88,30 @@ document.addEventListener('DOMContentLoaded', function() {
             offset: 100
         });
     }
+
+    initMobileNav();
     
     // Add any additional initialization code here
     console.log('TaskVise app initialized');
+
+    // Show loader when any internal link is clicked
+    function showRouteLoader() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.remove('hidden');
+        }
+    }
+
+    document.querySelectorAll('a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:')) {
+            return;
+        }
+        link.addEventListener('click', function(event) {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            showRouteLoader();
+        });
+    });
 });
 
 // Form validation helper functions

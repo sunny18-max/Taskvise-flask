@@ -1,0 +1,8 @@
+id,user_id,email_notifications,push_notifications,task_reminders,deadline_alerts,theme,language,timezone,updated_at,company_name,date_format,session_timeout,password_policy,notify_task_assignments,notify_project_updates,notify_system_alerts,desktop_notifications,sound_alerts,auto_backup,data_retention,api_access,webhook_url
+SET0001,__system__,true,true,true,true,executive,en,Asia/Kolkata,2026-03-23 09:00:00,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+SET0002,EMP001,true,true,true,true,system,en,Asia/Kolkata,2026-03-23 09:00:00,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+SET0003,EMP002,true,false,true,true,system,en,Asia/Kolkata,2026-03-23 09:00:00,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+SET0004,EMP004,true,true,true,true,system,en,Asia/Kolkata,2026-03-23 09:00:00,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+SET0005,EMP010,true,false,true,true,system,en,Asia/Kolkata,2026-03-23 09:00:00,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+SET0006,EMP016,true,true,true,true,light,en,UTC,2026-03-23 23:23:42,TechCorp HyperScale Delivery Command,dd/mm/yyyy,30,medium,true,true,true,true,false,weekly,12,true,
+68b8326a-d5a4-4333-a902-895aedb525d9,EMP046,true,false,true,true,light,en,UTC,2026-03-23 21:39:49,,,,,,,,,,,,,

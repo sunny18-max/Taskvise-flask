@@ -120,47 +120,66 @@
 </div>
 
 <script>
-// Skill Recommendations Data and Functions
 let employees = [];
 let projects = [];
+let tasks = [];
 
 document.addEventListener('DOMContentLoaded', function() {
   loadSkillData();
+  window.addEventListener('managerDataRefreshed', loadSkillData);
 });
 
+function parseSkills(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function inferRequiredSkills(project) {
+  const text = `${project.name || ''} ${project.description || ''} ${project.department || ''}`.toLowerCase();
+  const skillMap = {
+    engineering: ['Python', 'Flask', 'REST APIs'],
+    product: ['Product Strategy', 'Analytics', 'Stakeholder Management'],
+    finance: ['Financial Analysis', 'Reporting', 'Governance'],
+    marketing: ['Campaign Strategy', 'Content', 'Brand Marketing'],
+    sales: ['Sales Operations', 'Negotiation', 'Forecasting'],
+    operations: ['Operations', 'Capacity Planning', 'Workflow Automation'],
+    design: ['Figma', 'UX Research', 'Visual Design'],
+  };
+  for (const [keyword, skills] of Object.entries(skillMap)) {
+    if (text.includes(keyword)) return skills;
+  }
+  return ['Execution', 'Collaboration', 'Reporting'];
+}
+
+function normalizeStatus(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'in progress' || raw === 'in_progress') return 'in-progress';
+  return raw || 'planning';
+}
+
 function loadSkillData() {
-  // Mock data for demonstration
-  employees = [
-    {
-      id: '1',
-      fullName: 'John Smith',
-      department: 'Development',
-      skills: ['JavaScript', 'React', 'Node.js'],
-      skillGaps: ['TypeScript', 'AWS'],
-      completedTrainings: 3,
-      productivity: 85
-    },
-    {
-      id: '2', 
-      fullName: 'Sarah Johnson',
-      department: 'Design',
-      skills: ['UI/UX', 'Figma', 'Photoshop'],
-      skillGaps: ['Illustrator', 'Animation'],
-      completedTrainings: 2,
-      productivity: 92
-    }
-  ];
-
-  projects = [
-    {
-      id: '1',
-      name: 'Website Redesign',
-      requiredSkills: ['UI/UX', 'Figma', 'JavaScript'],
-      teamMembers: ['1', '2'],
-      status: 'active'
-    }
-  ];
-
+  const dashboard = window.managerDashboard || window.teamLeadDashboard || {};
+  const taskList = Array.isArray(dashboard.tasks) ? dashboard.tasks : [];
+  employees = (Array.isArray(dashboard.employees) ? dashboard.employees : []).map((employee) => {
+    const employeeTasks = taskList.filter((task) => String(task.assignee_id || '') === String(employee.id || ''));
+    const completedTasks = employeeTasks.filter((task) => normalizeStatus(task.status) === 'completed').length;
+    return {
+      ...employee,
+      fullName: employee.fullName || employee.name || 'Unknown',
+      skills: parseSkills(employee.skills),
+      completedTrainings: Math.floor(completedTasks / 2),
+      productivity: Number(employee.productivity || 0),
+    };
+  });
+  projects = (Array.isArray(dashboard.projects) ? dashboard.projects : []).map((project) => ({
+    ...project,
+    status: normalizeStatus(project.status),
+    teamMembers: Array.isArray(project.team_members)
+      ? project.team_members
+      : String(project.team_members || '').split(',').map((item) => item.trim()).filter(Boolean),
+    requiredSkills: inferRequiredSkills(project),
+  }));
+  tasks = taskList;
   updateSkillDisplay();
 }
 
@@ -171,118 +190,76 @@ function updateSkillDisplay() {
   updateTeamInsights();
 }
 
-function updateStatistics() {
-  const skillGapAnalysis = analyzeSkillGaps();
-  const highPriorityGaps = skillGapAnalysis.filter(gap => gap.priority === 'high');
-  const trainingRecommendations = getTrainingRecommendations();
-  
-  document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = highPriorityGaps.length;
-  document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = trainingRecommendations.length;
-  document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = 
-    employees.reduce((sum, emp) => sum + (emp.completedTrainings || 0), 0);
-  document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = 
-    employees.length > 0 ? 
-      Math.round(employees.reduce((sum, emp) => sum + (emp.productivity || 0), 0) / employees.length) + '%' : 
-      '0%';
-}
-
 function analyzeSkillGaps() {
-  const allRequiredSkills = projects
-    .filter(project => project.status === 'active' || project.status === 'planning')
-    .flatMap(project => project.requiredSkills || []);
-
+  const activeProjects = projects.filter((project) => ['active', 'planning'].includes(project.status));
+  const allRequiredSkills = activeProjects.flatMap((project) => project.requiredSkills || []);
   const uniqueRequiredSkills = [...new Set(allRequiredSkills)];
-  
-  if (uniqueRequiredSkills.length === 0) {
-    return [];
-  }
-  
-  const skillGapAnalysis = uniqueRequiredSkills.map(skill => {
-    const employeesWithSkill = employees.filter(emp => 
-      (emp.skills || []).includes(skill)
-    ).length;
-    
-    const coveragePercentage = employees.length > 0 ? 
-      (employeesWithSkill / employees.length) * 100 : 0;
-    
-    const priority = coveragePercentage < 50 ? 'high' : coveragePercentage < 75 ? 'medium' : 'low';
-
-    const projectsUsing = projects.filter(p => 
-      (p.requiredSkills || []).includes(skill)
-    ).length;
-
+  return uniqueRequiredSkills.map((skill) => {
+    const employeesWithSkill = employees.filter((employee) => (employee.skills || []).includes(skill)).length;
+    const coveragePercentage = employees.length ? (employeesWithSkill / employees.length) * 100 : 0;
     return {
       skill,
       coveragePercentage,
       employeesWithSkill,
       totalEmployees: employees.length,
-      priority,
-      projectsUsing
+      priority: coveragePercentage < 40 ? 'high' : coveragePercentage < 70 ? 'medium' : 'low',
+      projectsUsing: activeProjects.filter((project) => (project.requiredSkills || []).includes(skill)).length,
     };
-  });
-
-  return skillGapAnalysis.sort((a, b) => a.coveragePercentage - b.coveragePercentage);
+  }).sort((left, right) => left.coveragePercentage - right.coveragePercentage);
 }
 
 function getTrainingRecommendations() {
-  const recommendations = [];
-  const highPriorityGaps = analyzeSkillGaps().filter(gap => gap.priority === 'high');
-
-  employees.forEach(employee => {
+  const gaps = analyzeSkillGaps();
+  return employees.map((employee) => {
     const recommendedSkills = [];
-    let reason = '';
     let urgency = 'low';
-
-    const employeeSkills = employee.skills || [];
-
-    // Check current projects for skill requirements
-    const employeeProjects = projects.filter(project => {
-      const teamMembers = project.teamMembers || [];
-      return teamMembers.includes(employee.id) && 
-             (project.status === 'active' || project.status === 'planning');
-    });
-
-    employeeProjects.forEach(project => {
-      const requiredSkills = project.requiredSkills || [];
-      requiredSkills.forEach(skill => {
-        if (!employeeSkills.includes(skill) && !recommendedSkills.includes(skill)) {
+    let reason = 'Boost capability for upcoming work.';
+    const employeeProjects = projects.filter((project) => (project.teamMembers || []).includes(String(employee.id || '')));
+    employeeProjects.forEach((project) => {
+      (project.requiredSkills || []).forEach((skill) => {
+        if (!(employee.skills || []).includes(skill) && !recommendedSkills.includes(skill)) {
           recommendedSkills.push(skill);
-          reason = `Required for project: ${project.name}`;
           urgency = 'high';
+          reason = `Needed for project delivery: ${project.name}`;
         }
       });
     });
-
-    // Check for critical team skill gaps
-    highPriorityGaps.forEach(gap => {
-      if (!employeeSkills.includes(gap.skill) && !recommendedSkills.includes(gap.skill)) {
+    gaps.filter((gap) => gap.priority === 'high').forEach((gap) => {
+      if (!(employee.skills || []).includes(gap.skill) && !recommendedSkills.includes(gap.skill)) {
         recommendedSkills.push(gap.skill);
-        reason = reason || 'Critical team skill gap';
-        urgency = urgency === 'high' ? 'high' : 'medium';
+        if (urgency !== 'high') urgency = 'medium';
       }
     });
-
-    if (recommendedSkills.length > 0) {
-      recommendations.push({
-        employee,
-        recommendedSkills,
-        reason,
-        urgency
-      });
+    if (employee.productivity < 70 && employee.completedTrainings < 2) {
+      urgency = 'high';
+      reason = 'Completion trend suggests structured upskilling support.';
     }
-  });
-
-  return recommendations.sort((a, b) => {
-    const urgencyOrder = { high: 3, medium: 2, low: 1 };
-    return urgencyOrder[b.urgency] - urgencyOrder[a.urgency];
+    if (!recommendedSkills.length) {
+      return null;
+    }
+    return { employee, recommendedSkills: recommendedSkills.slice(0, 3), reason, urgency };
+  }).filter(Boolean).sort((left, right) => {
+    const order = { high: 3, medium: 2, low: 1 };
+    return order[right.urgency] - order[left.urgency];
   });
 }
 
+function updateStatistics() {
+  const gaps = analyzeSkillGaps();
+  const trainingRecommendations = getTrainingRecommendations();
+  document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = gaps.filter((gap) => gap.priority === 'high').length;
+  document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = trainingRecommendations.length;
+  document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = employees.reduce((sum, employee) => sum + (employee.completedTrainings || 0), 0);
+  document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = employees.length
+    ? `${Math.round(employees.reduce((sum, employee) => sum + Number(employee.productivity || 0), 0) / employees.length)}%`
+    : '0%';
+}
+
 function updateSkillGaps() {
-  const skillGapAnalysis = analyzeSkillGaps();
   const container = document.querySelector('.skill-gaps-list');
-  
-  if (skillGapAnalysis.length === 0) {
+  const skillGapAnalysis = analyzeSkillGaps();
+  if (!container) return;
+  if (!skillGapAnalysis.length) {
     container.innerHTML = `
       <div class="empty-state">
         <i class="fas fa-bullseye"></i>
@@ -292,8 +269,7 @@ function updateSkillGaps() {
     `;
     return;
   }
-
-  container.innerHTML = skillGapAnalysis.slice(0, 5).map(gap => `
+  container.innerHTML = skillGapAnalysis.slice(0, 5).map((gap) => `
     <div class="skill-gap-item">
       <div class="gap-header">
         <div class="gap-info">
@@ -307,17 +283,17 @@ function updateSkillGaps() {
       </div>
       <div class="gap-footer">
         <span>${gap.coveragePercentage.toFixed(0)}% coverage</span>
-        <span>${gap.projectsUsing} project${gap.projectsUsing !== 1 ? 's' : ''} need${gap.projectsUsing !== 1 ? '' : 's'} this</span>
+        <span>${gap.projectsUsing} active project${gap.projectsUsing !== 1 ? 's' : ''}</span>
       </div>
     </div>
   `).join('');
 }
 
 function updateTrainingRecommendations() {
-  const recommendations = getTrainingRecommendations();
   const container = document.querySelector('.training-list');
-  
-  if (recommendations.length === 0) {
+  const recommendations = getTrainingRecommendations();
+  if (!container) return;
+  if (!recommendations.length) {
     container.innerHTML = `
       <div class="empty-state">
         <i class="fas fa-book-open"></i>
@@ -327,80 +303,59 @@ function updateTrainingRecommendations() {
     `;
     return;
   }
-
-  container.innerHTML = recommendations.slice(0, 4).map(rec => `
+  container.innerHTML = recommendations.slice(0, 4).map((recommendation) => `
     <div class="training-item">
       <div class="training-header">
         <div class="employee-info">
-          <div class="employee-avatar">
-            ${rec.employee.fullName.split(' ').map(n => n[0]).join('')}
-          </div>
+          <div class="employee-avatar">${recommendation.employee.fullName.split(' ').map((part) => part[0]).join('').slice(0, 2)}</div>
           <div class="employee-details">
-            <div class="employee-name">${rec.employee.fullName}</div>
-            <div class="employee-department">${rec.employee.department}</div>
+            <div class="employee-name">${recommendation.employee.fullName}</div>
+            <div class="employee-department">${recommendation.employee.department || 'Operations'}</div>
           </div>
         </div>
-        <span class="badge ${getUrgencyClass(rec.urgency)}">${rec.urgency}</span>
+        <span class="badge ${getUrgencyClass(recommendation.urgency)}">${recommendation.urgency}</span>
       </div>
       <div class="recommended-skills">
         <div class="skills-label">Recommended Skills:</div>
         <div class="skills-tags">
-          ${rec.recommendedSkills.map(skill => `
-            <span class="skill-tag">${skill}</span>
-          `).join('')}
+          ${recommendation.recommendedSkills.map((skill) => `<span class="skill-tag">${skill}</span>`).join('')}
         </div>
       </div>
-      <div class="training-reason">${rec.reason}</div>
+      <div class="training-reason">${recommendation.reason}</div>
     </div>
   `).join('');
 }
 
 function updateTeamInsights() {
-  const totalSkillsInTeam = new Set(
-    employees.flatMap(emp => emp.skills || [])
-  ).size;
-
-  const multiSkilledMembers = employees.filter(emp => (emp.skills || []).length >= 5).length;
-  const avgSkillsPerMember = employees.length > 0 ? 
-    Math.round(employees.reduce((sum, emp) => sum + (emp.skills || []).length, 0) / employees.length) : 0;
-
-  // Update insight values
-  document.querySelectorAll('.insight-value')[0].textContent = totalSkillsInTeam;
+  const uniqueSkills = new Set(employees.flatMap((employee) => employee.skills || []));
+  const multiSkilledMembers = employees.filter((employee) => (employee.skills || []).length >= 4).length;
+  const avgSkillsPerMember = employees.length ? Math.round(employees.reduce((sum, employee) => sum + (employee.skills || []).length, 0) / employees.length) : 0;
+  document.querySelectorAll('.insight-value')[0].textContent = uniqueSkills.size;
   document.querySelectorAll('.insight-value')[1].textContent = multiSkilledMembers;
   document.querySelectorAll('.insight-value')[2].textContent = avgSkillsPerMember;
 
-  // Update top skills
   const skillCounts = {};
-  employees.forEach(emp => {
-    (emp.skills || []).forEach(skill => {
+  employees.forEach((employee) => {
+    (employee.skills || []).forEach((skill) => {
       skillCounts[skill] = (skillCounts[skill] || 0) + 1;
     });
   });
-
-  const topSkills = Object.entries(skillCounts)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 8);
-
-  const skillsContainer = document.querySelector('.skills-tags');
-  skillsContainer.innerHTML = topSkills.map(([skill, count]) => `
-    <span class="skill-tag">${skill} (${count})</span>
-  `).join('');
+  const topSkills = Object.entries(skillCounts).sort((left, right) => right[1] - left[1]).slice(0, 8);
+  document.querySelector('.top-skills-section .skills-tags').innerHTML = topSkills
+    .map(([skill, count]) => `<span class="skill-tag">${skill} (${count})</span>`)
+    .join('');
 }
 
 function getPriorityClass(priority) {
-  switch (priority) {
-    case 'high': return 'badge-danger';
-    case 'medium': return 'badge-warning';
-    default: return 'badge-success';
-  }
+  if (priority === 'high') return 'badge-danger';
+  if (priority === 'medium') return 'badge-warning';
+  return 'badge-success';
 }
 
 function getUrgencyClass(urgency) {
-  switch (urgency) {
-    case 'high': return 'badge-danger';
-    case 'medium': return 'badge-warning';
-    default: return 'badge-info';
-  }
+  if (urgency === 'high') return 'badge-danger';
+  if (urgency === 'medium') return 'badge-warning';
+  return 'badge-info';
 }
 </script>
 
@@ -447,9 +402,9 @@ function getUrgencyClass(urgency) {
 }
 
 .stat-icon.critical { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.stat-icon.training { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-icon.training { background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); }
 .stat-icon.completed { background: linear-gradient(135deg, #10b981, #047857); }
-.stat-icon.productivity { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.stat-icon.productivity { background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-dark)); }
 
 .stat-content {
   flex: 1;
@@ -586,7 +541,7 @@ function getUrgencyClass(urgency) {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -716,7 +671,7 @@ function getUrgencyClass(urgency) {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
   border-radius: 3px;
   transition: width 0.3s ease;
 }

@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block title %}Admin Dashboard - TaskVise{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/manager_dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
@@ -8,16 +16,15 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">
-                <div class="logo">
-                    <i class="fas fa-tasks"></i>
-                </div>
+                <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
                 <span class="brand-text">TaskVise</span>
             </div>
             <div class="nav-actions">
-                <button class="btn btn-primary" onclick="addEmployeeDialog.open()">
-                    <i class="fas fa-users"></i>
-                    Manage Employees
-                </button>
+                <!-- MongoDB Status Indicator -->
+                <div class="db-status" id="dbStatus" title="Database Connection Status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span class="status-text" id="statusText">Checking...</span>
+                </div>
                 <div class="user-dropdown">
                     <button class="nav-btn user-menu-toggle" id="userMenuToggle">
                         <div class="user-avatar-small">
@@ -176,12 +183,11 @@
 <!-- Toast Container -->
 <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
 
-<!-- Include CSS -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
 <!-- Include JavaScript -->
-<script id="initial-admin-data" type="application/json">{{ ( {'employees': employees or [], 'projects': projects or [], 'tasks': tasks or [], 'stats': stats or {}} )|tojson|safe }}</script>
+<script id="initial-admin-data" type="application/json">{{ ( {'employees': employees or [], 'projects': projects or [], 'tasks': tasks or [], 'stats': stats or {}, 'current_user_id': session.get('user_id'), 'system_settings': system_settings or {}} )|tojson|safe }}</script>
 <script id="recent-activity-data" type="application/json">{{ (recent_activity or [])|tojson|safe }}</script>
 <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/dashboardHelpers.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/add_employee.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/edit_employee.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/createProjectDialog.js') }}"></script>
@@ -189,7 +195,9 @@
 <script src="{{ url_for('static', filename='js/dialogs/editTaskDialog.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/editProjectDialog.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dialogs/employeeDetailsDialog.js') }}"></script>
-<script src="{{ url_for('static', filename='js/form_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/projectDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/taskDetailsDialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs/editProfileDialog.js') }}"></script>
 
 <script>
 // Initialize dashboard

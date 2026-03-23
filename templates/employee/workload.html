@@ -59,8 +59,8 @@
             <div class="stat-content">
                 <div class="stat-info">
                     <p class="stat-label">Help Requests</p>
-                    <p class="stat-value">2</p>
-                    <p class="stat-subtext">pending</p>
+                    <p class="stat-value" id="help-request-count">0</p>
+                    <p class="stat-subtext" id="help-request-subtext">pending</p>
                 </div>
                 <div class="stat-icon">
                     <i class="fas fa-hands-helping"></i>
@@ -132,9 +132,17 @@
             </div>
             <div class="card-content">
                 <div class="help-request">
-                    <p>If you're feeling overwhelmed with your workload, you can request help from your team members.</p>
+                    <p>If you're feeling overwhelmed with your workload, send a real help request to your manager or teammates.</p>
                     
                     <form id="help-request-form">
+                        <input type="hidden" id="help-recipient-type" value="manager">
+                        <input type="hidden" id="help-recipient-id" value="">
+
+                        <div class="help-request-target" id="help-request-target">
+                            <span class="target-label">Sending to:</span>
+                            <span class="target-value">Manager</span>
+                        </div>
+
                         <div class="form-group">
                             <label for="help-task">Select Task</label>
                             <select id="help-task" class="form-input" required>
@@ -178,56 +186,10 @@
             <h3><i class="fas fa-users"></i> Team Availability</h3>
         </div>
         <div class="card-content">
-            <div class="team-availability">
-                <div class="team-member">
-                    <div class="member-info">
-                        <div class="member-avatar">JD</div>
-                        <div class="member-details">
-                            <h4>John Doe</h4>
-                            <p>Senior Developer</p>
-                        </div>
-                    </div>
-                    <div class="member-status">
-                        <span class="badge badge-success">Available</span>
-                        <span class="status-text">Light workload</span>
-                    </div>
-                    <button class="btn btn-outline btn-sm request-collaboration">
-                        <i class="fas fa-user-plus"></i> Request Help
-                    </button>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-info">
-                        <div class="member-avatar">JS</div>
-                        <div class="member-details">
-                            <h4>Jane Smith</h4>
-                            <p>UI/UX Designer</p>
-                        </div>
-                    </div>
-                    <div class="member-status">
-                        <span class="badge badge-warning">Busy</span>
-                        <span class="status-text">Medium workload</span>
-                    </div>
-                    <button class="btn btn-outline btn-sm request-collaboration">
-                        <i class="fas fa-user-plus"></i> Request Help
-                    </button>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-info">
-                        <div class="member-avatar">MB</div>
-                        <div class="member-details">
-                            <h4>Mike Brown</h4>
-                            <p>Backend Developer</p>
-                        </div>
-                    </div>
-                    <div class="member-status">
-                        <span class="badge badge-danger">Very Busy</span>
-                        <span class="status-text">Heavy workload</span>
-                    </div>
-                    <button class="btn btn-outline btn-sm" disabled>
-                        <i class="fas fa-user-plus"></i> Unavailable
-                    </button>
+            <div class="team-availability" id="team-availability-list">
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>Loading team availability...</p>
                 </div>
             </div>
         </div>
@@ -239,41 +201,10 @@
             <h3><i class="fas fa-clock"></i> Pending Help Requests</h3>
         </div>
         <div class="card-content">
-            <div class="help-requests-list">
-                <div class="help-request-item">
-                    <div class="request-header">
-                        <h4>Design Homepage Layout</h4>
-                        <span class="badge badge-warning">Pending</span>
-                    </div>
-                    <div class="request-details">
-                        <p>Need help with responsive design for mobile devices</p>
-                        <div class="request-meta">
-                            <span><i class="fas fa-clock"></i> Requested 2 days ago</span>
-                            <span><i class="fas fa-bullhorn"></i> High urgency</span>
-                        </div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="btn btn-outline btn-sm">View Details</button>
-                        <button class="btn btn-outline btn-sm">Cancel Request</button>
-                    </div>
-                </div>
-                
-                <div class="help-request-item">
-                    <div class="request-header">
-                        <h4>API Documentation</h4>
-                        <span class="badge badge-success">Accepted</span>
-                    </div>
-                    <div class="request-details">
-                        <p>Jane Smith has accepted to help with documentation</p>
-                        <div class="request-meta">
-                            <span><i class="fas fa-clock"></i> Accepted yesterday</span>
-                            <span><i class="fas fa-user"></i> Assisted by Jane Smith</span>
-                        </div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="btn btn-outline btn-sm">View Progress</button>
-                        <button class="btn btn-outline btn-sm">Send Message</button>
-                    </div>
+            <div class="help-requests-list" id="help-requests-list">
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <p>Loading help requests...</p>
                 </div>
             </div>
         </div>
@@ -485,6 +416,32 @@
     line-height: 1.5;
 }
 
+.help-request-target {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid #dbeafe;
+    background: #eff6ff;
+    border-radius: 10px;
+}
+
+.target-label {
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.target-value {
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.target-reset {
+    margin-left: auto;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -584,6 +541,12 @@ textarea.form-input {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.help-request-empty {
+    text-align: center;
+    color: #64748b;
+    padding: 16px 0;
 }
 
 .help-request-item {
@@ -798,64 +761,350 @@ textarea.form-input {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Help request form
     const helpRequestForm = document.getElementById('help-request-form');
-    
+    const helpTask = document.getElementById('help-task');
+    const helpMessage = document.getElementById('help-message');
+    const helpUrgency = document.getElementById('help-urgency');
+    const recipientTypeInput = document.getElementById('help-recipient-type');
+    const recipientIdInput = document.getElementById('help-recipient-id');
+    const helpTarget = document.getElementById('help-request-target');
+    const helpRequestCount = document.getElementById('help-request-count');
+    const helpRequestSubtext = document.getElementById('help-request-subtext');
+    const teamAvailabilityList = document.getElementById('team-availability-list');
+    const helpRequestsList = document.getElementById('help-requests-list');
+
+    let teamInfo = { manager: null, teammates: [] };
+    let helpRequests = [];
+
+    function notify(message, type) {
+        if (window.showToast) {
+            window.showToast(message, type || 'success');
+            return;
+        }
+        alert(message);
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function relativeTime(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return 'Just now';
+        const timestamp = Date.parse(raw.replace(' ', 'T'));
+        if (Number.isNaN(timestamp)) return raw;
+        const diffMinutes = Math.max(1, Math.floor((Date.now() - timestamp) / 60000));
+        if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    }
+
+    function getTaskTitle(taskId) {
+        const fromWindow = (window.__employeeTasks || []).find((task) => String(task.id || '') === String(taskId || ''));
+        if (fromWindow && fromWindow.title) {
+            return fromWindow.title;
+        }
+        if (!helpTask) return '';
+        const selected = Array.from(helpTask.options || []).find((option) => String(option.value || '') === String(taskId || ''));
+        return selected ? selected.textContent.trim() : '';
+    }
+
+    function getRecipientLabel(type, name) {
+        if (name) return name;
+        return type === 'teammate' ? 'Selected teammate' : 'Manager';
+    }
+
+    function setHelpRecipient(type, recipientId, name) {
+        if (recipientTypeInput) recipientTypeInput.value = type || 'manager';
+        if (recipientIdInput) recipientIdInput.value = recipientId || '';
+        if (!helpTarget) return;
+        const label = getRecipientLabel(type, name);
+        helpTarget.innerHTML = `
+            <span class="target-label">Sending to:</span>
+            <span class="target-value">${escapeHtml(label)}</span>
+            ${(type === 'teammate' || recipientId) ? '<button type="button" class="btn btn-outline btn-sm target-reset" data-reset-help-target>Use Manager</button>' : ''}
+        `;
+    }
+
+    function resetHelpRecipient() {
+        if (teamInfo.manager && teamInfo.manager.id) {
+            setHelpRecipient('manager', teamInfo.manager.id, teamInfo.manager.name);
+        } else {
+            setHelpRecipient('manager', '', 'Manager');
+        }
+    }
+
+    function renderTeamAvailability() {
+        if (!teamAvailabilityList) return;
+        const cards = [];
+
+        if (teamInfo.manager) {
+            const initials = String(teamInfo.manager.name || 'M').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+            cards.push(`
+                <div class="team-member">
+                    <div class="member-info">
+                        <div class="member-avatar">${escapeHtml(initials || 'M')}</div>
+                        <div class="member-details">
+                            <h4>${escapeHtml(teamInfo.manager.name || 'Manager')}</h4>
+                            <p>Manager</p>
+                        </div>
+                    </div>
+                    <div class="member-status">
+                        <span class="badge badge-info">Escalation</span>
+                        <span class="status-text">Route help through your manager</span>
+                    </div>
+                    <button class="btn btn-outline btn-sm" data-select-help-target data-recipient-type="manager" data-recipient-id="${escapeHtml(teamInfo.manager.id || '')}" data-recipient-name="${escapeHtml(teamInfo.manager.name || 'Manager')}">
+                        <i class="fas fa-user-tie"></i> Ask Manager
+                    </button>
+                </div>
+            `);
+        }
+
+        (teamInfo.teammates || []).forEach((member) => {
+            const initials = String(member.name || 'T').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+            cards.push(`
+                <div class="team-member">
+                    <div class="member-info">
+                        <div class="member-avatar">${escapeHtml(initials || 'T')}</div>
+                        <div class="member-details">
+                            <h4>${escapeHtml(member.name || 'Teammate')}</h4>
+                            <p>${escapeHtml(member.position || 'Team member')}</p>
+                        </div>
+                    </div>
+                    <div class="member-status">
+                        <span class="badge badge-success">Available</span>
+                        <span class="status-text">Send a collaboration request</span>
+                    </div>
+                    <button class="btn btn-outline btn-sm" data-select-help-target data-recipient-type="teammate" data-recipient-id="${escapeHtml(member.id || '')}" data-recipient-name="${escapeHtml(member.name || 'Teammate')}">
+                        <i class="fas fa-user-plus"></i> Request Help
+                    </button>
+                </div>
+            `);
+        });
+
+        if (!cards.length) {
+            teamAvailabilityList.innerHTML = `
+                <div class="help-request-empty">
+                    <i class="fas fa-users"></i>
+                    <p>No manager or teammates are linked to this account yet.</p>
+                </div>
+            `;
+            resetHelpRecipient();
+            return;
+        }
+
+        teamAvailabilityList.innerHTML = cards.join('');
+    }
+
+    function renderHelpRequests() {
+        if (!helpRequestsList) return;
+        const pendingCount = helpRequests.filter((request) => String(request.status || '') === 'pending').length;
+        if (helpRequestCount) {
+            helpRequestCount.textContent = String(pendingCount);
+        }
+        if (helpRequestSubtext) {
+            helpRequestSubtext.textContent = pendingCount === 1 ? 'pending request' : 'pending requests';
+        }
+
+        if (!helpRequests.length) {
+            helpRequestsList.innerHTML = `
+                <div class="help-request-empty">
+                    <i class="fas fa-inbox"></i>
+                    <p>No help requests submitted yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        helpRequestsList.innerHTML = helpRequests.map((request) => `
+            <div class="help-request-item">
+                <div class="request-header">
+                    <h4>${escapeHtml(request.task_title || 'General workload support')}</h4>
+                    <span class="badge ${request.status === 'pending' ? 'badge-warning' : request.status === 'cancelled' ? 'badge-outline' : 'badge-success'}">${escapeHtml((request.status || 'pending').replace('-', ' '))}</span>
+                </div>
+                <div class="request-details">
+                    <p>${escapeHtml(request.message || '')}</p>
+                    <div class="request-meta">
+                        <span><i class="fas fa-clock"></i> ${escapeHtml(relativeTime(request.created_at))}</span>
+                        <span><i class="fas fa-user"></i> ${escapeHtml(request.recipient_name || 'Manager')}</span>
+                        <span><i class="fas fa-bullhorn"></i> ${escapeHtml((request.urgency || 'medium').toUpperCase())}</span>
+                    </div>
+                </div>
+                <div class="request-actions">
+                    <button class="btn btn-outline btn-sm" type="button" data-view-help-request="${escapeHtml(request.id)}">View Details</button>
+                    ${request.status === 'pending' ? `<button class="btn btn-outline btn-sm" type="button" data-cancel-help-request="${escapeHtml(request.id)}">Cancel Request</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function loadTeamInfo() {
+        try {
+            const response = await fetch('/api/employee/team-info', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Failed to load team info');
+            const data = await response.json();
+            teamInfo = data || { manager: null, teammates: [] };
+            renderTeamAvailability();
+            resetHelpRecipient();
+        } catch (error) {
+            console.error('Failed to load team info:', error);
+            if (teamAvailabilityList) {
+                teamAvailabilityList.innerHTML = `
+                    <div class="help-request-empty">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>Unable to load team availability right now.</p>
+                    </div>
+                `;
+            }
+            resetHelpRecipient();
+        }
+    }
+
+    async function loadHelpRequests() {
+        try {
+            const response = await fetch('/api/employee/help-requests', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Failed to load help requests');
+            const data = await response.json();
+            helpRequests = Array.isArray(data) ? data : (data.requests || []);
+            renderHelpRequests();
+        } catch (error) {
+            console.error('Failed to load help requests:', error);
+            helpRequests = [];
+            renderHelpRequests();
+        }
+    }
+
     if (helpRequestForm) {
         helpRequestForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const formData = {
-                task: document.getElementById('help-task').value,
-                message: document.getElementById('help-message').value,
-                urgency: document.getElementById('help-urgency').value
+            const submitBtn = helpRequestForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn ? submitBtn.innerHTML : '';
+
+            const payload = {
+                task_id: helpTask ? helpTask.value : '',
+                message: helpMessage ? helpMessage.value.trim() : '',
+                urgency: helpUrgency ? helpUrgency.value : 'medium',
+                recipient_type: recipientTypeInput ? recipientTypeInput.value : 'manager',
+                recipient_id: recipientIdInput ? recipientIdInput.value : '',
+                request_type: (recipientTypeInput && recipientTypeInput.value === 'teammate') ? 'collaboration' : 'help'
             };
-            
+
+            if (!payload.task_id || !payload.message) {
+                notify('Select a task and add a help message before submitting.', 'error');
+                return;
+            }
+
             try {
-                // Simulate API call
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    submitBtn.disabled = true;
+                }
+
                 const response = await fetch('/api/employee/help-request', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-                
-                // For demo purposes, we'll just show a success message
-                alert('Help request submitted successfully! Your team has been notified.');
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || 'Unable to send help request');
+                }
+
+                notify(result.message || 'Help request submitted successfully.', 'success');
                 helpRequestForm.reset();
-                
+                resetHelpRecipient();
+                await loadHelpRequests();
             } catch (error) {
                 console.error('Error submitting help request:', error);
-                alert('Error submitting help request. Please try again.');
+                notify(error.message || 'Error submitting help request. Please try again.', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
             }
         });
     }
 
-    // Request collaboration buttons
-    document.querySelectorAll('.request-collaboration').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const memberName = this.closest('.team-member').querySelector('h4').textContent;
-            alert(`Collaboration request sent to ${memberName}! They will be notified of your request.`);
-        });
+    document.addEventListener('click', async function(event) {
+        const targetBtn = event.target.closest('[data-select-help-target]');
+        if (targetBtn) {
+            const recipientType = targetBtn.getAttribute('data-recipient-type') || 'teammate';
+            const recipientId = targetBtn.getAttribute('data-recipient-id') || '';
+            const recipientName = targetBtn.getAttribute('data-recipient-name') || '';
+            setHelpRecipient(recipientType, recipientId, recipientName);
+            if (helpTask && !helpTask.value && helpTask.options.length > 1) {
+                helpTask.selectedIndex = 1;
+            }
+            if (helpMessage && !helpMessage.value.trim()) {
+                const taskTitle = getTaskTitle(helpTask ? helpTask.value : '');
+                helpMessage.value = taskTitle
+                    ? `I need help from ${recipientName} on "${taskTitle}".`
+                    : `I need help from ${recipientName} with my current workload.`;
+            }
+            if (helpRequestForm) {
+                helpRequestForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (helpMessage) {
+                helpMessage.focus();
+            }
+            notify(`Help request prepared for ${recipientName || 'the selected teammate'}.`, 'success');
+            return;
+        }
+
+        const resetBtn = event.target.closest('[data-reset-help-target]');
+        if (resetBtn) {
+            resetHelpRecipient();
+            notify('Help requests will be sent to your manager.', 'success');
+            return;
+        }
+
+        const viewBtn = event.target.closest('[data-view-help-request]');
+        if (viewBtn) {
+            const requestId = viewBtn.getAttribute('data-view-help-request');
+            const requestDetails = helpRequests.find((request) => String(request.id || '') === String(requestId || ''));
+            if (requestDetails) {
+                alert(
+                    `Task: ${requestDetails.task_title || 'General workload support'}\n` +
+                    `Recipient: ${requestDetails.recipient_name || 'Manager'}\n` +
+                    `Urgency: ${(requestDetails.urgency || 'medium').toUpperCase()}\n` +
+                    `Status: ${(requestDetails.status || 'pending').toUpperCase()}\n\n` +
+                    `${requestDetails.message || ''}`
+                );
+            }
+            return;
+        }
+
+        const cancelBtn = event.target.closest('[data-cancel-help-request]');
+        if (cancelBtn) {
+            const requestId = cancelBtn.getAttribute('data-cancel-help-request');
+            if (!requestId) return;
+            if (!confirm('Cancel this help request?')) return;
+            try {
+                const response = await fetch(`/api/employee/help-request/${encodeURIComponent(requestId)}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.error || 'Unable to cancel help request');
+                }
+                notify('Help request cancelled.', 'success');
+                await loadHelpRequests();
+            } catch (error) {
+                console.error('Failed to cancel help request:', error);
+                notify(error.message || 'Unable to cancel help request.', 'error');
+            }
+        }
     });
 
-    // Add loading animation to buttons
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                submitBtn.disabled = true;
-                
-                // Re-enable button after 3 seconds (for demo)
-                setTimeout(() => {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }, 3000);
-            }
-        });
-    });
+    loadTeamInfo();
+    loadHelpRequests();
 });
 </script>

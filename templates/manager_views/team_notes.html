@@ -3,8 +3,8 @@
     <!-- Header Actions -->
     <div class="header-actions">
       <div class="header-info">
-        <h2>Team Collaboration Notes</h2>
-        <p>Share instructions, updates, and important information with your team</p>
+        <h2>{{ 'Policy & Operations Notes' if role == 'hr' else 'Team Collaboration Notes' }}</h2>
+        <p>{{ 'Share policies, updates, and operational information across the workforce.' if role == 'hr' else 'Share instructions, updates, and important information with your team' }}</p>
       </div>
       <button class="btn btn-primary new-note-btn">
         <i class="fas fa-comment"></i>
@@ -17,7 +17,7 @@
       <div class="note-form-card">
         <div class="card-header">
           <div class="card-title" id="formTitle">Create New Note</div>
-          <p class="card-description" id="formDescription">Share important information with your entire team</p>
+          <p class="card-description" id="formDescription">{{ 'Share important information with managers, team leads, and employees' if role == 'hr' else 'Share important information with your entire team' }}</p>
         </div>
         <div class="card-content">
           <div class="form-group">
@@ -446,7 +446,7 @@ function showNotification(message, type) {
 }
 
 .new-note-btn {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--gradient-start), var(--accent-secondary));
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -461,7 +461,7 @@ function showNotification(message, type) {
 
 .new-note-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Note Form */
@@ -538,9 +538,9 @@ function showNotification(message, type) {
 }
 
 .priority-btn.active {
-  background: #3b82f6;
+  background: var(--primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--primary);
 }
 
 .form-actions {
@@ -558,12 +558,12 @@ function showNotification(message, type) {
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: var(--primary);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: var(--primary-dark);
 }
 
 .btn-outline {
@@ -825,7 +825,7 @@ function showNotification(message, type) {
 }
 
 .notification.info {
-  background: #3b82f6;
+  background: var(--primary);
 }
 
 .notification-content {

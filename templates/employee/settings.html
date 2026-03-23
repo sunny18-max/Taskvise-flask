@@ -1,5 +1,3 @@
-{% extends "base.html" %}
-{% block content %}
 <div class="settings-page">
     <div class="page-header animate-slide-up">
         <h1 class="page-title">Settings</h1>
@@ -127,6 +125,7 @@
                             <input 
                                 type="password" 
                                 id="currentPassword" 
+                                class="form-input"
                                 placeholder="Enter current password" 
                                 required
                             >
@@ -142,6 +141,7 @@
                             <input 
                                 type="password" 
                                 id="newPassword" 
+                                class="form-input"
                                 placeholder="Enter new password" 
                                 required 
                                 minlength="6"
@@ -159,6 +159,7 @@
                             <input 
                                 type="password" 
                                 id="confirmPassword" 
+                                class="form-input"
                                 placeholder="Confirm new password" 
                                 required
                             >
@@ -587,220 +588,249 @@ input:checked + .slider:before {
 </style>
 
 <script>
-// Password toggle functionality
-document.querySelectorAll('.password-toggle').forEach(button => {
-    button.addEventListener('click', function() {
-        const targetId = this.getAttribute('data-target');
-        const passwordInput = document.getElementById(targetId);
-        const icon = this.querySelector('i');
-        
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            icon.className = 'fas fa-eye-slash';
-        } else {
-            passwordInput.type = 'password';
-            icon.className = 'fas fa-eye';
-        }
-    });
-});
-
-// Password form submission
-document.getElementById('passwordForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const updateBtn = document.getElementById('updatePasswordBtn');
-    
-    // Validation
-    if (newPassword !== confirmPassword) {
-        showMessage('New passwords do not match!', 'error');
-        return;
-    }
-    
-    if (newPassword.length < 6) {
-        showMessage('Password must be at least 6 characters long!', 'error');
-        return;
-    }
-    
-    // Show loading state
-    const originalText = updateBtn.innerHTML;
-    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-    updateBtn.disabled = true;
-    
-    try {
-        const response = await fetch('/api/employee/password/change', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                currentPassword: currentPassword,
-                newPassword: newPassword,
-                confirmPassword: confirmPassword
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showMessage('Password updated successfully! You can now login with your new password.', 'success');
-            document.getElementById('passwordForm').reset();
-        } else {
-            showMessage(result.message || 'Failed to update password', 'error');
-        }
-    } catch (error) {
-        console.error('Error updating password:', error);
-        showMessage('Error updating password. Please try again.', 'error');
-    } finally {
-        // Restore button state
-        updateBtn.innerHTML = originalText;
-        updateBtn.disabled = false;
-    }
-});
-
-// Save all settings
-document.getElementById('saveSettingsBtn').addEventListener('click', async function() {
-    const saveBtn = document.getElementById('saveSettingsBtn');
-    const originalText = saveBtn.innerHTML;
-    
-    // Show loading state
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    saveBtn.disabled = true;
-    
-    const settings = {
-        emailNotifications: document.getElementById('emailNotifications').checked,
-        pushNotifications: document.getElementById('pushNotifications').checked,
-        taskReminders: document.getElementById('taskReminders').checked,
-        deadlineAlerts: document.getElementById('deadlineAlerts').checked,
-        theme: document.getElementById('theme').value,
-        language: document.getElementById('language').value,
-        timezone: document.getElementById('timezone').value
-    };
-    
-    try {
-        const response = await fetch('/api/employee/settings/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(settings)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showMessage('Settings saved successfully!', 'success');
-        } else {
-            showMessage(result.message || 'Failed to save settings', 'error');
-        }
-    } catch (error) {
-        console.error('Error saving settings:', error);
-        showMessage('Error saving settings. Please try again.', 'error');
-    } finally {
-        // Restore button state
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
-    }
-});
-
-// Export data
-document.getElementById('exportDataBtn').addEventListener('click', async function() {
-    const exportBtn = document.getElementById('exportDataBtn');
-    const originalText = exportBtn.innerHTML;
-    
-    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
-    exportBtn.disabled = true;
-    
-    try {
-        const response = await fetch('/api/employee/data/export');
-        const result = await response.json();
-        
-        if (result.success) {
-            // Create a downloadable file
-            const dataStr = JSON.stringify(result.data, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `taskvise-data-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            showMessage('Data exported successfully!', 'success');
-        } else {
-            showMessage(result.message || 'Failed to export data', 'error');
-        }
-    } catch (error) {
-        console.error('Error exporting data:', error);
-        showMessage('Error exporting data. Please try again.', 'error');
-    } finally {
-        exportBtn.innerHTML = originalText;
-        exportBtn.disabled = false;
-    }
-});
-
-// Import data
-document.getElementById('importDataBtn').addEventListener('click', function() {
-    showMessage('Import functionality will be available soon!', 'success');
-});
-
-// Delete account
-document.getElementById('deleteAccountBtn')?.addEventListener('click', function() {
-    if (confirm('Are you sure you want to request account deletion? This action cannot be undone.')) {
-        showMessage('Account deletion request has been submitted. An administrator will review your request.', 'success');
-    }
-});
-
-// Message display function
-function showMessage(message, type) {
-    const messagesDiv = document.getElementById('settingsMessages');
-    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-    
-    messagesDiv.innerHTML = `
-        <div class="alert alert-${type}">
-            <i class="fas ${icon}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    // Auto-hide after 5 seconds for success messages
-    if (type === 'success') {
-        setTimeout(() => {
-            messagesDiv.innerHTML = '';
-        }, 5000);
-    }
-    
-    // Scroll to messages
-    messagesDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-// Initialize settings from server (you can implement this later)
-async function loadSettings() {
-    try {
-        // You can implement this to load saved settings from the server
-        // const response = await fetch('/api/employee/settings');
-        // const settings = await response.json();
-        
-        // For now, we'll use default values
-        console.log('Loading settings...');
-    } catch (error) {
-        console.error('Error loading settings:', error);
-    }
-}
-
-// Load settings when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    const refs = {
+        passwordForm: document.getElementById('passwordForm'),
+        saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+        exportDataBtn: document.getElementById('exportDataBtn'),
+        importDataBtn: document.getElementById('importDataBtn'),
+        deleteAccountBtn: document.getElementById('deleteAccountBtn'),
+        theme: document.getElementById('theme'),
+        language: document.getElementById('language'),
+        timezone: document.getElementById('timezone'),
+        emailNotifications: document.getElementById('emailNotifications'),
+        pushNotifications: document.getElementById('pushNotifications'),
+        taskReminders: document.getElementById('taskReminders'),
+        deadlineAlerts: document.getElementById('deadlineAlerts'),
+        messages: document.getElementById('settingsMessages'),
+    };
+
+    function setButtonLoading(btn, loadingText, loading) {
+        if (!btn) return;
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.innerHTML;
+        }
+        btn.innerHTML = loading ? loadingText : btn.dataset.originalText;
+        btn.disabled = !!loading;
+    }
+
+    function showMessage(message, type) {
+        if (!refs.messages) return;
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        refs.messages.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas ${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        if (type === 'success') {
+            setTimeout(() => {
+                refs.messages.innerHTML = '';
+            }, 5000);
+        }
+    }
+
+    function currentSettingsPayload() {
+        return {
+            emailNotifications: !!refs.emailNotifications?.checked,
+            pushNotifications: !!refs.pushNotifications?.checked,
+            taskReminders: !!refs.taskReminders?.checked,
+            deadlineAlerts: !!refs.deadlineAlerts?.checked,
+            theme: refs.theme?.value || 'system',
+            language: refs.language?.value || 'en',
+            timezone: refs.timezone?.value || 'UTC'
+        };
+    }
+
+    function applyClientPreferences(payload) {
+        if (window.applyEmployeeTheme) {
+            window.applyEmployeeTheme(payload.theme || 'system');
+        }
+        if (window.applyEmployeeLanguage) {
+            window.applyEmployeeLanguage(payload.language || 'en');
+        }
+    }
+
+    // Password toggle functionality
+    document.querySelectorAll('.password-toggle').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            if (!passwordInput || !icon) return;
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        });
+    });
+
+    if (refs.passwordForm) {
+        refs.passwordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const updateBtn = document.getElementById('updatePasswordBtn');
+
+            if (newPassword !== confirmPassword) {
+                showMessage('New passwords do not match!', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showMessage('Password must be at least 6 characters long!', 'error');
+                return;
+            }
+
+            setButtonLoading(updateBtn, '<i class="fas fa-spinner fa-spin"></i> Updating...', true);
+            try {
+                const response = await fetch('/api/employee/password/change', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword,
+                        confirmPassword
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || !(result.ok || result.success)) {
+                    throw new Error(result.message || 'Failed to update password');
+                }
+                showMessage('Password updated successfully!', 'success');
+                refs.passwordForm.reset();
+            } catch (error) {
+                console.error('Error updating password:', error);
+                showMessage(error.message || 'Error updating password. Please try again.', 'error');
+            } finally {
+                setButtonLoading(updateBtn, '', false);
+            }
+        });
+    }
+
+    if (refs.saveSettingsBtn) {
+        refs.saveSettingsBtn.addEventListener('click', async function() {
+            const payload = currentSettingsPayload();
+            setButtonLoading(refs.saveSettingsBtn, '<i class="fas fa-spinner fa-spin"></i> Saving...', true);
+
+            try {
+                const response = await fetch('/api/employee/settings/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (!response.ok || !(result.ok || result.success)) {
+                    throw new Error(result.message || 'Failed to save settings');
+                }
+                applyClientPreferences(payload);
+                showMessage('Settings saved successfully!', 'success');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showMessage(error.message || 'Error saving settings. Please try again.', 'error');
+            } finally {
+                setButtonLoading(refs.saveSettingsBtn, '', false);
+            }
+        });
+    }
+
+    if (refs.theme) {
+        refs.theme.addEventListener('change', function() {
+            applyClientPreferences(currentSettingsPayload());
+        });
+    }
+    if (refs.language) {
+        refs.language.addEventListener('change', function() {
+            applyClientPreferences(currentSettingsPayload());
+        });
+    }
+
+    if (refs.exportDataBtn) {
+        refs.exportDataBtn.addEventListener('click', async function() {
+            setButtonLoading(refs.exportDataBtn, '<i class="fas fa-spinner fa-spin"></i> Exporting...', true);
+            try {
+                const response = await fetch('/api/employee/data/export', { cache: 'no-store' });
+                const result = await response.json();
+                if (!response.ok || !(result.ok || result.success)) {
+                    throw new Error(result.message || 'Failed to export data');
+                }
+                const dataStr = JSON.stringify(result.data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `taskvise-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showMessage('Data exported successfully!', 'success');
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showMessage(error.message || 'Error exporting data. Please try again.', 'error');
+            } finally {
+                setButtonLoading(refs.exportDataBtn, '', false);
+            }
+        });
+    }
+
+    if (refs.importDataBtn) {
+        refs.importDataBtn.addEventListener('click', function() {
+            showMessage('Import is not available yet.', 'error');
+        });
+    }
+
+    if (refs.deleteAccountBtn) {
+        refs.deleteAccountBtn.addEventListener('click', async function() {
+            if (!confirm('Are you sure you want to request account deletion?')) {
+                return;
+            }
+            setButtonLoading(refs.deleteAccountBtn, '<i class="fas fa-spinner fa-spin"></i> Submitting...', true);
+            try {
+                const response = await fetch('/api/employee/account/delete-request', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok || !(result.ok || result.success)) {
+                    throw new Error(result.message || 'Failed to submit deletion request');
+                }
+                showMessage('Account deletion request submitted successfully.', 'success');
+            } catch (error) {
+                console.error('Delete request error:', error);
+                showMessage(error.message || 'Failed to submit deletion request.', 'error');
+            } finally {
+                setButtonLoading(refs.deleteAccountBtn, '', false);
+            }
+        });
+    }
+
+    async function loadSettings() {
+        try {
+            const response = await fetch('/api/employee/settings', { cache: 'no-store' });
+            const result = await response.json();
+            const settings = result.settings || {};
+            if (response.ok && (result.ok || result.success)) {
+                if (refs.emailNotifications) refs.emailNotifications.checked = !!settings.emailNotifications;
+                if (refs.pushNotifications) refs.pushNotifications.checked = !!settings.pushNotifications;
+                if (refs.taskReminders) refs.taskReminders.checked = !!settings.taskReminders;
+                if (refs.deadlineAlerts) refs.deadlineAlerts.checked = !!settings.deadlineAlerts;
+                if (refs.theme) refs.theme.value = settings.theme || 'system';
+                if (refs.language) refs.language.value = settings.language || 'en';
+                if (refs.timezone) refs.timezone.value = settings.timezone || 'UTC';
+                applyClientPreferences(currentSettingsPayload());
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    }
+
     loadSettings();
-    
-    // Add animation classes
+
     const elements = document.querySelectorAll('.animate-slide-up');
     elements.forEach((el, index) => {
         el.style.animationDelay = `${index * 0.1}s`;
     });
 });
 </script>
-{% endblock %}

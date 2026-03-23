@@ -4,8 +4,11 @@ class LeaveRequestDialog {
         <div class="modal-overlay" id="leave-request-modal">
             <div class="modal">
                 <div class="modal-header">
-                    <h3>Request Leave</h3>
-                    <button class="modal-close">&times;</button>
+                    <div>
+                        <h3>Request Leave</h3>
+                        <p class="modal-subtitle">Submit your leave request for approval.</p>
+                    </div>
+                    <button class="modal-close" type="button" aria-label="Close">&times;</button>
                 </div>
                 <div class="modal-body">
                     <form id="leave-request-form">
@@ -24,8 +27,8 @@ class LeaveRequestDialog {
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-outline" id="leave-cancel">Cancel</button>
-                    <button class="btn-primary" id="leave-submit">Submit Request</button>
+                    <button class="btn btn-outline" id="leave-cancel" type="button">Cancel</button>
+                    <button class="btn btn-primary" id="leave-submit" type="button">Submit Request</button>
                 </div>
             </div>
         </div>`;
@@ -38,6 +41,13 @@ class LeaveRequestDialog {
         modal.addEventListener('click', (e) => { if (e.target === modal) this.close(); });
         modal.querySelector('#leave-cancel').addEventListener('click', (e)=>{ e.preventDefault(); this.close(); });
         modal.querySelector('#leave-submit').addEventListener('click', (e)=>{ e.preventDefault(); this.submit(); });
+        document.addEventListener('keydown', this.handleEscClose, { once: true });
+    }
+    handleEscClose(e) {
+        if (e.key === 'Escape') {
+            const m = document.getElementById('leave-request-modal');
+            if (m) m.remove();
+        }
     }
     async submit() {
         const start = document.getElementById('leave-start').value;

@@ -6,18 +6,23 @@ class AdminDashboard {
         this.tasks = [];
         this.projects = [];
         this.stats = {};
+        this.currentUserId = null;
+        this.systemSettings = {};
         this.init();
     }
 
     init() {
         this.loadInitialData();
         this.setupEventListeners();
+        this.checkDatabaseStatus();
+        // Check database status every 30 seconds
+        setInterval(() => this.checkDatabaseStatus(), 30000);
     }
 
-    async loadInitialData() {
+    async loadInitialData(forceFetch = false) {
         try {
             // Try to seed from JSON script tags first
-            const seeded = this.seedFromScriptTags();
+            const seeded = forceFetch ? false : this.seedFromScriptTags();
             if (!seeded) {
                 await Promise.all([
                     this.loadEmployees(),
@@ -42,6 +47,8 @@ class AdminDashboard {
             this.projects = Array.isArray(json.projects) ? json.projects : [];
             this.tasks = Array.isArray(json.tasks) ? json.tasks : [];
             this.stats = typeof json.stats === 'object' && json.stats ? json.stats : {};
+            this.currentUserId = json.current_user_id || null;
+            this.systemSettings = typeof json.system_settings === 'object' && json.system_settings ? json.system_settings : {};
             return true;
         } catch (e) {
             console.warn('Failed to parse initial admin data:', e);
@@ -49,22 +56,50 @@ class AdminDashboard {
         }
     }
 
+    async checkDatabaseStatus() {
+        try {
+            const response = await fetch('/api/system/health');
+            const health = await response.json();
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (statusDot && statusText) {
+                if (health.mongodb.connected && health.mysql && health.mysql.connected) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'MongoDB + MySQL Ready';
+                } else if (health.mongodb.connected) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'MongoDB Connected';
+                } else if (health.mysql && health.mysql.connected) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'MySQL Connected';
+                } else {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Database Offline';
+                }
+            }
+        } catch (error) {
+            console.warn('Could not check database status:', error);
+            const statusText = document.getElementById('statusText');
+            if (statusText) {
+                statusText.textContent = 'Status Unknown';
+            }
+        }
+    }
+
     async loadEmployees() {
-        // This would be replaced with actual API call
         const response = await this.makeAuthenticatedRequest('/api/admin/employees');
         this.employees = response || [];
         return this.employees;
     }
 
     async loadTasks() {
-        // This would be replaced with actual API call
         const response = await this.makeAuthenticatedRequest('/api/admin/tasks');
         this.tasks = response || [];
         return this.tasks;
     }
 
     async loadProjects() {
-        // This would be replaced with actual API call
         const response = await this.makeAuthenticatedRequest('/api/admin/projects');
         this.projects = response || [];
         return this.projects;
@@ -83,6 +118,11 @@ class AdminDashboard {
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => this.refreshData());
         }
+
+        // Live data refresh each 30 seconds
+        this.liveRefreshInterval = setInterval(() => {
+            this.refreshData();
+        }, 30000);
     }
 
     updateCurrentView() {
@@ -111,47 +151,39 @@ class AdminDashboard {
     }
 
     async refreshData() {
-        this.showNotification('Refreshing data...', 'info');
-        
-        try {
-            await this.loadInitialData();
-            this.showNotification('Data refreshed successfully', 'success');
-        } catch (error) {
-            console.error('Error refreshing data:', error);
-            this.showNotification('Error refreshing data', 'error');
-        }
+        window.location.reload();
     }
 
     async makeAuthenticatedRequest(endpoint, options = {}) {
-        // Simulate API call - replace with actual fetch
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Mock data for demonstration
-                if (endpoint.includes('/employees')) {
-                    resolve([
-                        { id: 1, name: 'John Doe', email: 'john@company.com', position: 'Developer', department: 'Engineering' },
-                        { id: 2, name: 'Jane Smith', email: 'jane@company.com', position: 'Designer', department: 'Design' }
-                    ]);
-                } else if (endpoint.includes('/projects')) {
-                    resolve([
-                        { id: 1, name: 'Website Redesign', status: 'active', department: 'Design' },
-                        { id: 2, name: 'Mobile App', status: 'planning', department: 'Engineering' }
-                    ]);
-                } else if (endpoint.includes('/tasks')) {
-                    resolve([
-                        { id: 1, title: 'Homepage Layout', status: 'completed', priority: 'high' },
-                        { id: 2, title: 'API Integration', status: 'in-progress', priority: 'medium' }
-                    ]);
-                } else if (endpoint.includes('/stats')) {
-                    resolve({
-                        totalEmployees: 24,
-                        activeProjects: 8,
-                        completedTasks: 45,
-                        totalTasks: 67
-                    });
-                }
-            }, 1000);
-        });
+        try {
+            const opts = {
+                method: options.method || 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                },
+                body: options.body ? JSON.stringify(options.body) : undefined,
+            };
+            const response = await fetch(endpoint, opts);
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+            return await response.json();
+        } catch (e) {
+            console.warn('API request failed, using local fallback:', endpoint, e);
+            // fallback for dashboard stats / project / tasks (non-core)
+            if (endpoint.includes('/admin/projects')) {
+                return this.projects;
+            }
+            if (endpoint.includes('/admin/tasks')) {
+                return this.tasks;
+            }
+            if (endpoint.includes('/admin/stats')) {
+                return this.stats;
+            }
+            return [];
+        }
     }
 
     showNotification(message, type = 'info') {

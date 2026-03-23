@@ -1,0 +1,45 @@
+<svg width="960" height="600" viewBox="0 0 960 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="80" y1="80" x2="860" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF6FF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <rect x="22" y="22" width="916" height="556" rx="30" fill="url(#bg2)"/>
+  <rect x="120" y="84" width="720" height="432" rx="24" fill="#FFFFFF" stroke="#BFDBFE"/>
+
+  <circle cx="240" cy="178" r="56" fill="url(#node)"/>
+  <circle cx="480" cy="178" r="56" fill="url(#node)"/>
+  <circle cx="720" cy="178" r="56" fill="url(#node)"/>
+  <circle cx="360" cy="382" r="56" fill="url(#node)"/>
+  <circle cx="600" cy="382" r="56" fill="url(#node)"/>
+
+  <path d="M296 178H424" stroke="#93C5FD" stroke-width="10" stroke-linecap="round"/>
+  <path d="M536 178H664" stroke="#93C5FD" stroke-width="10" stroke-linecap="round"/>
+  <path d="M276 214L330 334" stroke="#93C5FD" stroke-width="10" stroke-linecap="round"/>
+  <path d="M684 214L630 334" stroke="#93C5FD" stroke-width="10" stroke-linecap="round"/>
+  <path d="M416 382H544" stroke="#93C5FD" stroke-width="10" stroke-linecap="round"/>
+
+  <rect x="188" y="256" width="104" height="24" rx="12" fill="#DBEAFE"/>
+  <rect x="428" y="256" width="104" height="24" rx="12" fill="#DBEAFE"/>
+  <rect x="668" y="256" width="104" height="24" rx="12" fill="#DBEAFE"/>
+
+  <circle cx="240" cy="165" r="18" fill="#DBEAFE"/>
+  <rect x="210" y="190" width="60" height="28" rx="14" fill="#DBEAFE"/>
+
+  <circle cx="480" cy="165" r="18" fill="#DBEAFE"/>
+  <rect x="450" y="190" width="60" height="28" rx="14" fill="#DBEAFE"/>
+
+  <circle cx="720" cy="165" r="18" fill="#DBEAFE"/>
+  <rect x="690" y="190" width="60" height="28" rx="14" fill="#DBEAFE"/>
+
+  <circle cx="360" cy="369" r="18" fill="#DBEAFE"/>
+  <rect x="330" y="394" width="60" height="28" rx="14" fill="#DBEAFE"/>
+
+  <circle cx="600" cy="369" r="18" fill="#DBEAFE"/>
+  <rect x="570" y="394" width="60" height="28" rx="14" fill="#DBEAFE"/>
+</svg>

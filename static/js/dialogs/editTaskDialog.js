@@ -1,240 +1,185 @@
-// Edit Task Dialog
-function openEditTaskDialog(taskId, tasks, updateTaskCallback) {
-  const task = (tasks || []).find(t => String(t.id) === String(taskId));
-  if (!task) {
-    showNotification(`Task not found: ${taskId}`, 'error');
-    return;
+(function () {
+  const helpers = () => window.TaskViseDashboardHelpers;
+
+  function closeEditTaskDialog() {
+    const modal = document.getElementById('edit-task-modal');
+    if (modal) {
+      modal.remove();
+    }
   }
 
-  // Create dialog overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'dialog-overlay';
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  `;
+  async function openEditTaskDialog(taskId, tasks, updateTaskCallback) {
+    const h = helpers();
+    const context = h.getDashboardContext();
+    const taskList = Array.isArray(tasks) ? tasks : h.getDashboardCollection('tasks');
+    let employeeList = h.getDashboardCollection('employees');
+    let projectList = h.getDashboardCollection('projects');
+    if (!employeeList.length && context.dashboard && typeof context.dashboard.getEmployees === 'function') {
+      employeeList = await context.dashboard.getEmployees();
+    }
+    if (!projectList.length && context.dashboard && typeof context.dashboard.getProjects === 'function') {
+      projectList = await context.dashboard.getProjects();
+    }
+    const task = (taskList || []).find((item) => String(item.id) === String(taskId));
+    if (!task) {
+      h.notify('Task not found', 'error');
+      return;
+    }
 
-  // Current task data
-  let editedTask = {
-    title: task.title || '',
-    description: task.description || '',
-    priority: task.priority || 'medium',
-    dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-    status: task.status || 'pending',
-    estimatedHours: task.estimatedHours || 0,
-    actualHours: task.actualHours || 0
-  };
-
-  let saving = false;
-
-  // Create dialog content
-  const dialog = document.createElement('div');
-  dialog.className = 'dialog-content';
-  dialog.style.cssText = `
-    background: #ffffff;
-    padding: 24px;
-    border-radius: 12px;
-    width: 92%;
-    max-width: 680px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 45px rgba(2,6,23,0.16);
-  `;
-
-  dialog.innerHTML = `
-    <div class="dialog-header" style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0 0 6px 0; color:#111827;">Edit Task</h2>
-        <p style="color: #6b7280; margin: 0; font-size:0.9rem;">Update task details and status</p>
-      </div>
-      <button id="closeX" aria-label="Close" style="background:none;border:0;color:#64748b;font-size:1.25rem;line-height:1;cursor:pointer;border-radius:8px;padding:2px 6px;">×</button>
-    </div>
-    
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Task Title *</label>
-        <input 
-          type="text" 
-          id="editTaskTitle" 
-          placeholder="Enter task title" 
-          value="${editedTask.title}"
-          style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-        />
-      </div>
-      
-      <div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Description</label>
-        <textarea 
-          id="editTaskDescription" 
-          placeholder="Enter task description"
-          style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; min-height: 80px;"
-        >${editedTask.description}</textarea>
-      </div>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Priority</label>
-          <select 
-            id="editPriority" 
-            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'edit-task-modal';
+    overlay.innerHTML = `
+      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="edit-task-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="edit-task-title">Edit Task</h3>
+            <p class="modal-subtitle">Adjust ownership, timing, and delivery status.</p>
+          </div>
+          <button class="modal-close" type="button" aria-label="Close">&times;</button>
         </div>
-        
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status</label>
-          <select 
-            id="editStatus" 
-            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-          >
-            <option value="pending">Pending</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="overdue">Overdue</option>
-          </select>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="et-title">Task Title *</label>
+            <input id="et-title" class="form-input" type="text" value="${h.escapeHtml(task.title || '')}">
+          </div>
+          <div class="form-group">
+            <label for="et-description">Description</label>
+            <textarea id="et-description" class="form-textarea">${h.escapeHtml(task.description || '')}</textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="et-assignee">Assignee</label>
+              <select id="et-assignee" class="form-select">
+                <option value="">Unassigned</option>
+                ${employeeList
+                  .map((employee) => `<option value="${h.escapeHtml(employee.id)}">${h.escapeHtml(employee.name)} - ${h.escapeHtml(employee.position || employee.role || '')}</option>`)
+                  .join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="et-project">Project</label>
+              <select id="et-project" class="form-select">
+                <option value="">No project</option>
+                ${projectList
+                  .map((project) => `<option value="${h.escapeHtml(project.id)}">${h.escapeHtml(project.name)}</option>`)
+                  .join('')}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="et-priority">Priority</label>
+              <select id="et-priority" class="form-select">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="et-status">Status</label>
+              <select id="et-status" class="form-select">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="review">In Review</option>
+                <option value="completed">Completed</option>
+                <option value="blocked">Blocked</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="et-due-date">Due Date *</label>
+              <input id="et-due-date" class="form-input" type="date" value="${h.escapeHtml(task.due_date || task.dueDate || '')}">
+            </div>
+            <div class="form-group">
+              <label for="et-estimated-hours">Estimated Hours</label>
+              <input id="et-estimated-hours" class="form-input" type="number" min="0" value="${h.escapeHtml(String(task.estimated_hours || task.estimatedHours || 0))}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="et-actual-hours">Actual Hours</label>
+              <input id="et-actual-hours" class="form-input" type="number" min="0" value="${h.escapeHtml(String(task.actual_hours || task.actualHours || 0))}">
+            </div>
+            <div class="form-group">
+              <label for="et-progress">Progress</label>
+              <input id="et-progress" class="form-input" type="number" min="0" max="100" value="${h.escapeHtml(String(task.progress || 0))}">
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Due Date *</label>
-          <input 
-            type="date" 
-            id="editDueDate" 
-            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-          />
-        </div>
-        
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: 500;">Estimated Hours</label>
-          <input 
-            type="number" 
-            id="editEstimatedHours" 
-            placeholder="0" 
-            style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-          />
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" type="button">Cancel</button>
+          <button class="btn btn-primary" type="button" id="et-save">Save Changes</button>
         </div>
       </div>
+    `;
 
-      <div>
-        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Actual Hours</label>
-        <input 
-          type="number" 
-          id="editActualHours" 
-          placeholder="0" 
-          style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px;"
-        />
-      </div>
-    </div>
-    
-    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-      <button id="cancelBtn" style="padding: 10px 16px; border: 1px solid #d1d5db; border-radius: 8px; background: white; cursor: pointer; font-weight:600;">Cancel</button>
-      <button id="updateBtn" style="padding: 10px 16px; border: none; border-radius: 8px; background: #3b82f6; color: white; cursor: pointer; font-weight:600;">Update Task</button>
-    </div>
-    <div id="errorHint" style="display:none;margin-top:10px;color:#b91c1c;font-size:0.85rem;">Please fill in required fields.</div>
-  `;
+    document.body.appendChild(overlay);
 
-  overlay.appendChild(dialog);
-  document.body.appendChild(overlay);
+    document.getElementById('et-assignee').value = String(task.assignee_id || '');
+    document.getElementById('et-project').value = String(task.project_id || '');
+    document.getElementById('et-priority').value = String(task.priority || 'medium').toLowerCase();
+    document.getElementById('et-status').value = String(task.status || 'pending').toLowerCase();
 
-  // Event listeners
-  document.getElementById('editTaskTitle').addEventListener('input', (e) => {
-    editedTask.title = e.target.value;
-    validateForm();
-  });
-  
-  document.getElementById('editTaskDescription').addEventListener('input', (e) => {
-    editedTask.description = e.target.value;
-  });
-  
-  document.getElementById('editPriority').addEventListener('change', (e) => {
-    editedTask.priority = e.target.value;
-  });
-  
-  document.getElementById('editStatus').addEventListener('change', (e) => {
-    editedTask.status = e.target.value;
-  });
-  
-  document.getElementById('editDueDate').addEventListener('input', (e) => {
-    editedTask.dueDate = e.target.value;
-    validateForm();
-  });
-  
-  document.getElementById('editEstimatedHours').addEventListener('input', (e) => {
-    editedTask.estimatedHours = parseInt(e.target.value) || 0;
-  });
-  
-  document.getElementById('editActualHours').addEventListener('input', (e) => {
-    editedTask.actualHours = parseInt(e.target.value) || 0;
-  });
-
-  function validateForm() {
-    const isValid = editedTask.title.trim() !== '' && editedTask.dueDate !== '';
-    document.getElementById('updateBtn').disabled = saving || !isValid;
-  }
-
-  // Update task function
-  async function updateTask() {
-    if (saving) return;
-
-    saving = true;
-    document.getElementById('updateBtn').disabled = true;
-    document.getElementById('updateBtn').textContent = 'Updating...';
-
-    try {
-      const success = await updateTaskCallback(taskId, editedTask);
-      if (success) {
-        showNotification('Task updated successfully', 'success');
-        closeDialog();
-      } else {
-        throw new Error('Failed to update task');
+    const close = () => closeEditTaskDialog();
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+    overlay.querySelector('.btn-outline').addEventListener('click', close);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        close();
       }
-    } catch (error) {
-      console.error('Error updating task:', error);
-      showNotification(error.message || 'Failed to update task', 'error');
-    } finally {
-      saving = false;
-      document.getElementById('updateBtn').disabled = false;
-      document.getElementById('updateBtn').textContent = 'Update Task';
-    }
+    });
+
+    document.getElementById('et-save').addEventListener('click', async () => {
+      const payload = {
+        title: document.getElementById('et-title').value.trim(),
+        description: document.getElementById('et-description').value.trim(),
+        assignee_id: document.getElementById('et-assignee').value,
+        project_id: document.getElementById('et-project').value,
+        priority: document.getElementById('et-priority').value,
+        status: document.getElementById('et-status').value,
+        dueDate: document.getElementById('et-due-date').value,
+        estimatedHours: document.getElementById('et-estimated-hours').value,
+        actualHours: document.getElementById('et-actual-hours').value,
+        progress: document.getElementById('et-progress').value,
+      };
+
+      if (!payload.title || !payload.dueDate) {
+        h.notify('Task title and due date are required.', 'error');
+        return;
+      }
+
+      const saveButton = document.getElementById('et-save');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+
+      try {
+        if (typeof updateTaskCallback === 'function') {
+          const ok = await updateTaskCallback(taskId, payload);
+          if (!ok) {
+            throw new Error('Failed to update task');
+          }
+        } else {
+          await h.requestJson(`${context.apiBase}/tasks/${encodeURIComponent(taskId)}`, {
+            method: 'PUT',
+            body: payload,
+          });
+        }
+        h.notify('Task updated successfully', 'success');
+        close();
+        await h.refreshView();
+      } catch (error) {
+        console.error(error);
+        h.notify(error.message || 'Failed to update task', 'error');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Changes';
+      }
+    });
   }
 
-  function closeDialog() {
-    document.body.removeChild(overlay);
-  }
-
-  document.getElementById('cancelBtn').addEventListener('click', closeDialog);
-  document.getElementById('closeX').addEventListener('click', closeDialog);
-  document.getElementById('updateBtn').addEventListener('click', updateTask);
-  
-  // Close on overlay click
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      closeDialog();
-    }
-  });
-
-  // ESC to close, Enter to submit (except in textarea)
-  dialog.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeDialog();
-    if (e.key === 'Enter' && e.target.tagName.toLowerCase() !== 'textarea') {
-      e.preventDefault();
-      if (!document.getElementById('updateBtn').disabled) updateTask();
-    }
-  });
-
-  validateForm();
-}
-
-window.openEditTaskDialog = openEditTaskDialog;
+  window.openEditTaskDialog = openEditTaskDialog;
+})();

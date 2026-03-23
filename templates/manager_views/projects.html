@@ -7,11 +7,17 @@
                 <div class="project-info">
                     <h3 class="project-title">{{ project.name }}</h3>
                     <p class="project-description">{{ project.description or 'No description provided' }}</p>
+                    {% if project.team_name %}
+                    <p class="project-team-badge">{{ project.team_name }}</p>
+                    {% endif %}
                 </div>
                 <div class="project-actions">
                     <span class="status-badge {{ project.status }}">
                         {{ project.status|title }}
                     </span>
+                    <button class="btn-icon" onclick="openProjectDetails('{{ project.id }}')" title="View Project Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
                     <button class="btn-icon" onclick="editProject('{{ project.id }}')" title="Edit Project">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -98,22 +104,23 @@
 </div>
 
 <script>
-function ensureProjectDialogLoaded() {
+function ensureDialogScript(kind, src) {
     return new Promise((resolve, reject) => {
-        if (window.openEditProjectDialog) return resolve();
-        const existing = document.querySelector('script[data-dialog="editProject"]');
+        if (kind === 'editProject' && window.openEditProjectDialog) return resolve();
+        if (kind === 'projectDetails' && window.openProjectDetailsDialog) return resolve();
+        const existing = document.querySelector(`script[data-dialog="${kind}"]`);
         if (existing) {
             existing.addEventListener('load', () => resolve());
-            existing.addEventListener('error', () => reject(new Error('Failed to load editProjectDialog.js')));
+            existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)));
             return;
         }
         const script = document.createElement('script');
-        script.src = '/static/js/dialogs/editProjectDialog.js?v=' + Date.now();
+        script.src = src + '?v=' + Date.now();
         script.async = true;
         script.defer = true;
-        script.dataset.dialog = 'editProject';
+        script.dataset.dialog = kind;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load editProjectDialog.js'));
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
         document.head.appendChild(script);
     });
 }
@@ -123,7 +130,7 @@ async function editProject(projectId) {
         // Get current projects data
         const projects = await window.managerDashboard.getProjects();
         const employees = await window.managerDashboard.getEmployees();
-        await ensureProjectDialogLoaded();
+        await ensureDialogScript('editProject', '/static/js/dialogs/editProjectDialog.js');
         
         // Call the edit project dialog function
         if (window.openEditProjectDialog) {
@@ -172,6 +179,7 @@ function deleteProject(projectId) {
                 .then(success => {
                     if (success) {
                         showNotification('Project deleted successfully', 'success');
+                        window.location.reload();
                     } else {
                         showNotification('Failed to delete project', 'error');
                     }
@@ -186,10 +194,6 @@ function deleteProject(projectId) {
     }
 }
 
-function openCreateProjectDialog() {
-    showNotification('Create project feature coming soon', 'info');
-}
-
 function showNotification(message, type = 'info') {
     if (window.managerDashboard) {
         window.managerDashboard.showNotification(message, type);
@@ -198,8 +202,27 @@ function showNotification(message, type = 'info') {
     }
 }
 
+function openProjectDetails(projectId) {
+    Promise.all([
+        window.managerDashboard && window.managerDashboard.getProjects ? window.managerDashboard.getProjects() : Promise.resolve([]),
+        window.managerDashboard && window.managerDashboard.getEmployees ? window.managerDashboard.getEmployees() : Promise.resolve([]),
+        window.managerDashboard && window.managerDashboard.getTasks ? window.managerDashboard.getTasks() : Promise.resolve([]),
+        ensureDialogScript('projectDetails', '/static/js/dialogs/projectDetailsDialog.js')
+    ]).then(([projects, employees, tasks]) => {
+        if (window.openProjectDetailsDialog) {
+            window.openProjectDetailsDialog(projectId, projects, employees, tasks);
+        } else {
+            showNotification('Project details dialog not loaded', 'error');
+        }
+    }).catch((error) => {
+        console.error('Error opening project details dialog:', error);
+        showNotification('Failed to open project details dialog', 'error');
+    });
+}
+
 // Preload dialog (non-blocking)
-ensureProjectDialogLoaded().catch(()=>{});
+ensureDialogScript('editProject', '/static/js/dialogs/editProjectDialog.js').catch(()=>{});
+ensureDialogScript('projectDetails', '/static/js/dialogs/projectDetailsDialog.js').catch(()=>{});
 </script>
 
 <style>
@@ -234,7 +257,7 @@ ensureProjectDialogLoaded().catch(()=>{});
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(90deg, var(--gradient-start), var(--accent-secondary));
 }
 
 .project-card:hover {
@@ -274,6 +297,18 @@ ensureProjectDialogLoaded().catch(()=>{});
     overflow: hidden;
 }
 
+.project-team-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.65rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
 .project-actions {
     display: flex;
     align-items: center;
@@ -296,9 +331,9 @@ ensureProjectDialogLoaded().catch(()=>{});
     border-color: #bbf7d0;
 }
 .status-badge.active { 
-    background: #dbeafe; 
-    color: #1d4ed8; 
-    border-color: #93c5fd;
+    background: rgba(var(--primary-rgb), 0.12); 
+    color: var(--primary-dark); 
+    border-color: rgba(var(--primary-rgb), 0.28);
 }
 .status-badge.planning { 
     background: #fef3c7; 
@@ -371,7 +406,7 @@ ensureProjectDialogLoaded().catch(()=>{});
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
     border-radius: 3px;
     transition: width 0.3s ease;
 }
@@ -408,7 +443,7 @@ ensureProjectDialogLoaded().catch(()=>{});
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #3b82f6;
+    color: var(--primary);
     font-size: 0.8rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
@@ -446,16 +481,16 @@ ensureProjectDialogLoaded().catch(()=>{});
 }
 
 .btn-primary {
-    background: #3b82f6;
+    background: var(--primary);
     color: white;
-    border-color: #3b82f6;
+    border-color: var(--primary);
 }
 
 .btn-primary:hover {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Empty State */

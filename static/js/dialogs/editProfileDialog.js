@@ -36,8 +36,8 @@ class EditProfileDialog {
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn-outline" id="ep-cancel">Cancel</button>
-          <button class="btn-primary" id="ep-save">Save</button>
+          <button class="btn btn-outline" id="ep-cancel" type="button">Cancel</button>
+          <button class="btn btn-primary" id="ep-save" type="button">Save</button>
         </div>
       </div>
     </div>`;
@@ -49,6 +49,7 @@ class EditProfileDialog {
     modal.querySelector('#ep-save').addEventListener('click', (e)=>{ e.preventDefault(); this.submit(); });
   }
   async submit() {
+    const dashboard = window.adminDashboard || window.managerDashboard || window.teamLeadDashboard;
     const payload = {
       name: document.getElementById('prof-name').value,
       email: document.getElementById('prof-email').value,
@@ -61,8 +62,8 @@ class EditProfileDialog {
       const res = await fetch('/api/employee/profile/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       const ok = res.ok;
       if (!ok) throw new Error('Failed');
-      if (window.managerDashboard && window.managerDashboard.showNotification) {
-        window.managerDashboard.showNotification('Profile updated successfully','success');
+      if (dashboard && dashboard.showNotification) {
+        dashboard.showNotification('Profile updated successfully','success');
       } else if (window.showToast) {
         showToast('Profile updated','success');
       } else {
@@ -70,18 +71,26 @@ class EditProfileDialog {
       }
       this.close();
       // Refresh data so profile view reflects updates
-      if (window.managerDashboard && typeof window.managerDashboard.refreshData === 'function') {
-        window.managerDashboard.refreshData();
+      if (dashboard && typeof dashboard.refreshData === 'function') {
+        dashboard.refreshData();
       }
-      // Navigate to /manager/profile to ensure server-rendered values update
-      if (window.location.pathname !== '/manager/profile') {
-        window.location.href = '/manager/profile';
+      // Navigate to the active role's profile route to ensure server-rendered values update
+      let profilePath = '/manager/profile';
+      if (window.location.pathname.startsWith('/admin/')) {
+        profilePath = '/admin/profile';
+      } else if (window.location.pathname.startsWith('/hr/')) {
+        profilePath = '/hr/profile';
+      } else if (window.location.pathname.startsWith('/teamlead/')) {
+        profilePath = '/teamlead/profile';
+      }
+      if (window.location.pathname !== profilePath) {
+        window.location.href = profilePath;
       } else {
         window.location.reload();
       }
     } catch(e) {
-      if (window.managerDashboard && window.managerDashboard.showNotification) {
-        window.managerDashboard.showNotification('Failed to update profile','error');
+      if (dashboard && dashboard.showNotification) {
+        dashboard.showNotification('Failed to update profile','error');
       } else if (window.showToast) {
         showToast('Failed to update profile','error');
       } else {

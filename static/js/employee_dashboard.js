@@ -1,7 +1,172 @@
 // Employee Dashboard JavaScript
+const EMPLOYEE_TRANSLATIONS = {
+    en: {},
+    es: {
+        'Overview': 'Resumen',
+        'My Tasks': 'Mis tareas',
+        'My Projects': 'Mis proyectos',
+        'Workload & Help': 'Carga y ayuda',
+        'Leave Management': 'Gestión de permisos',
+        'Reports': 'Informes',
+        'Notifications': 'Notificaciones',
+        'Profile': 'Perfil',
+        'Settings': 'Ajustes',
+        'Dashboard Overview': 'Resumen del panel',
+        "Welcome back! Here's what's happening today.": 'Bienvenido de nuevo. Esto es lo que sucede hoy.',
+        'Manage your assigned tasks and track progress': 'Gestiona tus tareas asignadas y su progreso',
+        'Track and manage your assigned projects': 'Sigue y gestiona tus proyectos asignados',
+        'Monitor your workload and request assistance when needed': 'Monitorea tu carga y solicita ayuda cuando sea necesario',
+        'Manage your leave requests and calendar': 'Gestiona tus solicitudes de permiso y calendario',
+        'View your performance reports and analytics': 'Consulta tus informes y analíticas',
+        'Stay updated with your notifications': 'Mantente al día con tus notificaciones',
+        'View and manage your personal information': 'Ver y gestionar información personal',
+        'Customize your preferences and account settings': 'Personaliza tus preferencias y ajustes de cuenta',
+    },
+    fr: {
+        'Overview': 'Aperçu',
+        'My Tasks': 'Mes tâches',
+        'My Projects': 'Mes projets',
+        'Workload & Help': 'Charge et aide',
+        'Leave Management': 'Gestion des congés',
+        'Reports': 'Rapports',
+        'Notifications': 'Notifications',
+        'Profile': 'Profil',
+        'Settings': 'Paramètres',
+        'Dashboard Overview': 'Aperçu du tableau de bord',
+        "Welcome back! Here's what's happening today.": "Bon retour. Voici ce qui se passe aujourd'hui.",
+        'Manage your assigned tasks and track progress': 'Gérez vos tâches assignées et suivez la progression',
+        'Track and manage your assigned projects': 'Suivez et gérez vos projets assignés',
+        'Monitor your workload and request assistance when needed': "Surveillez votre charge et demandez de l'aide si besoin",
+        'Manage your leave requests and calendar': 'Gérez vos demandes de congé et calendrier',
+        'View your performance reports and analytics': 'Consultez vos rapports et analyses',
+        'Stay updated with your notifications': 'Restez informé avec vos notifications',
+        'View and manage your personal information': 'Voir et gérer vos informations personnelles',
+        'Customize your preferences and account settings': 'Personnalisez vos préférences et paramètres de compte',
+    },
+    de: {
+        'Overview': 'Übersicht',
+        'My Tasks': 'Meine Aufgaben',
+        'My Projects': 'Meine Projekte',
+        'Workload & Help': 'Auslastung & Hilfe',
+        'Leave Management': 'Urlaubsverwaltung',
+        'Reports': 'Berichte',
+        'Notifications': 'Benachrichtigungen',
+        'Profile': 'Profil',
+        'Settings': 'Einstellungen',
+        'Dashboard Overview': 'Dashboard-Übersicht',
+        "Welcome back! Here's what's happening today.": 'Willkommen zurück! Das passiert heute.',
+        'Manage your assigned tasks and track progress': 'Verwalte deine zugewiesenen Aufgaben und den Fortschritt',
+        'Track and manage your assigned projects': 'Verfolge und verwalte deine zugewiesenen Projekte',
+        'Monitor your workload and request assistance when needed': 'Überwache deine Auslastung und bitte bei Bedarf um Hilfe',
+        'Manage your leave requests and calendar': 'Verwalte deine Urlaubsanträge und Kalender',
+        'View your performance reports and analytics': 'Sieh dir Leistungsberichte und Analysen an',
+        'Stay updated with your notifications': 'Bleibe mit Benachrichtigungen auf dem Laufenden',
+        'View and manage your personal information': 'Persönliche Informationen ansehen und verwalten',
+        'Customize your preferences and account settings': 'Präferenzen und Kontoeinstellungen anpassen',
+    }
+};
+
+let activeEmployeeLanguage = localStorage.getItem('taskvise_employee_language') || 'en';
+
+function tEmployee(text) {
+    const bundle = EMPLOYEE_TRANSLATIONS[activeEmployeeLanguage] || EMPLOYEE_TRANSLATIONS.en;
+    return bundle[text] || text;
+}
+
+function resolveThemeMode(theme) {
+    const raw = String(theme || 'system').toLowerCase();
+    if (raw === 'dark' || raw === 'light') return raw;
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+
+function applyEmployeeTheme(theme = 'system') {
+    const mode = String(theme || 'system').toLowerCase();
+    const resolved = resolveThemeMode(mode);
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.documentElement.setAttribute('data-theme-mode', mode);
+    localStorage.setItem('taskvise_employee_theme', mode);
+}
+
+function applyEmployeeLanguage(language = 'en') {
+    const lang = EMPLOYEE_TRANSLATIONS[language] ? language : 'en';
+    activeEmployeeLanguage = lang;
+    localStorage.setItem('taskvise_employee_language', lang);
+    document.documentElement.setAttribute('lang', lang);
+
+    const labelMap = [
+        ['a[href="/employee/overview"] span', 'Overview'],
+        ['a[href="/employee/tasks"] span', 'My Tasks'],
+        ['a[href="/employee/projects"] span', 'My Projects'],
+        ['a[href="/employee/workload"] span', 'Workload & Help'],
+        ['a[href="/employee/leave"] span', 'Leave Management'],
+        ['a[href="/employee/reports"] span', 'Reports'],
+        ['a[href="/employee/notifications"] span', 'Notifications'],
+        ['a[href="/employee/profile"] span', 'Profile'],
+        ['a[href="/employee/settings"] span', 'Settings'],
+        ['.dropdown-item[data-view="profile"] span', 'Profile'],
+        ['.dropdown-item[data-view="settings"] span', 'Settings'],
+    ];
+
+    labelMap.forEach(([selector, key]) => {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = tEmployee(key);
+    });
+
+    const titleElement = document.getElementById('page-title');
+    const subtitleElement = document.getElementById('page-subtitle');
+    if (titleElement) {
+        const base = titleElement.getAttribute('data-base-value') || titleElement.textContent.trim();
+        titleElement.setAttribute('data-base-value', base);
+        titleElement.textContent = tEmployee(base);
+    }
+    if (subtitleElement) {
+        const base = subtitleElement.getAttribute('data-base-value') || subtitleElement.textContent.trim();
+        subtitleElement.setAttribute('data-base-value', base);
+        subtitleElement.textContent = tEmployee(base);
+    }
+}
+
+async function loadUserPreferences() {
+    const storedTheme = localStorage.getItem('taskvise_employee_theme') || 'system';
+    const storedLanguage = localStorage.getItem('taskvise_employee_language') || 'en';
+    applyEmployeeTheme(storedTheme);
+    applyEmployeeLanguage(storedLanguage);
+
+    try {
+        const response = await fetch('/api/employee/settings', { cache: 'no-store' });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (!(result.ok || result.success)) return;
+        const settings = result.settings || {};
+        applyEmployeeTheme(settings.theme || storedTheme);
+        applyEmployeeLanguage(settings.language || storedLanguage);
+    } catch (_error) {
+        // Keep local preferences if server settings are unavailable.
+    }
+}
+
+window.applyEmployeeTheme = applyEmployeeTheme;
+window.applyEmployeeLanguage = applyEmployeeLanguage;
+
+if (!window.__employeeThemeMediaWatcherBound && window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = () => {
+        const mode = localStorage.getItem('taskvise_employee_theme') || 'system';
+        if (mode === 'system') applyEmployeeTheme('system');
+    };
+    if (typeof mq.addEventListener === 'function') {
+        mq.addEventListener('change', listener);
+    } else if (typeof mq.addListener === 'function') {
+        mq.addListener(listener);
+    }
+    window.__employeeThemeMediaWatcherBound = true;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Employee Dashboard Initialized');
-    
+
+    loadUserPreferences();
+
     // Initialize dashboard
     initDashboard();
     
@@ -31,7 +196,25 @@ function setupEventListeners() {
     // Menu toggle for mobile
     const menuToggle = document.getElementById('menuToggle');
     if (menuToggle) {
-        menuToggle.addEventListener('click', toggleSidebar);
+        menuToggle.addEventListener('click', function(event) {
+            toggleSidebar(event);
+        });
+    }
+
+    const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeSidebar();
+        });
+    }
+
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function() {
+            closeSidebar();
+        });
     }
     
     // User dropdown
@@ -49,6 +232,18 @@ function setupEventListeners() {
     document.addEventListener('click', function() {
         if (userDropdown) {
             userDropdown.classList.remove('show');
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeSidebar();
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        if (!isMobileSidebarViewport()) {
+            closeSidebar();
         }
     });
     
@@ -101,6 +296,7 @@ function setupNavigationListeners() {
                 const parentSection = this.closest('.nav-section');
                 if (parentSection) parentSection.classList.toggle('active');
             }
+            if (isMobileSidebarViewport()) closeSidebar();
             if (href && href !== '#') window.location.href = href;
         });
     });
@@ -117,6 +313,7 @@ function setupNavigationListeners() {
             
             console.log('Submenu clicked:', view, filter, href);
             
+            if (isMobileSidebarViewport()) closeSidebar();
             if (href && href !== '#') {
                 window.location.href = href;
             }
@@ -197,15 +394,49 @@ function updatePageTitle(view) {
     const titleElement = document.getElementById('page-title');
     const subtitleElement = document.getElementById('page-subtitle');
     
-    if (titleElement) titleElement.textContent = pageInfo.title;
-    if (subtitleElement) subtitleElement.textContent = pageInfo.subtitle;
+    if (titleElement) {
+        titleElement.setAttribute('data-base-value', pageInfo.title);
+        titleElement.textContent = tEmployee(pageInfo.title);
+    }
+    if (subtitleElement) {
+        subtitleElement.setAttribute('data-base-value', pageInfo.subtitle);
+        subtitleElement.textContent = tEmployee(pageInfo.subtitle);
+    }
 }
 
-function toggleSidebar() {
+function isMobileSidebarViewport() {
+    return window.innerWidth <= 1024;
+}
+
+function setSidebarOpen(isOpen) {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('active', !!isOpen);
+    if (overlay) {
+        overlay.classList.toggle('active', !!isOpen);
     }
+}
+
+function closeSidebar() {
+    setSidebarOpen(false);
+}
+
+function toggleSidebar(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (!isMobileSidebarViewport()) {
+        closeSidebar();
+        return;
+    }
+
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    setSidebarOpen(!sidebar.classList.contains('active'));
 }
 
 function loadOverviewData() {
@@ -234,10 +465,11 @@ function loadOverviewData() {
                 project: t.project_id || '',
                 priority: (t.priority||'medium'),
                 dueDate: t.due_date,
-                status: t.status||'pending'
+                status: t.status||'pending',
+                progress: parseInt(t.progress) || 0
             }));
         const activeProjectsList = projects.filter(p => (p.status||'planning') !== 'completed').slice(0,5).map(p => ({
-            id: p.id, name: p.name||'Unnamed', description: p.description||'', status: p.status||'planning', progress: 0
+            id: p.id, name: p.name||'Unnamed', description: p.description||'', status: p.status||'planning', progress: parseInt(p.progress) || 0
         }));
 
         const html = `
@@ -306,7 +538,7 @@ function loadOverviewData() {
                 <div class="card-body">
                     <div class="task-list">
                         ${recentTasks.map(task => `
-                            <div class="task-item" onclick="viewTask(${task.id})">
+                            <div class="task-item" onclick="viewTask('${task.id}')">
                                 <div class="task-info">
                                     <div class="task-title">${task.title}</div>
                                     <div class="task-project">${task.project || ''}</div>
@@ -334,7 +566,7 @@ function loadOverviewData() {
                 <div class="card-body">
                     <div class="project-list">
                         ${activeProjectsList.map(project => `
-                            <div class="project-item" onclick="viewProject(${project.id})">
+                            <div class="project-item" onclick="viewProject('${project.id}')">
                                 <div class="project-info">
                                     <div class="project-name">${project.name}</div>
                                     <div class="project-description">${project.description}</div>
@@ -424,13 +656,13 @@ async function loadTasksData(filter = null) {
                         <span><i class="far fa-calendar"></i> ${task.due_date ? 'Due: '+formatDate(task.due_date) : ''}</span>
                     </div>
                     <div class="task-actions">
-                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); updateTaskStatus('${task.id}', 'in-progress')">
+                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); startEmployeeTaskTimer('${task.id}')">
                             <i class="fas fa-play"></i> Start
                         </button>
                         <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); updateTaskStatus('${task.id}', 'completed')">
                             <i class="fas fa-check"></i> Complete
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); requestTaskHelp(${task.id})">
+                        <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); requestTaskHelp('${task.id}')">
                             <i class="fas fa-question-circle"></i> Need Help
                         </button>
                     </div>
@@ -506,10 +738,10 @@ async function loadProjectsData(filter = null) {
                     </div>
                     
                     <div class="project-actions">
-                        <button class="btn btn-sm btn-primary" onclick="viewProject(${project.id})">
+                        <button class="btn btn-sm btn-primary" onclick="viewProject('${project.id}')">
                             <i class="fas fa-eye"></i> View Details
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="viewProjectTasks(${project.id})">
+                        <button class="btn btn-sm btn-outline" onclick="viewProjectTasks('${project.id}')">
                             <i class="fas fa-list"></i> Tasks
                         </button>
                     </div>
@@ -585,7 +817,7 @@ function applyTaskFilters() {
                 <span><i class="far fa-calendar"></i> ${task.due_date ? 'Due: '+formatDate(task.due_date) : ''}</span>
             </div>
             <div class="task-actions">
-                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); updateTaskStatus('${task.id}', 'in-progress')">
+                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); startEmployeeTaskTimer('${task.id}')">
                     <i class="fas fa-play"></i> Start
                 </button>
                 <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); updateTaskStatus('${task.id}', 'completed')">
@@ -935,50 +1167,60 @@ function loadReportsData() {
 function loadNotificationsData() {
     const contentArea = document.getElementById('dashboard-view');
     if (!contentArea) return;
-    
-    const notificationsData = [
-        { id: 1, type: 'task', title: 'New Task Assigned', message: 'You have been assigned "Website Design Review"', time: '2 hours ago', read: false },
-        { id: 2, type: 'project', title: 'Project Update', message: 'Website Redesign project deadline updated', time: '1 day ago', read: false },
-        { id: 3, type: 'system', title: 'System Maintenance', message: 'Scheduled maintenance this weekend', time: '2 days ago', read: true }
-    ];
-    
-    const html = `
-        <div class="notifications-content">
-            <div class="content-card">
-                <div class="card-header">
-                    <h3><i class="fas fa-bell"></i> Notifications</h3>
-                    <button class="btn btn-outline" onclick="markAllAsRead()">
-                        <i class="fas fa-check-double"></i> Mark All as Read
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="notifications-list">
-                        ${notificationsData.length > 0 ? notificationsData.map(notification => `
-                            <div class="notification-item ${notification.read ? 'read' : 'unread'}" onclick="viewNotification(${notification.id})">
-                                <div class="notification-icon">
-                                    <i class="fas fa-${notification.type === 'task' ? 'tasks' : notification.type === 'project' ? 'target' : 'cog'}"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <div class="notification-title">${notification.title}</div>
-                                    <div class="notification-message">${notification.message}</div>
-                                    <div class="notification-time">${notification.time}</div>
-                                </div>
-                                ${!notification.read ? `<div class="notification-badge"></div>` : ''}
+
+    fetch('/api/employee/notifications', { cache: 'no-store' })
+        .then((response) => {
+            if (!response.ok) throw new Error('Failed to load notifications');
+            return response.json();
+        })
+        .then((notificationsData) => {
+            const html = `
+                <div class="notifications-content">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bell"></i> Notifications</h3>
+                            <button class="btn btn-outline" onclick="markAllAsRead()">
+                                <i class="fas fa-check-double"></i> Mark All as Read
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="notifications-list">
+                                ${notificationsData.length > 0 ? notificationsData.map(notification => `
+                                    <div class="notification-item ${notification.is_read ? 'read' : 'unread'}" onclick="viewNotification('${notification.id}')">
+                                        <div class="notification-icon">
+                                            <i class="fas fa-${notification.type === 'task' ? 'tasks' : notification.type === 'project' ? 'target' : notification.type === 'leave' ? 'calendar-check' : 'cog'}"></i>
+                                        </div>
+                                        <div class="notification-content">
+                                            <div class="notification-title">${notification.title}</div>
+                                            <div class="notification-message">${notification.message}</div>
+                                            <div class="notification-time">${notification.created_at || 'Just now'}</div>
+                                        </div>
+                                        ${!notification.is_read ? `<div class="notification-badge"></div>` : ''}
+                                    </div>
+                                `).join('') : `
+                                    <div class="empty-state">
+                                        <i class="fas fa-bell-slash"></i>
+                                        <h3>No notifications</h3>
+                                        <p class="empty-subtext">You're all caught up!</p>
+                                    </div>
+                                `}
                             </div>
-                        `).join('') : `
-                            <div class="empty-state">
-                                <i class="fas fa-bell-slash"></i>
-                                <h3>No notifications</h3>
-                                <p class="empty-subtext">You're all caught up!</p>
-                            </div>
-                        `}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    `;
-    
-    contentArea.innerHTML = html;
+            `;
+            contentArea.innerHTML = html;
+        })
+        .catch((error) => {
+            console.error(error);
+            contentArea.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <h3>Unable to load notifications</h3>
+                    <p class="empty-subtext">Please try again in a moment.</p>
+                </div>
+            `;
+        });
 }
 
 function loadProfileData() {
@@ -1206,11 +1448,19 @@ function loadSettingsData() {
 }
 
 function updateNotificationBadges() {
-    // Sample notification count
-    const notificationCount = 3;
-    
     const badge = document.getElementById('notification-badge');
-    if (badge) badge.textContent = notificationCount;
+    if (!badge) return;
+
+    fetch('/api/employee/notifications', { cache: 'no-store' })
+        .then((response) => (response.ok ? response.json() : []))
+        .then((rows) => {
+            const list = Array.isArray(rows) ? rows : [];
+            const unread = list.filter((item) => !Boolean(item.is_read)).length;
+            badge.textContent = String(unread);
+        })
+        .catch(() => {
+            badge.textContent = '0';
+        });
 }
 
 function updateWorkloadIndicator() {
@@ -1553,22 +1803,143 @@ function createTask() {
     closeModal(event);
 }
 
+function escapeMarkup(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+async function getEmployeeProjectContext() {
+    let projects = Array.isArray(window.__employeeProjects) ? window.__employeeProjects : [];
+    let tasks = Array.isArray(window.__employeeTasks) ? window.__employeeTasks : [];
+
+    if (!projects.length) {
+        projects = await fetch('/api/employee/projects').then(r => r.json()).catch(() => []);
+        window.__employeeProjects = projects;
+    }
+
+    if (!tasks.length) {
+        tasks = await fetch('/api/employee/tasks').then(r => r.json()).catch(() => []);
+        window.__employeeTasks = tasks;
+    }
+
+    return { projects, tasks };
+}
+
+function getProjectProgress(project, tasksForProject) {
+    const explicitProgress = Number.parseInt(project?.progress, 10);
+    if (Number.isFinite(explicitProgress)) return explicitProgress;
+    if (!tasksForProject.length) return 0;
+    const completed = tasksForProject.filter(t => (t.status || '').toLowerCase() === 'completed').length;
+    return Math.round((completed / tasksForProject.length) * 100);
+}
+
 // Additional functions for the new sections
-function viewProjectTasks(projectId) {
-    console.log('Viewing project tasks:', projectId);
-    showToast(`Opening tasks for project ${projectId}...`, 'success');
+async function viewProjectTasks(projectId) {
+    const pid = String(projectId);
+    const { projects, tasks } = await getEmployeeProjectContext();
+    const project = projects.find(p => String(p.id) === pid);
+    const projectTasks = tasks.filter(t => String(t.project_id) === pid);
+
+    const title = project?.name || `Project ${pid}`;
+    const taskHtml = projectTasks.length ? projectTasks.map(task => `
+        <div class="task-item">
+            <span class="task-name">${escapeMarkup(task.title || 'Untitled Task')}</span>
+            <span class="task-assignee">${escapeMarkup(task.assignee_name || task.assignee_id || 'Unassigned')}</span>
+            <span class="task-status-badge ${(task.status || 'pending').toLowerCase()}">${escapeMarkup(task.status || 'pending')}</span>
+        </div>
+    `).join('') : `
+        <div class="empty-state">
+            <i class="fas fa-list"></i>
+            <h3>No tasks linked</h3>
+            <p class="empty-subtext">This project does not have assigned tasks yet.</p>
+        </div>
+    `;
+
+    showModal(`
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal modal-lg" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>${escapeMarkup(title)} Tasks</h3>
+                    <button class="modal-close" onclick="closeModal(event)">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="project-tasks">
+                        ${taskHtml}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeModal(event)">Close</button>
+                </div>
+            </div>
+        </div>
+    `);
 }
 
-function requestManagerHelp() {
-    showToast('Help request sent to manager', 'success');
+function getEmployeeTaskRecord(taskId) {
+    return (window.__employeeTasks || []).find((task) => String(task.id || '') === String(taskId || '')) || null;
 }
 
-function requestTeamHelp() {
-    showToast('Team collaboration request sent', 'success');
+async function submitEmployeeHelpRequest(payload, successMessage) {
+    try {
+        const response = await fetch('/api/employee/help-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload || {})
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || 'Unable to submit help request');
+        }
+        showToast(result.message || successMessage || 'Help request sent', 'success');
+        return result;
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || 'Unable to submit help request', 'error');
+        throw error;
+    }
 }
 
-function requestExtension() {
-    showToast('Extension request submitted', 'success');
+function requestManagerHelp(taskId = '') {
+    const task = getEmployeeTaskRecord(taskId);
+    return submitEmployeeHelpRequest({
+        task_id: task ? task.id : '',
+        message: task
+            ? `I need help with "${task.title || 'this task'}". Please review priorities or suggest support.`
+            : 'I need help with my current workload and priorities.',
+        urgency: 'medium',
+        recipient_type: 'manager',
+        request_type: 'help'
+    }, 'Help request sent to manager');
+}
+
+function requestTeamHelp(taskId = '') {
+    const task = getEmployeeTaskRecord(taskId);
+    return submitEmployeeHelpRequest({
+        task_id: task ? task.id : '',
+        message: task
+            ? `I need collaboration support on "${task.title || 'this task'}".`
+            : 'I need collaboration support on my current workload.',
+        urgency: 'medium',
+        recipient_type: 'teammate',
+        request_type: 'collaboration'
+    }, 'Team collaboration request sent');
+}
+
+function requestExtension(taskId = '') {
+    const task = getEmployeeTaskRecord(taskId);
+    return submitEmployeeHelpRequest({
+        task_id: task ? task.id : '',
+        message: task
+            ? `I need additional time to complete "${task.title || 'this task'}".`
+            : 'I need a deadline extension for my current workload.',
+        urgency: 'medium',
+        recipient_type: 'manager',
+        request_type: 'extension'
+    }, 'Extension request submitted');
 }
 
 function cancelLeaveRequest(requestId) {
@@ -1588,12 +1959,30 @@ function generateTimeReport() {
 }
 
 function markAllAsRead() {
-    showToast('All notifications marked as read', 'success');
+    fetch('/api/employee/notifications/read-all', { method: 'POST' })
+        .then((response) => {
+            if (!response.ok) throw new Error('Failed to update notifications');
+            showToast('All notifications marked as read', 'success');
+            loadNotificationsData();
+            updateNotificationBadge();
+        })
+        .catch((error) => {
+            console.error(error);
+            showToast('Unable to update notifications', 'error');
+        });
 }
 
 function viewNotification(notificationId) {
-    console.log('Viewing notification:', notificationId);
-    showToast(`Opening notification ${notificationId}...`, 'success');
+    fetch(`/api/employee/notifications/${encodeURIComponent(notificationId)}/read`, { method: 'POST' })
+        .then((response) => {
+            if (!response.ok) throw new Error('Failed to update notification');
+            loadNotificationsData();
+            updateNotificationBadge();
+        })
+        .catch((error) => {
+            console.error(error);
+            showToast('Unable to open notification', 'error');
+        });
 }
 
 function updateSetting(setting, value) {
@@ -1601,33 +1990,203 @@ function updateSetting(setting, value) {
     showToast(`Setting updated: ${setting}`, 'success');
 }
 
-// Placeholder functions for future implementation
-function viewTask(taskId) {
-    console.log('Viewing task:', taskId);
-    showToast(`Opening task ${taskId}...`, 'success');
+async function startEmployeeTaskTimer(taskId) {
+    try {
+        const response = await fetch('/api/employee/tasks/start-timer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_id: taskId })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to start task timer');
+        }
+        showToast(result.already_running ? 'Task timer is already running' : 'Task timer started', 'success');
+
+        const path = window.location.pathname;
+        if (path.includes('/employee/tasks')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            loadTasksData(urlParams.get('filter'));
+        } else {
+            loadOverviewData();
+        }
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || 'Failed to start task timer', 'error');
+    }
 }
 
-function viewProject(projectId) {
-    console.log('Viewing project:', projectId);
-    showToast(`Opening project ${projectId}...`, 'success');
+async function viewTask(taskId) {
+    const tid = String(taskId || '').trim();
+    let tasks = Array.isArray(window.__employeeTasks) ? window.__employeeTasks : [];
+    let projects = Array.isArray(window.__employeeProjects) ? window.__employeeProjects : [];
+
+    if (!tasks.length) {
+        tasks = await fetch('/api/employee/tasks', { cache: 'no-store' }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        window.__employeeTasks = tasks;
+    }
+    if (!projects.length) {
+        projects = await fetch('/api/employee/projects', { cache: 'no-store' }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        window.__employeeProjects = projects;
+    }
+
+    const task = (tasks || []).find((item) => String(item.id || '') === tid);
+    if (!task) {
+        showToast('Task details are unavailable.', 'error');
+        return;
+    }
+    if (typeof window.openTaskDetailsDialog === 'function') {
+        window.openTaskDetailsDialog(tid, tasks, [], projects);
+        return;
+    }
+    showToast('Task details dialog is unavailable.', 'error');
 }
 
-function updateTaskStatus(taskId, status) {
-    console.log(`Updating task ${taskId} to ${status}`);
-    showToast(`Task status updated to ${status}`, 'success');
+async function viewProject(projectId) {
+    const pid = String(projectId);
+    const { projects, tasks } = await getEmployeeProjectContext();
+    const project = projects.find(p => String(p.id) === pid);
+
+    if (!project) {
+        showToast('Project details are unavailable.', 'error');
+        return;
+    }
+
+    const projectTasks = tasks.filter(t => String(t.project_id) === pid);
+    const progress = getProjectProgress(project, projectTasks);
+    const completed = projectTasks.filter(t => (t.status || '').toLowerCase() === 'completed').length;
+    const dueDate = project.endDate || project.end_date || '';
+    const startDate = project.startDate || project.start_date || '';
+
+    showModal(`
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal modal-lg" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div>
+                        <h3>${escapeMarkup(project.name || 'Untitled Project')}</h3>
+                        <p class="modal-subtitle">${escapeMarkup(project.description || 'No description provided.')}</p>
+                    </div>
+                    <button class="modal-close" onclick="closeModal(event)">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="project-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">Status</div>
+                            <div class="stat-value">${escapeMarkup(project.status || 'planning')}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Tasks</div>
+                            <div class="stat-value">${completed}/${projectTasks.length}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Progress</div>
+                            <div class="stat-value">${progress}%</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Deadline</div>
+                            <div class="stat-value">${dueDate ? formatDate(dueDate) : 'N/A'}</div>
+                        </div>
+                    </div>
+                    <div class="project-dates">
+                        <div class="date-item">
+                            <i class="fas fa-play-circle"></i>
+                            <span>Start: ${startDate ? formatDate(startDate) : 'N/A'}</span>
+                        </div>
+                        <div class="date-item">
+                            <i class="fas fa-flag-checkered"></i>
+                            <span>End: ${dueDate ? formatDate(dueDate) : 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="viewProjectTasks('${escapeMarkup(pid)}')">
+                        <i class="fas fa-list"></i> View Tasks
+                    </button>
+                    <button class="btn btn-primary" onclick="closeModal(event)">Close</button>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+async function updateTaskStatus(taskId, status) {
+    try {
+        const resp = await fetch('/api/employee/tasks/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task_id: taskId, status })
+        });
+        if (!resp.ok) throw new Error('Update failed');
+        showToast('Task updated', 'success');
+
+        const path = window.location.pathname;
+        if (path.includes('/employee/tasks')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const filter = urlParams.get('filter');
+            loadTasksData(filter);
+        } else if (document.querySelector('.projects-grid')) {
+            loadProjectsData();
+        } else {
+            loadOverviewData();
+        }
+    } catch (e) {
+        showToast('Failed to update task', 'error');
+    }
 }
 
 function requestTaskHelp(taskId) {
-    console.log(`Requesting help for task ${taskId}`);
-    showToast('Help request sent to manager', 'success');
+    return requestManagerHelp(taskId);
 }
 
 function applyTaskFilters() {
-    console.log('Applying task filters...');
-    const search = document.getElementById('taskSearch')?.value;
-    const status = document.getElementById('statusFilter')?.value;
-    const priority = document.getElementById('priorityFilter')?.value;
-    
-    console.log('Filters:', { search, status, priority });
-    showToast('Filters applied', 'success');
+    const search = (document.getElementById('taskSearch')?.value || '').toLowerCase();
+    const status = document.getElementById('statusFilter')?.value || '';
+    const priority = document.getElementById('priorityFilter')?.value || '';
+    const tasks = (window.__employeeTasks || []).slice();
+    const filtered = tasks.filter(t => {
+        const matchesSearch = !search || (t.title || '').toLowerCase().includes(search) || (t.description || '').toLowerCase().includes(search);
+        const matchesStatus = !status || (t.status || '') === status;
+        const matchesPriority = !priority || (t.priority || '') === priority;
+        return matchesSearch && matchesStatus && matchesPriority;
+    });
+
+    const list = document.querySelector('.task-list');
+    if (!list) return;
+    list.innerHTML = filtered.length ? filtered.map(task => `
+        <div class="task-card" onclick="viewTask('${task.id}')">
+            <div class="task-card-header">
+                <h3 class="task-title">${task.title || 'Untitled Task'}</h3>
+                <div class="task-badges">
+                    <span class="badge badge-${(task.priority||'medium') === 'high' ? 'danger' : (task.priority||'medium') === 'medium' ? 'warning' : 'success'}">
+                        ${(task.priority||'medium')} priority
+                    </span>
+                    <span class="badge badge-outline">
+                        ${(task.status||'pending')}
+                    </span>
+                </div>
+            </div>
+            <div class="task-description">${task.description || ''}</div>
+            <div class="task-meta">
+                <span><i class="fas fa-project-diagram"></i> ${task.project_id || ''}</span>
+                <span><i class="far fa-calendar"></i> ${task.due_date ? 'Due: ' + formatDate(task.due_date) : ''}</span>
+            </div>
+            <div class="task-actions">
+                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); startEmployeeTaskTimer('${task.id}')">
+                    <i class="fas fa-play"></i> Start
+                </button>
+                <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); updateTaskStatus('${task.id}', 'completed')">
+                    <i class="fas fa-check"></i> Complete
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); requestTaskHelp('${task.id}')">
+                    <i class="fas fa-question-circle"></i> Need Help
+                </button>
+            </div>
+        </div>
+    `).join('') : `
+        <div class="empty-state">
+            <i class="fas fa-tasks"></i>
+            <h3>No tasks found</h3>
+            <p class="empty-subtext">No tasks match your filters</p>
+        </div>
+    `;
 }

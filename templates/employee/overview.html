@@ -759,55 +759,57 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Add animation to progress bars
-    const progressBars = document.querySelectorAll('.progress-fill');
-    
-    progressBars.forEach(bar => {
-        const originalWidth = bar.style.width;
-        bar.style.width = '0%';
-        
-        setTimeout(() => {
-            bar.style.width = originalWidth;
-        }, 500);
-    });
-
-    // Add click handlers for task items
-    document.querySelectorAll('.task-item').forEach(item => {
-        item.style.cursor = 'pointer';
-        item.addEventListener('click', function() {
-            // In a real app, this would navigate to task details
-            console.log('Task clicked:', this.querySelector('h4').textContent);
-        });
-    });
-
-    // Add click handlers for project items
-    document.querySelectorAll('.project-item').forEach(item => {
-        item.style.cursor = 'pointer';
-        item.addEventListener('click', function() {
-            // In a real app, this would navigate to project details
-            console.log('Project clicked:', this.querySelector('h4').textContent);
-        });
-    });
-
-    // Update real-time data (simulated)
-    function updateRealTimeData() {
-        // Simulate real-time updates
-        setTimeout(() => {
-            const productivity = document.getElementById('productivity');
-            const productivityBar = document.getElementById('productivity-bar');
-            
-            if (productivity && productivityBar) {
-                const currentValue = parseInt(productivity.textContent);
-                if (currentValue < 100) {
-                    const newValue = Math.min(currentValue + 5, 100);
-                    productivity.textContent = newValue + '%';
-                    productivityBar.style.width = newValue + '%';
-                }
-            }
-        }, 3000);
+    function normalizeStatus(value) {
+        const raw = String(value || '').trim().toLowerCase();
+        if (raw === 'in progress') return 'in-progress';
+        return raw || 'pending';
     }
 
-    // Initialize real-time updates
-    updateRealTimeData();
+    function computeOverdue(tasks) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return tasks.filter((task) => {
+            const status = normalizeStatus(task.status);
+            if (status === 'completed') return false;
+            const dueRaw = String(task.due_date || task.deadline || '').trim();
+            if (!dueRaw) return false;
+            const due = new Date(dueRaw);
+            return !Number.isNaN(due.getTime()) && due < today;
+        }).length;
+    }
+
+    function updateSummary(tasks, projects) {
+        const total = tasks.length;
+        const completed = tasks.filter((t) => normalizeStatus(t.status) === 'completed').length;
+        const overdue = computeOverdue(tasks);
+        const activeProjects = projects.filter((p) => {
+            const status = String(p.status || '').toLowerCase();
+            return status === 'active' || status === 'planning';
+        }).length;
+        const productivityValue = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        const totalEl = document.getElementById('total-tasks');
+        const completedEl = document.getElementById('completed-tasks');
+        const productivityEl = document.getElementById('productivity');
+        const productivityBarEl = document.getElementById('productivity-bar');
+        const activeProjectsEl = document.getElementById('active-projects');
+        const overdueEl = document.getElementById('overdue-tasks');
+
+        if (totalEl) totalEl.textContent = String(total);
+        if (completedEl) completedEl.textContent = String(completed);
+        if (productivityEl) productivityEl.textContent = `${productivityValue}%`;
+        if (productivityBarEl) productivityBarEl.style.width = `${productivityValue}%`;
+        if (activeProjectsEl) activeProjectsEl.textContent = String(activeProjects);
+        if (overdueEl) overdueEl.textContent = String(overdue);
+    }
+
+    Promise.all([
+        fetch('/api/employee/tasks', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : [])),
+        fetch('/api/employee/projects', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : []))
+    ]).then(([tasks, projects]) => {
+        updateSummary(Array.isArray(tasks) ? tasks : [], Array.isArray(projects) ? projects : []);
+    }).catch((error) => {
+        console.error('Failed to refresh overview metrics:', error);
+    });
 });
 </script>

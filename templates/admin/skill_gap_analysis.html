@@ -1,77 +1,62 @@
 <div class="view-content">
-    <div class="skill-gap-container">
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
+    <div class="analytics-page">
+        <section class="stats-grid">
+            <article class="stat-card elevated">
                 <div class="stat-content">
                     <div>
-                        <div class="stat-value">{{ projects|length }}</div>
-                        <div class="stat-label">Total Projects</div>
+                        <div class="stat-value" id="skill-gap-projects">{{ skill_gap.summary.projects_analyzed|default(0) }}</div>
+                        <div class="stat-label">Projects Analyzed</div>
                     </div>
-                    <div class="stat-icon blue">
-                        <i class="fas fa-project-diagram"></i>
-                    </div>
+                    <div class="stat-icon blue"><i class="fas fa-project-diagram"></i></div>
                 </div>
-            </div>
-
-            <div class="stat-card">
+            </article>
+            <article class="stat-card elevated">
                 <div class="stat-content">
                     <div>
-                        <div class="stat-value" id="high-priority-gaps">0</div>
+                        <div class="stat-value" id="high-priority-gaps">{{ skill_gap.summary.high|default(0) }}</div>
                         <div class="stat-label">High Priority Gaps</div>
                     </div>
-                    <div class="stat-icon red">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
+                    <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
                 </div>
-            </div>
-
-            <div class="stat-card">
+            </article>
+            <article class="stat-card elevated">
                 <div class="stat-content">
                     <div>
                         <div class="stat-value">{{ employees|length }}</div>
-                        <div class="stat-label">Total Employees</div>
+                        <div class="stat-label">Skilled Employees</div>
                     </div>
-                    <div class="stat-icon green">
-                        <i class="fas fa-users"></i>
-                    </div>
+                    <div class="stat-icon green"><i class="fas fa-users"></i></div>
                 </div>
-            </div>
-
-            <div class="stat-card">
+            </article>
+            <article class="stat-card elevated">
                 <div class="stat-content">
                     <div>
-                        <div class="stat-value" id="avg-skill-match">0%</div>
-                        <div class="stat-label">Avg. Skill Match</div>
+                        <div class="stat-value" id="avg-skill-match">{{ skill_gap.summary.avg_match_rate|default(0) }}%</div>
+                        <div class="stat-label">Average Match</div>
                     </div>
-                    <div class="stat-icon purple">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
+                    <div class="stat-icon purple"><i class="fas fa-brain"></i></div>
                 </div>
-            </div>
-        </div>
+            </article>
+        </section>
 
-        <!-- Filters -->
-        <div class="card">
+        <section class="card analytics-panel">
             <div class="card-content">
                 <div class="filters-grid">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="skill-search" placeholder="Search projects or skills...">
+                        <input type="text" id="skill-search" placeholder="Search project, company, or skills">
                     </div>
-
                     <div class="filter-group">
-                        <label>Project</label>
+                        <label for="project-filter">Project</label>
                         <select id="project-filter" class="form-select">
                             <option value="all">All Projects</option>
-                            {% for project in projects %}
-                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% for item in skill_gap_rows %}
+                            <option value="{{ item.project_id }}">{{ item.project_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
-
                     <div class="filter-group">
-                        <label>Gap Severity</label>
+                        <label for="severity-filter">Severity</label>
                         <select id="severity-filter" class="form-select">
                             <option value="all">All Severities</option>
                             <option value="high">High</option>
@@ -79,28 +64,23 @@
                             <option value="low">Low</option>
                         </select>
                     </div>
-
                     <div class="filter-group">
-                        <label>Department</label>
+                        <label for="department-filter">Department</label>
                         <select id="department-filter" class="form-select">
                             <option value="all">All Departments</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% for department in departments %}
+                            <option value="{{ department }}">{{ department }}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Skill Gaps Table -->
-        <div class="card">
+        <section class="card analytics-panel">
             <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-search"></i>
-                    Skill Gap Analysis
-                </h3>
-                <p class="card-description">Overview of missing skills across all projects with recommendations</p>
+                <h3 class="card-title"><i class="fas fa-search"></i> Project Skill Gap Matrix</h3>
+                <p class="card-description">Required capabilities inferred from project scope, team mix, and linked task descriptions.</p>
             </div>
             <div class="card-content">
                 <div class="table-container">
@@ -112,404 +92,172 @@
                                 <th>Available Skills</th>
                                 <th>Missing Skills</th>
                                 <th>Match Rate</th>
-                                <th>Gap Severity</th>
+                                <th>Severity</th>
                                 <th>Recommendation</th>
                             </tr>
                         </thead>
                         <tbody id="skill-gaps-body">
-                            <tr>
-                                <td colspan="7" class="empty-table">
-                                    <div class="empty-state small">
-                                        <i class="fas fa-check-circle"></i>
-                                        <p>No skill gaps found</p>
-                                        <p class="empty-description">All skill requirements are currently met across projects</p>
-                                    </div>
-                                </td>
-                            </tr>
+                            {% if skill_gap_rows %}
+                                {% for item in skill_gap_rows %}
+                                <tr
+                                    class="skill-gap-row"
+                                    data-project-id="{{ item.project_id }}"
+                                    data-project="{{ item.project_name|lower }}"
+                                    data-department="{{ item.department|lower }}"
+                                    data-severity="{{ item.gap_severity }}"
+                                    data-search="{{ (item.project_name ~ ' ' ~ item.company ~ ' ' ~ (item.required_skills|join(' ')) ~ ' ' ~ (item.available_skills|join(' ')) ~ ' ' ~ (item.missing_skills|join(' ')))|lower }}"
+                                >
+                                    <td>
+                                        <div class="analytics-item-title">{{ item.project_name }}</div>
+                                        <div class="analytics-item-subtitle">{{ item.company }} • {{ item.department }} • {{ item.team_members_count }} people</div>
+                                    </td>
+                                    <td>
+                                        <div class="skills-list">
+                                            {% for skill in item.required_skills %}
+                                            <span class="skill-badge skill-required">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.available_skills %}
+                                        <div class="skills-list">
+                                            {% for skill in item.available_skills %}
+                                            <span class="skill-badge skill-available">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <span class="detail-empty">No verified skills on the assigned team.</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.missing_skills %}
+                                        <div class="skills-list">
+                                            {% for skill in item.missing_skills %}
+                                            <span class="skill-badge skill-missing">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <span class="detail-empty">No missing skills.</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="match-rate">
+                                            <div class="match-bar">
+                                                <div class="match-fill {{ 'high' if item.match_rate >= 80 else 'medium' if item.match_rate >= 55 else 'low' }}" style="width: {{ item.match_rate }}%"></div>
+                                            </div>
+                                            <span>{{ item.match_rate }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="severity-badge severity-{{ item.gap_severity }}">{{ item.gap_severity }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="recommendation">{{ item.recommendation }}</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr id="no-skill-gaps-row">
+                                    <td colspan="7" class="empty-table">
+                                        <div class="empty-state small">
+                                            <i class="fas fa-check-circle"></i>
+                                            <p>No skill gaps found.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Visualization Section -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Skill Gap Visualization
-                </h3>
-                <p class="card-description">Visual representation of missing skills across projects</p>
-            </div>
-            <div class="card-content">
-                <div class="visualization-grid">
-                    <!-- Missing Skills Chart -->
-                    <div class="chart-section">
-                        <h4>Missing Skills by Project</h4>
-                        <div class="bar-chart" id="missing-skills-chart">
-                            <!-- Bar chart will be populated by JavaScript -->
-                            <div class="empty-state small">
-                                <p>No data available for visualization</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Severity Distribution -->
-                    <div class="chart-section">
-                        <h4>Gap Severity Distribution</h4>
-                        <div class="severity-distribution">
-                            <div class="donut-chart">
-                                <div class="donut-segment high"></div>
-                                <div class="donut-segment medium"></div>
-                                <div class="donut-segment low"></div>
-                                <div class="donut-center">
-                                    <span id="total-projects-count">0</span>
-                                    <small>Projects</small>
-                                </div>
-                            </div>
-                            <div class="severity-legend">
-                                <div class="legend-item">
-                                    <span class="legend-color high"></span>
-                                    <span>High: <span id="high-count">0</span></span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-color medium"></span>
-                                    <span>Medium: <span id="medium-count">0</span></span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-color low"></span>
-                                    <span>Low: <span id="low-count">0</span></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <section class="grid-2-col analytics-grid">
+            <article class="card analytics-panel">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-chart-bar"></i> Most Requested Missing Skills</h3>
+                    <p class="card-description">Top capabilities currently missing from active project squads.</p>
                 </div>
-            </div>
-        </div>
+                <div class="card-content">
+                    {% if skill_gap.missing_skill_counts %}
+                        <div class="bar-chart">
+                            {% for skill in skill_gap.missing_skill_counts %}
+                            <div class="bar-item">
+                                <div class="bar-label">{{ skill.skill }}</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: {{ (skill.count / skill_gap.missing_skill_counts[0].count) * 100 if skill_gap.missing_skill_counts[0].count else 0 }}%"></div>
+                                </div>
+                                <div class="bar-value">{{ skill.count }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state small"><p>No missing skills detected.</p></div>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="card analytics-panel">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Training Priorities</h3>
+                    <p class="card-description">Recommended upskilling areas based on repeated project demand.</p>
+                </div>
+                <div class="card-content">
+                    {% if skill_gap.recommended_training %}
+                        <div class="company-overview-grid">
+                            {% for recommendation in skill_gap.recommended_training %}
+                            <div class="company-mini-card">
+                                <h4>{{ recommendation.skill }}</h4>
+                                <p>Appears in {{ recommendation.count }} gap{{ '' if recommendation.count == 1 else 's' }}</p>
+                                <p>Priority: {{ 'Critical' if loop.index == 1 else 'High' if loop.index < 4 else 'Medium' }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state small"><p>No training priorities right now.</p></div>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
     </div>
 </div>
 
-<style>
-.skill-gap-container {
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.stat-icon.red {
-    background: #fee2e2;
-    color: #ef4444;
-}
-
-.filters-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 1rem;
-    align-items: end;
-}
-
-.filter-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #374151;
-    font-size: 0.875rem;
-}
-
-.table-container {
-    overflow-x: auto;
-}
-
-.skill-gap-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.skill-gap-table th {
-    background: #f8fafc;
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.skill-gap-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: top;
-}
-
-.skill-gap-table tr:hover {
-    background: #f8fafc;
-}
-
-.empty-table {
-    text-align: center;
-    padding: 3rem !important;
-}
-
-.skills-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    max-width: 200px;
-}
-
-.skill-badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid;
-}
-
-.skill-required {
-    background: #dbeafe;
-    color: #1e40af;
-    border-color: #93c5fd;
-}
-
-.skill-available {
-    background: #d1fae5;
-    color: #065f46;
-    border-color: #86efac;
-}
-
-.skill-missing {
-    background: #fee2e2;
-    color: #991b1b;
-    border-color: #fca5a5;
-}
-
-.match-rate {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.match-bar {
-    width: 60px;
-    height: 6px;
-    background: #e5e7eb;
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.match-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease;
-}
-
-.match-fill.high {
-    background: #10b981;
-}
-
-.match-fill.medium {
-    background: #f59e0b;
-}
-
-.match-fill.low {
-    background: #ef4444;
-}
-
-.severity-badge {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: capitalize;
-}
-
-.severity-high {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-}
-
-.severity-medium {
-    background: #fffbeb;
-    color: #d97706;
-    border: 1px solid #fed7aa;
-}
-
-.severity-low {
-    background: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
-}
-
-.recommendation {
-    max-width: 200px;
-    font-size: 0.875rem;
-}
-
-.visualization-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-}
-
-.chart-section h4 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #374151;
-}
-
-.bar-chart {
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.bar-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.bar-label {
-    width: 120px;
-    font-size: 0.875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.bar-track {
-    flex: 1;
-    height: 20px;
-    background: #e5e7eb;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.bar-fill {
-    height: 100%;
-    background: #ef4444;
-    border-radius: 10px;
-    transition: width 0.3s ease;
-}
-
-.bar-value {
-    width: 30px;
-    text-align: right;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
-.severity-distribution {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.donut-chart {
-    position: relative;
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    background: conic-gradient(
-        #ef4444 0% 40%,
-        #f59e0b 40% 70%,
-        #10b981 70% 100%
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.donut-center {
-    width: 100px;
-    height: 100px;
-    background: white;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.25rem;
-}
-
-.donut-center small {
-    font-size: 0.75rem;
-    color: #6b7280;
-    font-weight: normal;
-}
-
-.severity-legend {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.legend-color.high {
-    background: #ef4444;
-}
-
-.legend-color.medium {
-    background: #f59e0b;
-}
-
-.legend-color.low {
-    background: #10b981;
-}
-
-@media (max-width: 1024px) {
-    .filters-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .visualization-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .filters-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .skills-list {
-        max-width: 150px;
-    }
-}
-</style>
-
 <script>
-// This would be populated with actual data from your backend
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize with empty data - you would fetch this from your API
-    updateSkillGapStats(0, 0, 0);
-});
+function updateSkillGapVisibility() {
+    const query = (document.getElementById('skill-search')?.value || '').trim().toLowerCase();
+    const selectedProject = (document.getElementById('project-filter')?.value || 'all').toLowerCase();
+    const selectedSeverity = (document.getElementById('severity-filter')?.value || 'all').toLowerCase();
+    const selectedDepartment = (document.getElementById('department-filter')?.value || 'all').toLowerCase();
+    const rows = Array.from(document.querySelectorAll('.skill-gap-row'));
 
-function updateSkillGapStats(highCount, mediumCount, lowCount) {
-    document.getElementById('high-priority-gaps').textContent = highCount;
-    document.getElementById('avg-skill-match').textContent = '75%'; // Example value
-    document.getElementById('total-projects-count').textContent = highCount + mediumCount + lowCount;
-    document.getElementById('high-count').textContent = highCount;
-    document.getElementById('medium-count').textContent = mediumCount;
-    document.getElementById('low-count').textContent = lowCount;
+    let visibleCount = 0;
+    let visibleHigh = 0;
+    let totalMatch = 0;
+
+    rows.forEach((row) => {
+        const matchesQuery = !query || (row.dataset.search || '').includes(query);
+        const matchesProject = selectedProject === 'all' || (row.dataset.projectId || '').toLowerCase() === selectedProject;
+        const matchesSeverity = selectedSeverity === 'all' || (row.dataset.severity || '').toLowerCase() === selectedSeverity;
+        const matchesDepartment = selectedDepartment === 'all' || (row.dataset.department || '').toLowerCase() === selectedDepartment;
+        const visible = matchesQuery && matchesProject && matchesSeverity && matchesDepartment;
+        row.style.display = visible ? '' : 'none';
+        if (visible) {
+            visibleCount += 1;
+            if ((row.dataset.severity || '') === 'high') {
+                visibleHigh += 1;
+            }
+            const matchText = row.querySelector('.match-rate span')?.textContent || '0%';
+            totalMatch += parseInt(matchText, 10) || 0;
+        }
+    });
+
+    document.getElementById('skill-gap-projects').textContent = visibleCount;
+    document.getElementById('high-priority-gaps').textContent = visibleHigh;
+    document.getElementById('avg-skill-match').textContent = visibleCount ? `${Math.round(totalMatch / visibleCount)}%` : '0%';
 }
+
+document.getElementById('skill-search')?.addEventListener('input', updateSkillGapVisibility);
+document.getElementById('project-filter')?.addEventListener('change', updateSkillGapVisibility);
+document.getElementById('severity-filter')?.addEventListener('change', updateSkillGapVisibility);
+document.getElementById('department-filter')?.addEventListener('change', updateSkillGapVisibility);
 </script>

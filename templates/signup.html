@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+{% endblock %}
 {% block content %}
 <div class="app-container auth-container">
   <!-- Navigation -->
@@ -6,14 +12,19 @@
     <div class="nav-container">
       <div class="nav-brand">
         <div class="logo">
-          <i class="fas fa-tasks"></i>
+          <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
         </div>
         <span class="brand-text">TaskVise</span>
       </div>
+      <button type="button" class="mobile-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="nav-actions">
-        <button class="nav-btn secondary" onclick="window.location.href='{{ url_for('landing') }}'">
+        <a class="nav-btn secondary" href="{{ url_for('landing') }}" target="_top">
           Back to Home
-        </button>
+        </a>
       </div>
     </div>
   </nav>
@@ -53,14 +64,14 @@
     <div class="auth-form-container">
       <div class="auth-card">
         <div class="auth-header">
-          <div class="auth-icon">
-            <i class="fas fa-building"></i>
+          <div class="auth-icon auth-logo-icon">
+            <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
           </div>
           <h2>Create Employee Account</h2>
           <p>Enter employee details to create a complete profile</p>
         </div>
 
-        <form method="POST" action="{{ url_for('signup') }}" class="auth-form signup-form" id="signupForm">
+        <form method="POST" action="{{ url_for('signup') }}" target="_top" class="auth-form signup-form" id="signupForm">
           {% if error %}
           <div class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i>
@@ -238,9 +249,7 @@
 
         <div class="auth-footer">
           <p>Already have credentials?</p>
-          <button class="auth-link" onclick="window.location.href='{{ url_for('login') }}'">
-            Sign in instead
-          </button>
+          <a class="auth-link" href="{{ url_for('login') }}" target="_top">Sign in instead</a>
         </div>
       </div>
     </div>

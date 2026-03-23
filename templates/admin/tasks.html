@@ -2,52 +2,61 @@
     <div class="action-bar">
         <div class="search-box">
             <i class="fas fa-search"></i>
-            <input type="text" id="task-search" placeholder="Search tasks...">
+            <input type="text" id="task-search" placeholder="Search tasks by title, assignee, project, or status">
         </div>
-        <button class="btn btn-primary" onclick="openAssignTaskDialog()">
-            <i class="fas fa-plus"></i>
-            Add Task
-        </button>
+        <div class="action-hint">Track every admin-assigned task from one table and open the dialogs to inspect or update them.</div>
     </div>
 
     <div class="tasks-table" id="tasks-list">
         <table>
             <thead>
                 <tr>
-                    <th>TASK</th>
-                    <th>ASSIGNEE</th>
-                    <th>PROJECT</th>
-                    <th>DUE DATE</th>
-                    <th>PRIORITY</th>
-                    <th>STATUS</th>
-                    <th>ACTIONS</th>
+                    <th>Task</th>
+                    <th>Assignee</th>
+                    <th>Project</th>
+                    <th>Due Date</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% if tasks %}
                     {% for task in tasks %}
-                    <tr>
+                    <tr
+                        data-title="{{ task.title|lower }}"
+                        data-assignee="{{ (task.assignee_name or 'unassigned')|lower }}"
+                        data-project="{{ (task.project_name or 'no project')|lower }}"
+                        data-status="{{ task.status|lower }}"
+                    >
                         <td>
                             <div class="task-info">
                                 <div class="task-title">{{ task.title }}</div>
-                                <div class="task-description">{{ task.description or 'No description' }}</div>
+                                <div class="task-description">{{ task.description or 'No description provided' }}</div>
                             </div>
                         </td>
                         <td class="task-assignee">{{ task.assignee_name or 'Unassigned' }}</td>
                         <td class="task-project">{{ task.project_name or 'No project' }}</td>
                         <td class="task-due-date">{{ task.due_date or 'No due date' }}</td>
                         <td>
-                            <span class="priority-badge {{ task.priority }}">{{ task.priority }}</span>
+                            <span class="priority-badge {{ task.priority }}">{{ task.priority|title }}</span>
                         </td>
                         <td>
-                            <span class="status-badge {{ task.status }}">{{ task.status }}</span>
+                            <span class="status-badge {{ task.status }}">{{ task.status|title }}</span>
+                        </td>
+                        <td>
+                            <div class="progress-chip">{{ task.progress or 0 }}%</div>
                         </td>
                         <td>
                             <div class="task-actions">
-                                <button class="btn btn-icon" onclick="editTask('{{ task.id }}')">
+                                <button class="btn btn-icon" type="button" onclick="viewAdminTask('{{ task.id }}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-icon" type="button" onclick="editAdminTask('{{ task.id }}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-icon btn-danger" onclick="deleteTask('{{ task.id }}')">
+                                <button class="btn btn-icon btn-danger" type="button" onclick="deleteAdminTask('{{ task.id }}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -56,7 +65,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state small">
                                 <div class="empty-icon">
                                     <i class="fas fa-tasks"></i>
@@ -77,38 +86,71 @@
 </div>
 
 <script>
-function editTask(taskId) {
-    const tasks = (window.adminDashboard && window.adminDashboard.tasks) ? window.adminDashboard.tasks : [];
-    if (!window.openEditTaskDialog) {
-        return window.adminDashboard && window.adminDashboard.showNotification('Edit dialog script not loaded', 'error');
-    }
-
-    const updateTaskCallback = async (id, updated) => {
-        try {
-            // TODO: Replace with real API call
-            console.log('Update task', id, updated);
-            if (window.adminDashboard) {
-                await window.adminDashboard.refreshData();
-            }
-            return true;
-        } catch (e) {
-            console.error(e);
-            return false;
-        }
+function getAdminTaskCollections() {
+    return {
+        tasks: (window.adminDashboard && window.adminDashboard.tasks) ? window.adminDashboard.tasks : [],
+        employees: (window.adminDashboard && window.adminDashboard.employees) ? window.adminDashboard.employees : [],
+        projects: (window.adminDashboard && window.adminDashboard.projects) ? window.adminDashboard.projects : []
     };
-
-    window.openEditTaskDialog(taskId, tasks, updateTaskCallback);
 }
 
-function deleteTask(taskId) {
-    if (confirm('Are you sure you want to delete this task?')) {
-        // Simulate API call
-        setTimeout(() => {
-            if (window.adminDashboard) {
-                window.adminDashboard.showNotification('Task deleted successfully', 'success');
-                window.adminDashboard.refreshData();
+function editAdminTask(taskId) {
+    const { tasks } = getAdminTaskCollections();
+    if (!window.openEditTaskDialog) {
+        return showNotification('Edit task dialog script not loaded', 'error');
+    }
+    window.openEditTaskDialog(taskId, tasks);
+}
+
+function viewAdminTask(taskId) {
+    const { tasks, employees, projects } = getAdminTaskCollections();
+    if (!window.openTaskDetailsDialog) {
+        return showNotification('Task details dialog script not loaded', 'error');
+    }
+    window.openTaskDetailsDialog(taskId, tasks, employees, projects);
+}
+
+async function deleteAdminTask(taskId) {
+    if (!confirm('Delete this task? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/admin/tasks/${encodeURIComponent(taskId)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
             }
-        }, 1000);
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to delete task');
+        }
+
+        if (window.adminDashboard) {
+            window.adminDashboard.showNotification('Task deleted successfully', 'success');
+        }
+        window.location.reload();
+    } catch (error) {
+        console.error('Delete task failed:', error);
+        showNotification(error.message || 'Unable to delete task', 'error');
     }
 }
+
+document.getElementById('task-search')?.addEventListener('input', function () {
+    const query = this.value.trim().toLowerCase();
+    document.querySelectorAll('#tasks-list tbody tr').forEach((row) => {
+        if (row.querySelector('.empty-state')) {
+            return;
+        }
+        const matches = [
+            row.dataset.title || '',
+            row.dataset.assignee || '',
+            row.dataset.project || '',
+            row.dataset.status || ''
+        ].some((value) => value.includes(query));
+        row.style.display = !query || matches ? '' : 'none';
+    });
+});
 </script>

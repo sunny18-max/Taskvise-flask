@@ -1,6 +1,22 @@
-<!-- overview.html -->
-<div class="view-container">
-    <!-- Stats Grid -->
+{% set dashboard_prefix = dashboard_prefix|default('/manager') %}
+{% set is_hr = role == 'hr' %}
+{% set is_teamlead = role == 'teamlead' %}
+{% set workforce = namespace(managers=0, teamleads=0, contributors=0) %}
+{% if is_hr %}
+    {% for employee in employees %}
+        {% set employee_role = (employee.role or 'employee')|lower %}
+        {% if employee_role == 'manager' %}
+            {% set workforce.managers = workforce.managers + 1 %}
+        {% elif employee_role == 'teamlead' %}
+            {% set workforce.teamleads = workforce.teamleads + 1 %}
+        {% else %}
+            {% set workforce.contributors = workforce.contributors + 1 %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% set recent_joiners = employees|sort(attribute='join_date', reverse=true) %}
+
+<div class="view-container overview-view">
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-main">
@@ -9,7 +25,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value">{{ stats.totalEmployees }}</div>
-                    <div class="stat-label">Total Employees</div>
+                    <div class="stat-label">{{ 'Workforce Size' if is_hr else 'Team Members' if is_teamlead else 'Total Employees' }}</div>
                 </div>
             </div>
             <div class="stat-footer">
@@ -17,9 +33,7 @@
                     <i class="fas fa-circle"></i>
                     {{ stats.activeEmployees }} active
                 </div>
-                <div class="stat-trend up">
-                    +2.5%
-                </div>
+                <div class="stat-trend up">+2.5%</div>
             </div>
         </div>
 
@@ -30,7 +44,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value">{{ stats.totalProjects }}</div>
-                    <div class="stat-label">Total Projects</div>
+                    <div class="stat-label">{{ 'Active Programs' if is_hr else 'Total Projects' }}</div>
                 </div>
             </div>
             <div class="stat-footer">
@@ -38,9 +52,7 @@
                     <i class="fas fa-circle"></i>
                     {{ stats.activeProjects }} active
                 </div>
-                <div class="stat-trend up">
-                    +5.1%
-                </div>
+                <div class="stat-trend up">+5.1%</div>
             </div>
         </div>
 
@@ -51,7 +63,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value">{{ stats.totalTasks }}</div>
-                    <div class="stat-label">Total Tasks</div>
+                    <div class="stat-label">{{ 'Work Items' if is_hr else 'Total Tasks' }}</div>
                 </div>
             </div>
             <div class="stat-footer">
@@ -59,9 +71,7 @@
                     <i class="fas fa-circle"></i>
                     {{ stats.overdueTasks }} overdue
                 </div>
-                <div class="stat-trend down">
-                    -1.2%
-                </div>
+                <div class="stat-trend down">-1.2%</div>
             </div>
         </div>
 
@@ -72,7 +82,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value">{{ stats.productivity }}%</div>
-                    <div class="stat-label">Team Productivity</div>
+                    <div class="stat-label">{{ 'Workforce Productivity' if is_hr else 'Team Productivity' }}</div>
                 </div>
             </div>
             <div class="stat-footer">
@@ -81,23 +91,51 @@
                         <div class="progress-fill" style="width: {{ stats.productivity }}%;"></div>
                     </div>
                 </div>
-                <div class="stat-trend up">
-                    +3.8%
-                </div>
+                <div class="stat-trend up">+3.8%</div>
             </div>
         </div>
     </div>
 
-    <!-- Content Grid -->
+    {% if not is_hr and stats.teamName %}
+    <div class="content-card team-identity-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-rocket"></i>
+                {{ stats.teamName }}
+            </h3>
+            <span class="team-pill">{{ 'Team Lead Scope' if is_teamlead else 'Manager Scope' }}</span>
+        </div>
+        <div class="card-content">
+            <div class="team-identity-grid">
+                <div>
+                    <div class="identity-label">Team Motto</div>
+                    <div class="identity-value">{{ stats.teamTagline or 'Focused, fast, and slightly chaotic in the fun way.' }}</div>
+                </div>
+                <div>
+                    <div class="identity-label">Focus Area</div>
+                    <div class="identity-value">{{ stats.teamFocus or 'Delivery execution and team performance.' }}</div>
+                </div>
+                <div>
+                    <div class="identity-label">Manager</div>
+                    <div class="identity-value">{{ stats.managerName or 'Not assigned' }}</div>
+                </div>
+                <div>
+                    <div class="identity-label">Team Lead</div>
+                    <div class="identity-value">{{ stats.teamLeadName or 'Not assigned' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="content-grid">
-        <!-- Recent Tasks -->
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-history"></i>
-                    Recent Tasks
+                    {{ 'Recent Work Items' if is_hr else 'Recent Tasks' }}
                 </h3>
-                <a href="/manager/tasks" class="view-all">View All</a>
+                <a href="{{ dashboard_prefix }}/tasks" class="view-all">View All</a>
             </div>
             <div class="card-content">
                 <div class="task-list" id="recent-tasks-list">
@@ -121,7 +159,7 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="empty-state">
+                    <div class="empty-state compact">
                         <i class="fas fa-tasks"></i>
                         <p>No tasks found</p>
                     </div>
@@ -130,14 +168,13 @@
             </div>
         </div>
 
-        <!-- Team Performance -->
         <div class="content-card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-trophy"></i>
-                    Team Performance
+                    {{ 'People Snapshot' if is_hr else 'Team Snapshot' if is_teamlead else 'Team Performance' }}
                 </h3>
-                <a href="/manager/employees" class="view-all">View All</a>
+                <a href="{{ dashboard_prefix }}/employees" class="view-all">View All</a>
             </div>
             <div class="card-content">
                 <div class="performance-list">
@@ -149,17 +186,22 @@
                         <div class="employee-info">
                             <div class="employee-name">{{ employee.name }}</div>
                             <div class="employee-role">{{ employee.position }}</div>
+                            <div class="employee-id">ID: {{ employee.id }}</div>
                         </div>
                         <div class="performance-metric">
                             <div class="metric-value">
-                                {% set productivity = 75 + loop.index * 5 %}
-                                {{ productivity }}%
+                                {% if is_hr %}
+                                    {{ employee.department or 'Operations' }}
+                                {% else %}
+                                    {% set productivity = 75 + loop.index * 5 %}
+                                    {{ productivity }}%
+                                {% endif %}
                             </div>
-                            <div class="metric-label">Productivity</div>
+                            <div class="metric-label">{{ 'Department' if is_hr else 'Productivity' }}</div>
                         </div>
                     </div>
                     {% else %}
-                    <div class="empty-state">
+                    <div class="empty-state compact">
                         <i class="fas fa-users"></i>
                         <p>No employees found</p>
                     </div>
@@ -168,28 +210,332 @@
             </div>
         </div>
     </div>
+
+    {% if is_hr %}
+    <div class="content-grid hr-content-grid">
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-sitemap"></i>
+                    Workforce Mix
+                </h3>
+            </div>
+            <div class="card-content">
+                <div class="hr-role-grid">
+                    <div class="hr-role-tile primary">
+                        <span class="hr-role-value">{{ workforce.managers }}</span>
+                        <span class="hr-role-label">Managers</span>
+                    </div>
+                    <div class="hr-role-tile secondary">
+                        <span class="hr-role-value">{{ workforce.teamleads }}</span>
+                        <span class="hr-role-label">Team Leads</span>
+                    </div>
+                    <div class="hr-role-tile neutral">
+                        <span class="hr-role-value">{{ workforce.contributors }}</span>
+                        <span class="hr-role-label">Employees</span>
+                    </div>
+                </div>
+                <div class="hr-section-label">Department Coverage</div>
+                <div class="department-list">
+                    {% for department_group in employees|groupby('department') %}
+                    <div class="department-row">
+                        <span>{{ department_group.grouper or 'Unassigned' }}</span>
+                        <strong>{{ department_group.list|length }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-user-plus"></i>
+                    Recent Joiners
+                </h3>
+            </div>
+            <div class="card-content">
+                <div class="joiner-list">
+                    {% for employee in recent_joiners[:6] %}
+                    <div class="joiner-item">
+                        <div class="employee-avatar">{{ employee.name[0] }}</div>
+                        <div class="joiner-info">
+                            <div class="employee-name">{{ employee.name }}</div>
+                            <div class="employee-role">{{ employee.position }}</div>
+                            <div class="joiner-meta">{{ employee.id }} • Joined {{ employee.join_date or 'N/A' }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state compact">
+                        <i class="fas fa-user-plus"></i>
+                        <p>No new joiners available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card double hr-review-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-check"></i>
+                    Pending Leave Review
+                </h3>
+                <a href="{{ dashboard_prefix }}/leave?filter=pending" class="view-all">Open Leave Desk</a>
+            </div>
+            <div class="card-content">
+                <div class="hr-review-summary">
+                    <div class="hr-summary-pill">
+                        <span id="hr-pending-count">0</span>
+                        Pending approvals
+                    </div>
+                    <div class="hr-summary-pill">
+                        <span id="hr-away-today-count">0</span>
+                        Away today
+                    </div>
+                    <div class="hr-summary-pill">
+                        <span id="hr-upcoming-count">0</span>
+                        Starting this week
+                    </div>
+                </div>
+                <div class="hr-review-list" id="hr-pending-leave-list">
+                    <div class="empty-state compact">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading leave requests...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+{% if is_hr %}
+<script>
+(() => {
+    const root = document.getElementById('hr-pending-leave-list');
+    if (!root) return;
+
+    const employees = {{ employees|tojson|safe }};
+    const employeeById = new Map(
+        employees.map((employee) => [String(employee.id || '').trim(), employee])
+    );
+
+    const refs = {
+        pending: document.getElementById('hr-pending-count'),
+        awayToday: document.getElementById('hr-away-today-count'),
+        upcoming: document.getElementById('hr-upcoming-count'),
+    };
+
+    function notify(message, type = 'info') {
+        const dashboardApi = window.managerDashboard || window.teamLeadDashboard;
+        if (dashboardApi && typeof dashboardApi.showNotification === 'function') {
+            dashboardApi.showNotification(message, type);
+            return;
+        }
+        alert(message);
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function normalizeStatus(value) {
+        const raw = String(value || '').trim().toLowerCase();
+        if (!raw) return 'pending';
+        if (raw === 'pending approval' || raw === 'awaiting approval') return 'pending';
+        if (raw === 'approve' || raw === 'accepted') return 'approved';
+        if (raw === 'reject' || raw === 'denied') return 'rejected';
+        return raw;
+    }
+
+    function parseDate(value) {
+        const raw = String(value || '').slice(0, 10);
+        if (!raw) return null;
+        const parsed = new Date(`${raw}T00:00:00`);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function isDateInRange(day, start, end) {
+        if (!day || !start || !end) return false;
+        return day >= start && day <= end;
+    }
+
+    function formatDateRange(startDate, endDate) {
+        const start = parseDate(startDate);
+        const end = parseDate(endDate);
+        const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+        if (!start || !end) return 'Dates unavailable';
+        return `${formatter.format(start)} - ${formatter.format(end)}`;
+    }
+
+    function toTitleCase(value) {
+        return String(value || 'leave')
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function renderPendingList(pendingLeaves) {
+        if (!pendingLeaves.length) {
+            root.innerHTML = `
+                <div class="empty-state compact">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No pending leave requests.</p>
+                </div>
+            `;
+            return;
+        }
+
+        root.innerHTML = pendingLeaves.map((leave) => {
+            const employee = employeeById.get(String(leave.employee_id || '').trim()) || {};
+            return `
+                <article class="hr-review-item">
+                    <div class="hr-review-main">
+                        <div class="employee-avatar">${escapeHtml((employee.name || 'U').charAt(0))}</div>
+                        <div class="hr-review-copy">
+                            <div class="employee-name">${escapeHtml(employee.name || leave.employee_id || 'Unknown employee')}</div>
+                            <div class="hr-review-meta">
+                                <span>${escapeHtml(employee.id || leave.employee_id || 'No ID')}</span>
+                                <span>${escapeHtml(employee.department || 'Operations')}</span>
+                                <span>${escapeHtml(toTitleCase(leave.type))}</span>
+                                <span>${escapeHtml(formatDateRange(leave.start_date, leave.end_date))}</span>
+                            </div>
+                            <p class="hr-review-reason">${escapeHtml(leave.reason || 'No reason provided')}</p>
+                        </div>
+                    </div>
+                    <div class="hr-review-actions">
+                        <button class="hr-action-btn approve" type="button" data-leave-action="approved" data-leave-id="${escapeHtml(leave.id)}">Approve</button>
+                        <button class="hr-action-btn reject" type="button" data-leave-action="rejected" data-leave-id="${escapeHtml(leave.id)}">Reject</button>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    async function updateLeaveStatus(leaveId, status, button) {
+        if (button) button.disabled = true;
+        try {
+            const response = await fetch('/api/manager/leave/update', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: leaveId, status })
+            });
+            if (!response.ok) {
+                throw new Error('Unable to update leave request');
+            }
+            notify(`Leave request ${status}.`, 'success');
+            await loadLeaveReview();
+        } catch (error) {
+            console.error('Failed to update leave request:', error);
+            notify('Failed to update leave request.', 'error');
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
+    async function loadLeaveReview() {
+        root.innerHTML = `
+            <div class="empty-state compact">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading leave requests...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch('/api/manager/leave', { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error('Unable to fetch leave requests');
+            }
+
+            const leaves = await response.json();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const weekAhead = new Date(today);
+            weekAhead.setDate(weekAhead.getDate() + 7);
+
+            const pendingLeaves = (Array.isArray(leaves) ? leaves : [])
+                .filter((leave) => normalizeStatus(leave.status) === 'pending')
+                .sort((left, right) => String(right.applied_at || '').localeCompare(String(left.applied_at || '')));
+
+            const awayToday = (Array.isArray(leaves) ? leaves : []).filter((leave) => {
+                const start = parseDate(leave.start_date);
+                const end = parseDate(leave.end_date);
+                return normalizeStatus(leave.status) === 'approved' && isDateInRange(today, start, end);
+            });
+
+            const startingThisWeek = (Array.isArray(leaves) ? leaves : []).filter((leave) => {
+                const start = parseDate(leave.start_date);
+                return start && start >= today && start <= weekAhead;
+            });
+
+            refs.pending.textContent = String(pendingLeaves.length);
+            refs.awayToday.textContent = String(awayToday.length);
+            refs.upcoming.textContent = String(startingThisWeek.length);
+            renderPendingList(pendingLeaves.slice(0, 5));
+        } catch (error) {
+            console.error('Failed to load HR leave review:', error);
+            root.innerHTML = `
+                <div class="empty-state compact">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Unable to load leave requests right now.</p>
+                </div>
+            `;
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const actionButton = event.target.closest('[data-leave-action]');
+        if (!actionButton) return;
+        event.preventDefault();
+        updateLeaveStatus(
+            actionButton.getAttribute('data-leave-id'),
+            actionButton.getAttribute('data-leave-action'),
+            actionButton
+        );
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadLeaveReview, { once: true });
+    } else {
+        loadLeaveReview();
+    }
+
+    window.addEventListener('managerDataRefreshed', loadLeaveReview);
+})();
+</script>
+{% endif %}
+
 <style>
-/* Stats Grid - REDESIGNED */
+.overview-view {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
     margin-bottom: 2rem;
 }
 
 .stat-card {
     background: white;
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.1rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 1px solid #e8edf5;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    min-height: 140px;
+    min-height: 120px;
     position: relative;
     overflow: hidden;
 }
@@ -208,32 +554,32 @@
     height: 4px;
 }
 
-.stat-card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+.stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end)); }
 .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #047857); }
-.stat-card:nth-child(3)::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+.stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--accent-secondary), var(--accent-secondary-dark)); }
 .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
 
 .stat-main {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: white;
     flex-shrink: 0;
 }
 
-.stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-icon.blue { background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); }
 .stat-icon.green { background: linear-gradient(135deg, #10b981, #047857); }
-.stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.stat-icon.purple { background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-dark)); }
 .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
 .stat-content {
@@ -241,15 +587,15 @@
 }
 
 .stat-value {
-    font-size: 2.25rem;
+    font-size: 1.95rem;
     font-weight: 700;
     color: #1e293b;
     line-height: 1;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
 }
 
 .stat-label {
-    font-size: 0.95rem;
+    font-size: 0.86rem;
     color: #64748b;
     font-weight: 500;
 }
@@ -271,17 +617,19 @@
     font-weight: 600;
 }
 
-.stat-badge.success { 
-    background: #dcfce7; 
-    color: #166534; 
+.stat-badge.success {
+    background: #dcfce7;
+    color: #166534;
 }
-.stat-badge.info { 
-    background: #dbeafe; 
-    color: #1e40af; 
+
+.stat-badge.info {
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-dark);
 }
-.stat-badge.danger { 
-    background: #fecaca; 
-    color: #dc2626; 
+
+.stat-badge.danger {
+    background: #fecaca;
+    color: #dc2626;
 }
 
 .stat-badge i {
@@ -325,11 +673,45 @@
     transition: width 0.3s ease;
 }
 
-/* Content Grid */
 .content-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+}
+
+.team-identity-card {
+    margin-bottom: 1.5rem;
+}
+
+.team-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.team-identity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.identity-label {
+    color: #64748b;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+}
+
+.identity-value {
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1.5;
 }
 
 .content-card {
@@ -340,12 +722,17 @@
     overflow: hidden;
 }
 
+.content-card.double {
+    grid-column: 1 / -1;
+}
+
 .card-header {
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
 }
 
 .card-title {
@@ -359,56 +746,85 @@
 
 .view-all {
     font-size: 0.875rem;
-    color: #3b82f6;
+    color: var(--primary);
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .view-all:hover {
-    color: #1d4ed8;
+    color: var(--primary-dark);
 }
 
 .card-content {
     padding: 1.5rem;
 }
 
-/* Task List */
-.task-list {
+.task-list,
+.performance-list,
+.joiner-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.task-item {
+.task-item,
+.performance-item,
+.joiner-item,
+.hr-review-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
     padding: 1rem;
     background: #f8fafc;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
+    border-radius: 12px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.task-item:hover {
+.task-item:hover,
+.performance-item:hover,
+.joiner-item:hover,
+.hr-review-item:hover {
     background: #f1f5f9;
+    transform: translateY(-1px);
 }
 
-.task-main {
+.task-main,
+.employee-info,
+.joiner-info,
+.hr-review-copy {
     flex: 1;
+    min-width: 0;
 }
 
-.task-title {
-    font-weight: 500;
+.task-title,
+.employee-name {
+    font-weight: 600;
     color: #1e293b;
     margin-bottom: 0.25rem;
 }
 
-.task-meta {
+.task-meta,
+.employee-role,
+.joiner-meta,
+.hr-review-meta {
     font-size: 0.8rem;
     color: #64748b;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.employee-role {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.employee-id {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 2px;
 }
 
 .status-badge {
@@ -424,54 +840,19 @@
 .status-badge.overdue { background: #fecaca; color: #dc2626; }
 .status-badge.pending { background: #e2e8f0; color: #475569; }
 
-/* Performance List */
-.performance-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.performance-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-}
-
-.performance-item:hover {
-    background: #f1f5f9;
-}
-
 .employee-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 700;
     color: white;
     font-size: 0.9rem;
     flex-shrink: 0;
-}
-
-.employee-info {
-    flex: 1;
-}
-
-.employee-name {
-    font-weight: 500;
-    color: #1e293b;
-    margin-bottom: 0.125rem;
-}
-
-.employee-role {
-    font-size: 0.8rem;
-    color: #64748b;
+    box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.18);
 }
 
 .performance-metric {
@@ -480,86 +861,261 @@
 }
 
 .metric-value {
-    font-weight: 600;
+    font-weight: 700;
     color: #1e293b;
-    font-size: 1.1rem;
+    font-size: 1rem;
 }
 
-.metric-label {
+.metric-label,
+.hr-section-label {
     font-size: 0.75rem;
     color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-/* Empty States */
+.hr-content-grid {
+    margin-top: 1.5rem;
+}
+
+.hr-role-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.hr-role-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 14px;
+    color: white;
+}
+
+.hr-role-tile.primary {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+.hr-role-tile.secondary {
+    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-dark));
+}
+
+.hr-role-tile.neutral {
+    background: linear-gradient(135deg, #475569, #334155);
+}
+
+.hr-role-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.hr-role-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.department-list {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.department-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 0.95rem;
+    border-radius: 12px;
+    background: rgba(var(--primary-rgb), 0.06);
+    color: #334155;
+}
+
+.department-row strong {
+    color: var(--primary-dark);
+}
+
+.joiner-meta {
+    margin-top: 0.2rem;
+}
+
+.hr-review-card .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.hr-review-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.hr-summary-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+    background: rgba(var(--primary-rgb), 0.08);
+    color: #334155;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.hr-summary-pill span {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    line-height: 1;
+}
+
+.hr-review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.hr-review-item {
+    align-items: flex-start;
+}
+
+.hr-review-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.hr-review-meta {
+    margin-bottom: 0.45rem;
+}
+
+.hr-review-reason {
+    margin: 0;
+    color: #475569;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+.hr-review-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-shrink: 0;
+}
+
+.hr-action-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.72rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.hr-action-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.hr-action-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.hr-action-btn.approve {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.hr-action-btn.reject {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 .empty-state {
     text-align: center;
     padding: 2rem;
     color: #64748b;
 }
 
-.empty-state i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+.empty-state.compact {
+    padding: 1.25rem;
 }
 
-/* Responsive */
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.55;
+}
+
 @media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .content-grid {
         grid-template-columns: 1fr;
+    }
+
+    .content-card.double {
+        grid-column: auto;
     }
 }
 
 @media (max-width: 768px) {
-    .stats-grid {
+    .overview-view {
+        padding: 1rem;
+    }
+
+    .stats-grid,
+    .hr-role-grid,
+    .hr-review-summary {
         grid-template-columns: 1fr;
     }
-    
+
     .stat-card {
-        padding: 1.25rem;
-        min-height: 130px;
+        min-height: auto;
     }
-    
-    .stat-icon {
-        width: 55px;
-        height: 55px;
-        font-size: 1.35rem;
-    }
-    
-    .stat-value {
-        font-size: 2rem;
-    }
-    
-    .stat-footer {
+
+    .task-item,
+    .performance-item,
+    .joiner-item,
+    .hr-review-item {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
     }
-    
-    .progress-container {
-        margin-right: 0;
+
+    .performance-metric,
+    .hr-review-actions {
         width: 100%;
+        text-align: left;
+    }
+
+    .hr-review-actions {
+        justify-content: stretch;
+    }
+
+    .hr-action-btn {
+        flex: 1;
     }
 }
 
 @media (max-width: 480px) {
-    .stat-card {
-        min-height: auto;
-        padding: 1.25rem 1rem;
+    .stats-grid {
+        grid-template-columns: 1fr;
     }
-    
-    .stat-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.25rem;
-    }
-    
-    .stat-value {
-        font-size: 1.75rem;
-    }
-    
+
     .stat-main {
-        gap: 0.75rem;
+        gap: 0.65rem;
+    }
+
+    .stat-value {
+        font-size: 1.7rem;
     }
 }
 </style>

@@ -55,30 +55,62 @@
     <div class="stats-grid compact">
         <div class="stat-card compact">
             <div class="stat-content">
-                <div class="stat-value text-primary">{{ tasks|length if tasks else 0 }}</div>
+                <div class="stat-value text-primary" id="summary-total-tasks">{{ tasks|length if tasks else 0 }}</div>
                 <div class="stat-label">Total Tasks</div>
             </div>
         </div>
         
         <div class="stat-card compact">
             <div class="stat-content">
-                <div class="stat-value text-success">{{ tasks|selectattr('status', 'equalto', 'completed')|list|length if tasks else 0 }}</div>
+                <div class="stat-value text-success" id="summary-completed-tasks">{{ tasks|selectattr('status', 'equalto', 'completed')|list|length if tasks else 0 }}</div>
                 <div class="stat-label">Completed</div>
             </div>
         </div>
         
         <div class="stat-card compact">
             <div class="stat-content">
-                <div class="stat-value text-warning">{{ tasks|selectattr('status', 'equalto', 'in-progress')|list|length if tasks else 0 }}</div>
+                <div class="stat-value text-warning" id="summary-in-progress-tasks">{{ tasks|selectattr('status', 'equalto', 'in-progress')|list|length if tasks else 0 }}</div>
                 <div class="stat-label">In Progress</div>
             </div>
         </div>
         
         <div class="stat-card compact">
             <div class="stat-content">
-                <div class="stat-value text-danger">{{ tasks|selectattr('status', 'equalto', 'overdue')|list|length if tasks else 0 }}</div>
+                <div class="stat-value text-danger" id="summary-overdue-tasks">{{ tasks|selectattr('status', 'equalto', 'overdue')|list|length if tasks else 0 }}</div>
                 <div class="stat-label">Overdue</div>
             </div>
+        </div>
+    </div>
+
+    <div class="task-submission-panel">
+        <div class="submission-copy">
+            <h3>Deliver Task Package</h3>
+            <p>Upload your latest ZIP, RAR, or 7Z task package. TaskVise sends it to your reporting chain immediately.</p>
+        </div>
+        <div class="submission-controls">
+            <select id="submission-task-id" class="form-select">
+                <option value="">Choose task for upload</option>
+                {% if tasks %}
+                    {% for task in tasks %}
+                    <option value="{{ task.id }}">{{ task.title }} ({{ task.id }})</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+            <label class="submission-dropzone" id="submission-dropzone" for="submission-file">
+                <input id="submission-file" type="file" accept=".zip,.rar,.7z" hidden>
+                <span class="submission-dropzone-title">Drag and drop a package here</span>
+                <span class="submission-dropzone-subtitle" id="submission-file-label">or click to choose a ZIP, RAR, or 7Z file</span>
+            </label>
+            <textarea id="submission-notes" class="form-input submission-notes" rows="3" placeholder="Add delivery notes for your manager or team lead"></textarea>
+            <div class="submission-actions">
+                <button class="btn btn-primary" id="submit-task-package" type="button">
+                    <i class="fas fa-upload"></i> Upload Package
+                </button>
+                <span class="submission-hint" id="submission-status-text">Latest uploads appear below.</span>
+            </div>
+        </div>
+        <div class="submission-history" id="submission-history">
+            <div class="submission-history-empty">No task packages uploaded yet.</div>
         </div>
     </div>
 
@@ -138,25 +170,9 @@
     </div>
 </div>
 
-<!-- Task Details Modal -->
-<div class="modal" id="task-modal">
-    <div class="modal-content large">
-        <div class="modal-header">
-            <h3>Task Details</h3>
-            <button class="modal-close" id="close-task-modal">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div id="task-details-content">
-                <!-- Task details will be loaded here dynamically -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const projectData = {{ (projects or [])|tojson|safe }};
     // Apply quick filter from URL
     const urlParams = new URLSearchParams(window.location.search);
     const qFilter = urlParams.get('filter');
@@ -168,6 +184,190 @@ document.addEventListener('DOMContentLoaded', function() {
     const projectFilter = document.getElementById('project-filter');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const tasksContainer = document.getElementById('tasks-container');
+    const submissionTaskInput = document.getElementById('submission-task-id');
+    const submissionFileInput = document.getElementById('submission-file');
+    const submissionFileLabel = document.getElementById('submission-file-label');
+    const submissionDropzone = document.getElementById('submission-dropzone');
+    const submissionNotesInput = document.getElementById('submission-notes');
+    const submissionButton = document.getElementById('submit-task-package');
+    const submissionHistory = document.getElementById('submission-history');
+    const submissionStatusText = document.getElementById('submission-status-text');
+    let taskData = [];
+
+    function normalizeStatus(status) {
+        const value = String(status || '').trim().toLowerCase();
+        if (value === 'in progress') return 'in-progress';
+        return value || 'pending';
+    }
+
+    function parseTaskDate(task) {
+        const raw = String(task.due_date || task.deadline || '').trim();
+        if (!raw) return null;
+        const date = new Date(raw);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function computeOverdueCount(list) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return list.filter((task) => {
+            const status = normalizeStatus(task.status);
+            if (status === 'completed') return false;
+            const due = parseTaskDate(task);
+            return due && due < today;
+        }).length;
+    }
+
+    function updateSummaryCards(list) {
+        const total = list.length;
+        const completed = list.filter((t) => normalizeStatus(t.status) === 'completed').length;
+        const inProgress = list.filter((t) => normalizeStatus(t.status) === 'in-progress').length;
+        const overdue = computeOverdueCount(list);
+
+        const totalEl = document.getElementById('summary-total-tasks');
+        const completedEl = document.getElementById('summary-completed-tasks');
+        const progressEl = document.getElementById('summary-in-progress-tasks');
+        const overdueEl = document.getElementById('summary-overdue-tasks');
+        if (totalEl) totalEl.textContent = String(total);
+        if (completedEl) completedEl.textContent = String(completed);
+        if (progressEl) progressEl.textContent = String(inProgress);
+        if (overdueEl) overdueEl.textContent = String(overdue);
+    }
+
+    function escapeTaskHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function populateSubmissionTaskOptions(list) {
+        if (!submissionTaskInput) return;
+        const selectedValue = submissionTaskInput.value;
+        const options = Array.isArray(list) ? list : [];
+        submissionTaskInput.innerHTML = '<option value="">Choose task for upload</option>' + options.map((task) => `
+            <option value="${escapeTaskHtml(task.id || '')}">${escapeTaskHtml(task.title || 'Untitled Task')} (${escapeTaskHtml(task.id || '')})</option>
+        `).join('');
+        if (selectedValue && options.some((task) => String(task.id) === String(selectedValue))) {
+            submissionTaskInput.value = selectedValue;
+        }
+    }
+
+    function updateSubmissionLabel(file) {
+        if (!submissionFileLabel) return;
+        submissionFileLabel.textContent = file ? file.name : 'or click to choose a ZIP, RAR, or 7Z file';
+    }
+
+    function showTaskToast(message, type) {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type || 'success');
+        } else {
+            alert(message);
+        }
+    }
+
+    function renderSubmissionHistory(rows) {
+        if (!submissionHistory) return;
+        if (!Array.isArray(rows) || rows.length === 0) {
+            submissionHistory.innerHTML = '<div class="submission-history-empty">No task packages uploaded yet.</div>';
+            return;
+        }
+        submissionHistory.innerHTML = rows.slice(0, 5).map((row) => `
+            <div class="submission-item">
+                <div>
+                    <strong>${escapeTaskHtml(row.original_filename || 'Task package')}</strong>
+                    <p>${escapeTaskHtml(row.task_id || '')}${row.notes ? ` | ${escapeTaskHtml(row.notes)}` : ''}</p>
+                </div>
+                <div class="submission-item-meta">
+                    <span>${escapeTaskHtml(row.created_at || '')}</span>
+                    ${row.download_url ? `<a href="${escapeTaskHtml(row.download_url)}" target="_blank" rel="noopener">Open</a>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function loadSubmissionHistory() {
+        if (!submissionHistory) return;
+        try {
+            const response = await fetch('/api/employee/task-submissions', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Failed to load task packages');
+            const rows = await response.json();
+            renderSubmissionHistory(rows);
+        } catch (error) {
+            renderSubmissionHistory([]);
+            console.error('Unable to load task submissions:', error);
+        }
+    }
+
+    async function uploadTaskPackage() {
+        if (!submissionButton) return;
+        const taskId = submissionTaskInput ? submissionTaskInput.value : '';
+        const file = submissionFileInput && submissionFileInput.files ? submissionFileInput.files[0] : null;
+        const notes = submissionNotesInput ? submissionNotesInput.value.trim() : '';
+
+        if (!taskId) {
+            showTaskToast('Choose the task before uploading the package.', 'error');
+            return;
+        }
+        if (!file) {
+            showTaskToast('Choose a ZIP, RAR, or 7Z file first.', 'error');
+            return;
+        }
+
+        const payload = new FormData();
+        payload.append('task_id', taskId);
+        payload.append('notes', notes);
+        payload.append('submission', file);
+
+        const originalLabel = submissionButton.innerHTML;
+        submissionButton.disabled = true;
+        submissionButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        if (submissionStatusText) submissionStatusText.textContent = 'Sending package to your manager and leads...';
+
+        try {
+            const response = await fetch('/api/employee/tasks/upload', {
+                method: 'POST',
+                body: payload
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(result.error || 'Upload failed');
+            }
+            if (submissionFileInput) submissionFileInput.value = '';
+            if (submissionNotesInput) submissionNotesInput.value = '';
+            updateSubmissionLabel(null);
+            if (submissionStatusText) submissionStatusText.textContent = 'Package uploaded successfully.';
+            showTaskToast('Task package uploaded and routed successfully.', 'success');
+            await loadSubmissionHistory();
+        } catch (error) {
+            console.error('Task package upload failed:', error);
+            if (submissionStatusText) submissionStatusText.textContent = 'Upload failed. Check the file and try again.';
+            showTaskToast(error.message || 'Failed to upload task package.', 'error');
+        } finally {
+            submissionButton.disabled = false;
+            submissionButton.innerHTML = originalLabel;
+        }
+    }
+
+    function collectServerTaskData() {
+        const cards = Array.from(tasksContainer.querySelectorAll('.task-card'));
+        taskData = cards.map((card) => ({
+            id: card.querySelector('.view-details')?.getAttribute('data-task-id') || '',
+            title: card.querySelector('.task-title')?.textContent?.trim() || 'Untitled Task',
+            description: card.querySelector('.task-description')?.textContent?.trim() || '',
+            status: card.getAttribute('data-status') || 'pending',
+            priority: card.getAttribute('data-priority') || 'medium',
+            project_id: card.getAttribute('data-project') || '',
+            due_date: card.querySelector('.task-meta span i.fa-calendar')?.parentElement?.textContent?.replace('Due:', '').trim() || '',
+            created_at: card.querySelector('.task-meta span i.fa-clock')?.parentElement?.textContent?.replace('Created:', '').trim() || '',
+            estimated_hours: 0,
+            actual_hours: 0,
+        }));
+        updateSummaryCards(taskData);
+        populateSubmissionTaskOptions(taskData);
+    }
 
     function filterTasks() {
         const searchTerm = taskSearch.value.toLowerCase();
@@ -207,6 +407,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(r => r.json())
             .then(list => {
                 if (!Array.isArray(list) || list.length === 0) return;
+                taskData = list;
+                updateSummaryCards(taskData);
                 tasksContainer.innerHTML = list.map(task => `
                     <div class="task-card" data-status="${task.status||''}" data-priority="${task.priority||''}" data-project="${task.project_id||''}">
                         <div class="task-card-header">
@@ -222,14 +424,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${task.created_at ? `<span><i class="fas fa-clock"></i> Created: ${task.created_at}</span>` : ''}
                         </div>
                         <div class="task-actions">
+                            ${task.status !== 'completed' ? `<button class="btn btn-outline btn-sm" onclick="startTaskTimer('${task.id}')"><i class=\"fas fa-play\"></i> Start Timer</button>` : ''}
                             ${task.status !== 'completed' ? `<button class="btn btn-primary btn-sm" onclick="markTaskComplete('${task.id}')"><i class=\"fas fa-check\"></i> Mark Complete</button>` : ''}
                             <button class="btn btn-outline btn-sm" onclick="showTaskDetails('${task.id}')"><i class="fas fa-eye"></i> View Details</button>
                         </div>
                     </div>
                 `).join('');
+                populateSubmissionTaskOptions(taskData);
                 filterTasks();
             })
             .catch(() => {});
+    } else {
+        collectServerTaskData();
     }
 
     // Event listeners for filters
@@ -248,52 +454,121 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (submissionButton) {
+        submissionButton.addEventListener('click', uploadTaskPackage);
+    }
+    if (submissionFileInput) {
+        submissionFileInput.addEventListener('change', function() {
+            updateSubmissionLabel(this.files && this.files[0] ? this.files[0] : null);
+        });
+    }
+    if (submissionDropzone) {
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            submissionDropzone.addEventListener(eventName, function(event) {
+                event.preventDefault();
+                submissionDropzone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach((eventName) => {
+            submissionDropzone.addEventListener(eventName, function(event) {
+                event.preventDefault();
+                submissionDropzone.classList.remove('dragover');
+            });
+        });
+        submissionDropzone.addEventListener('drop', function(event) {
+            const droppedFiles = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+            if (!droppedFiles || !droppedFiles.length || !submissionFileInput) return;
+            try {
+                const transfer = new DataTransfer();
+                Array.from(droppedFiles).forEach((file) => transfer.items.add(file));
+                submissionFileInput.files = transfer.files;
+            } catch (_error) {
+                submissionFileInput.files = droppedFiles;
+            }
+            updateSubmissionLabel(droppedFiles[0]);
+        });
+    }
+
     // Task action handlers
     document.querySelectorAll('.mark-complete').forEach(btn => {
         btn.addEventListener('click', function() {
             const taskId = this.getAttribute('data-task-id');
-            markTaskComplete(taskId);
+            if (window.markTaskComplete) window.markTaskComplete(taskId);
+        });
+    });
+
+    document.querySelectorAll('.start-timer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-task-id');
+            if (window.startTaskTimer) window.startTaskTimer(taskId);
         });
     });
 
     document.querySelectorAll('.view-details').forEach(btn => {
         btn.addEventListener('click', function() {
             const taskId = this.getAttribute('data-task-id');
-            showTaskDetails(taskId);
+            if (window.showTaskDetails) window.showTaskDetails(taskId);
         });
     });
 
-    // Close modal handler
-    const closeModalBtn = document.getElementById('close-task-modal');
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', function() {
-            document.getElementById('task-modal').style.display = 'none';
-        });
-    }
+    window.startTaskTimer = async function startTaskTimer(taskId) {
+        try {
+            const response = await fetch('/api/employee/tasks/start-timer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId })
+            });
+            if (!response.ok) throw new Error('Failed to start timer');
+            if (window.showToast) {
+                window.showToast('Timer started for task', 'success');
+            } else {
+                alert('Timer started for task.');
+            }
+            window.location.reload();
+        } catch (error) {
+            console.error('Start timer failed:', error);
+            if (window.showToast) {
+                window.showToast('Failed to start timer', 'error');
+            } else {
+                alert('Failed to start timer.');
+            }
+        }
+    };
+
+    window.markTaskComplete = async function markTaskComplete(taskId) {
+        try {
+            const response = await fetch('/api/employee/tasks/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, status: 'completed' })
+            });
+            if (!response.ok) throw new Error('Failed to update task');
+            window.location.reload();
+        } catch (error) {
+            console.error('Mark complete failed:', error);
+            alert('Failed to mark task complete.');
+        }
+    };
+
+    window.showTaskDetails = function showTaskDetails(taskId) {
+        const task = taskData.find((item) => String(item.id) === String(taskId));
+        if (!task) {
+            if (window.showToast) {
+                window.showToast('Task details are unavailable', 'error');
+            } else {
+                alert('Task details are unavailable.');
+            }
+            return;
+        }
+        if (window.openTaskDetailsDialog) {
+            window.openTaskDetailsDialog(taskId, taskData, [], projectData);
+            return;
+        }
+        alert(task.title || 'Task details unavailable.');
+    };
+
+    loadSubmissionHistory();
 });
-
-function markTaskComplete(taskId) {
-    // Implement task completion logic here
-    console.log('Marking task complete:', taskId);
-    alert('Task marked as complete! This would update the task status in a real application.');
-}
-
-function showTaskDetails(taskId) {
-    // Implement task details display logic here
-    console.log('Showing task details:', taskId);
-    const modal = document.getElementById('task-modal');
-    const content = document.getElementById('task-details-content');
-    
-    content.innerHTML = `
-        <div class="task-details">
-            <h4>Task Details</h4>
-            <p>Detailed information for task ${taskId} would appear here.</p>
-            <p>In a real application, this would fetch and display complete task information.</p>
-        </div>
-    `;
-    
-    modal.style.display = 'block';
-}
 </script>
 <style>
 /* Quick filters */
@@ -311,5 +586,131 @@ function showTaskDetails(taskId) {
 
 @media (max-width: 768px) {
   .filters-grid { grid-template-columns: 1fr; }
+}
+
+.task-submission-panel {
+  display:grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap:1rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(248,250,252,0.98), rgba(241,245,249,0.98));
+  border:1px solid #e2e8f0;
+  border-radius: 18px;
+}
+
+.submission-copy h3 {
+  margin:0 0 .45rem;
+  color:#0f172a;
+}
+
+.submission-copy p {
+  margin:0;
+  color:#475569;
+  line-height:1.6;
+}
+
+.submission-controls {
+  display:grid;
+  gap:.85rem;
+}
+
+.submission-dropzone {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:132px;
+  padding:1rem;
+  border:1.5px dashed #94a3b8;
+  border-radius:14px;
+  background:#fff;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+
+.submission-dropzone.dragover {
+  border-color:#2563eb;
+  background:#eff6ff;
+}
+
+.submission-dropzone-title {
+  font-weight:700;
+  color:#0f172a;
+}
+
+.submission-dropzone-subtitle,
+.submission-hint,
+.submission-history-empty,
+.submission-item p,
+.submission-item-meta span {
+  color:#64748b;
+  font-size:.92rem;
+}
+
+.submission-notes {
+  min-height:96px;
+  resize:vertical;
+}
+
+.submission-actions {
+  display:flex;
+  align-items:center;
+  gap:.85rem;
+  flex-wrap:wrap;
+}
+
+.submission-history {
+  grid-column: 1 / -1;
+  display:grid;
+  gap:.75rem;
+}
+
+.submission-item {
+  display:flex;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.9rem 1rem;
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+}
+
+.submission-item strong {
+  color:#0f172a;
+}
+
+.submission-item p {
+  margin:.3rem 0 0;
+}
+
+.submission-item-meta {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:.35rem;
+}
+
+.submission-item-meta a {
+  color:#2563eb;
+  font-weight:600;
+  text-decoration:none;
+}
+
+@media (max-width: 900px) {
+  .task-submission-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .submission-item {
+    flex-direction:column;
+  }
+
+  .submission-item-meta {
+    align-items:flex-start;
+  }
 }
 </style>

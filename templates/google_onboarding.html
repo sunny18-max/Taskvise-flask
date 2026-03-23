@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Google Sign-In Onboarding - TaskVise{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="app-container auth-container">
+  <div class="auth-layout">
+    <div class="auth-form-container" style="max-width:540px; width:100%; margin:auto;">
+      <div class="auth-card" style="padding:2rem;">
+        <div class="auth-header">
+          <div class="auth-icon auth-logo-icon">
+            <img src="{{ url_for('static', filename='taskvise-logo.svg') }}" alt="TaskVise" class="site-logo">
+          </div>
+          <h2>Complete Your Profile</h2>
+          <p>Welcome, {{ profile.full_name }}. Add your role & skills to continue.</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error" style="margin-bottom:1rem;">
+          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form login-form">
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" name="role" class="form-select" required>
+          <option value="">Select role</option>
+          <option value="admin">Admin</option>
+          <option value="manager">Manager</option>
+          <option value="hr">HR</option>
+          <option value="teamlead">Team Lead</option>
+          <option value="employee">Employee</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="designation">Designation</label>
+        <input id="designation" name="designation" type="text" class="form-input" placeholder="e.g. Software Developer" required>
+      </div>
+
+      <div class="form-group">
+        <label for="department">Department</label>
+        <input id="department" name="department" type="text" class="form-input" placeholder="e.g. Engineering" required>
+      </div>
+
+      <div class="form-group">
+        <label for="skills">Skills (comma separated)</label>
+        <input id="skills" name="skills" type="text" class="form-input" placeholder="e.g. Python, SQL, Management" required>
+      </div>
+
+      <button type="submit" class="submit-btn" style="width:100%;">Save and Continue</button>
+      <a href="{{ url_for('login') }}" class="btn btn-outline" style="width:100%; margin-top: 0.5rem; display:block; text-align:center;">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
