@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, send_from_directory
-import csv, os, uuid
+import csv, os, shutil, tempfile, uuid
 from collections import Counter
 from email.message import EmailMessage
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,8 +18,15 @@ except Exception:
     taskvise_admin_manager = None
 
 BASE_DIR = os.path.dirname(__file__)
+IS_VERCEL = os.environ.get("VERCEL") == "1" or bool(os.environ.get("VERCEL_ENV"))
+SOURCE_DATA_DIR = os.path.join(BASE_DIR, "data")
+SOURCE_STATIC_DIR = os.path.join(BASE_DIR, "static")
+STORAGE_ROOT = os.environ.get(
+    "TASKVISE_STORAGE_DIR",
+    os.path.join(tempfile.gettempdir(), "taskvise") if IS_VERCEL else BASE_DIR
+)
 TASKVISE_ADMIN_URL = os.environ.get('TASKVISE_ADMIN_URL', 'http://127.0.0.1:5051').rstrip('/')
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = os.path.join(STORAGE_ROOT, "data")
 USERS_CSV = os.path.join(DATA_DIR, "users.csv")
 EMP_CSV = os.path.join(DATA_DIR, "employees.csv")
 TASKS_CSV = os.path.join(DATA_DIR, "tasks.csv")
@@ -34,9 +41,29 @@ HELP_REQUESTS_CSV = os.path.join(DATA_DIR, "help_requests.csv")
 CREDENTIALS_EXPORT_TXT = os.path.join(DATA_DIR, "login_credentials.txt")
 TEAMS_CSV = os.path.join(DATA_DIR, "teams.csv")
 PAYMENTS_CSV = os.path.join(DATA_DIR, "payments.csv")
-AVATAR_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "avatars")
+ADMIN_DATA_DIR = os.path.join(DATA_DIR, "admin")
+AVATAR_UPLOAD_DIR = os.path.join(STORAGE_ROOT, "static", "uploads", "avatars")
 TASK_SUBMISSIONS_CSV = os.path.join(DATA_DIR, "task_submissions.csv")
-TASK_SUBMISSION_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "task_submissions")
+TASK_SUBMISSION_UPLOAD_DIR = os.path.join(STORAGE_ROOT, "static", "uploads", "task_submissions")
+
+
+def _ensure_runtime_storage():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    if os.path.abspath(DATA_DIR) != os.path.abspath(SOURCE_DATA_DIR) and os.path.isdir(SOURCE_DATA_DIR):
+        for name in os.listdir(SOURCE_DATA_DIR):
+            source_path = os.path.join(SOURCE_DATA_DIR, name)
+            target_path = os.path.join(DATA_DIR, name)
+            if os.path.isdir(source_path):
+                if not os.path.exists(target_path):
+                    shutil.copytree(source_path, target_path)
+            elif not os.path.exists(target_path):
+                shutil.copy2(source_path, target_path)
+    os.makedirs(ADMIN_DATA_DIR, exist_ok=True)
+    os.makedirs(AVATAR_UPLOAD_DIR, exist_ok=True)
+    os.makedirs(TASK_SUBMISSION_UPLOAD_DIR, exist_ok=True)
+
+
+_ensure_runtime_storage()
 
 try:
     import mysql.connector
@@ -48,14 +75,22 @@ try:
 except Exception:
     MongoClient = None
 
+DEFAULT_DB_BACKEND = "mongodb"
+if IS_VERCEL and "TASKVISE_DB_BACKEND" not in os.environ and not os.environ.get("MONGO_URI"):
+    DEFAULT_DB_BACKEND = "csv"
+
 DB_BACKEND = os.environ.get(
     "TASKVISE_DB_BACKEND",
-    "mongodb"
+    DEFAULT_DB_BACKEND
 ).strip().lower()
+
+DEFAULT_MONGO_REQUIRED = "true"
+if DB_BACKEND != "mongodb" or (IS_VERCEL and not os.environ.get("MONGO_URI")):
+    DEFAULT_MONGO_REQUIRED = "false"
 
 MONGO_REQUIRED = os.environ.get(
     "TASKVISE_MONGO_REQUIRED",
-    "true"
+    DEFAULT_MONGO_REQUIRED
 ).strip().lower() in {"1", "true", "yes", "on"}
 
 MONGO_URI = os.environ.get(
@@ -71,11 +106,11 @@ MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "taskvise")
 MIRROR_MYSQL = os.environ.get(
     "TASKVISE_MIRROR_MYSQL",
-    "true"
+    "false" if IS_VERCEL and not os.environ.get("MYSQL_PASSWORD") else "true"
 ).strip().lower() in {"1", "true", "yes", "on"}
 MIRROR_MONGODB = os.environ.get(
     "TASKVISE_MIRROR_MONGODB",
-    "true"
+    "false" if IS_VERCEL and not os.environ.get("MONGO_URI") else "true"
 ).strip().lower() in {"1", "true", "yes", "on"}
 CSV_SHADOW_SYNC = os.environ.get(
     "TASKVISE_SYNC_CSV_SHADOW",
@@ -3577,7 +3612,14 @@ def api_system_health():
 
 @app.route('/static/<path:p>')
 def static_proxy(p):
-    return send_from_directory(os.path.join(BASE_DIR, 'static'), p)
+    runtime_static_dir = os.path.join(STORAGE_ROOT, 'static')
+    runtime_asset_path = os.path.join(runtime_static_dir, p)
+    if (
+        os.path.abspath(runtime_static_dir) != os.path.abspath(SOURCE_STATIC_DIR)
+        and os.path.exists(runtime_asset_path)
+    ):
+        return send_from_directory(runtime_static_dir, p)
+    return send_from_directory(SOURCE_STATIC_DIR, p)
 
 @app.route('/')
 def index():
@@ -7139,7 +7181,7 @@ def get_taskvise_companies():
         if taskvise_admin_manager is not None:
             companies = taskvise_admin_manager.get_all_companies()
         else:
-            company_csv = os.path.join(BASE_DIR, 'data', 'admin', 'companies.csv')
+            company_csv = os.path.join(ADMIN_DATA_DIR, 'companies.csv')
             ensure_csv(company_csv, ['id', 'company_name', 'industry', 'country', 'employees_count', 'users_assigned', 'signup_date', 'status', 'plan_type', 'contact_email'])
             companies = read_csv(company_csv)
         return jsonify({'success': True, 'companies': companies})
@@ -7163,7 +7205,7 @@ def add_taskvise_company():
         if taskvise_admin_manager is not None:
             company = taskvise_admin_manager.add_company(company)
         else:
-            company_csv = os.path.join(BASE_DIR, 'data', 'admin', 'companies.csv')
+            company_csv = os.path.join(ADMIN_DATA_DIR, 'companies.csv')
             ensure_csv(company_csv, ['id', 'company_name', 'industry', 'country', 'employees_count', 'users_assigned', 'signup_date', 'status', 'plan_type', 'contact_email'])
             companies = read_csv(company_csv)
             company['id'] = str(max([int(c.get('id', 0)) for c in companies] + [0]) + 1)
@@ -7182,7 +7224,7 @@ def update_taskvise_company(company_id):
         if taskvise_admin_manager is not None:
             taskvise_admin_manager.update_company(company_id, data)
         else:
-            company_csv = os.path.join(BASE_DIR, 'data', 'admin', 'companies.csv')
+            company_csv = os.path.join(ADMIN_DATA_DIR, 'companies.csv')
             update_by_id(company_csv, company_id, data, ['id', 'company_name', 'industry', 'country', 'employees_count', 'users_assigned', 'signup_date', 'status', 'plan_type', 'contact_email'])
         return jsonify({'success': True})
     except Exception as e:
@@ -7195,7 +7237,7 @@ def delete_taskvise_company(company_id):
         if taskvise_admin_manager is not None:
             taskvise_admin_manager.delete_company(company_id)
         else:
-            company_csv = os.path.join(BASE_DIR, 'data', 'admin', 'companies.csv')
+            company_csv = os.path.join(ADMIN_DATA_DIR, 'companies.csv')
             delete_by_id(company_csv, company_id, ['id', 'company_name', 'industry', 'country', 'employees_count', 'users_assigned', 'signup_date', 'status', 'plan_type', 'contact_email'])
         return jsonify({'success': True})
     except Exception as e:
@@ -7210,7 +7252,7 @@ def get_taskvise_admin_stats():
             companies = taskvise_admin_manager.get_all_companies()
             admin_stats = taskvise_admin_manager.get_admin_statistics()
         else:
-            company_csv = os.path.join(BASE_DIR, 'data', 'admin', 'companies.csv')
+            company_csv = os.path.join(ADMIN_DATA_DIR, 'companies.csv')
             ensure_csv(company_csv, ['id', 'company_name', 'industry', 'country', 'employees_count', 'users_assigned', 'signup_date', 'status', 'plan_type', 'contact_email'])
             companies = read_csv(company_csv)
             admin_stats = {}
@@ -7249,7 +7291,7 @@ def get_taskvise_admin_stats():
 def save_taskvise_settings():
     try:
         data = request.json
-        settings_dir = os.path.join(BASE_DIR, 'data', 'admin')
+        settings_dir = ADMIN_DATA_DIR
         os.makedirs(settings_dir, exist_ok=True)
         settings_file = os.path.join(settings_dir, 'settings.json')
         

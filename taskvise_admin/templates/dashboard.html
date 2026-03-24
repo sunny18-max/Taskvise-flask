@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskVise Founder Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="founder-shell">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark"><i class="fas fa-check"></i></div>
+                <div class="brand-copy">
+                    <span class="brand-kicker">Separate Founder App</span>
+                    <strong>TaskVise</strong>
+                    <span>Platform command center</span>
+                </div>
+            </div>
+
+            <div class="sidebar-profile">
+                <div class="profile-avatar">{{ founder_name[0] if founder_name else 'F' }}</div>
+                <div class="profile-copy">
+                    <strong>{{ founder_name or 'TaskVise Founder' }}</strong>
+                    <span>{{ founder_email or 'saathvikk202@gmail.com' }}</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-link active" data-section="dashboard"><i class="fas fa-grid-2"></i><span>Command Center</span></a>
+                <a href="#companies" class="nav-link" data-section="companies"><i class="fas fa-building"></i><span>Companies</span></a>
+                <a href="#analytics" class="nav-link" data-section="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a>
+                <a href="#settings" class="nav-link" data-section="settings"><i class="fas fa-sliders"></i><span>Settings</span></a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="console-note">
+                    <span class="note-label">Founder Access</span>
+                    <p>Cross-company controls, payroll visibility, and full-platform tracking.</p>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <button type="button" class="admin-sidebar-overlay" id="adminSidebarOverlay" aria-label="Close navigation"></button>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div class="admin-topbar-main">
+                    <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-label="Toggle navigation" aria-expanded="false">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="topbar-copy">
+                        <span class="eyebrow">Founder Control Surface</span>
+                        <h1 id="section-title">Platform Command Center</h1>
+                        <p id="section-subtitle">Global monitoring, company controls, and operational analytics.</p>
+                    </div>
+                </div>
+                <div class="admin-topbar-actions">
+                    <button type="button" class="secondary-btn" id="refresh-dashboard-btn"><i class="fas fa-rotate-right"></i><span>Refresh</span></button>
+                    <div class="status-pill"><span class="status-pill-dot"></span><span>Console online</span></div>
+                    <div class="time-pill" id="current-time"></div>
+                </div>
+            </header>
+
+            <div class="admin-main-scroll">
+                <section id="dashboard" class="content-section active">
+                    <div class="hero-grid">
+                        <article class="hero-panel">
+                            <span class="section-tag">Separate Founder Workspace</span>
+                            <h2>Monitor TaskVise growth, delivery, payroll, and platform health from one surface.</h2>
+                            <p>This console is intentionally separate from the main product and is built for founder-level supervision.</p>
+                            <div class="hero-actions">
+                                <button type="button" class="primary-btn" data-open-section="companies"><i class="fas fa-building"></i><span>Manage Companies</span></button>
+                                <button type="button" class="secondary-btn" data-open-section="analytics"><i class="fas fa-chart-line"></i><span>Open Analytics</span></button>
+                            </div>
+                        </article>
+
+                        <aside class="hero-summary">
+                            <div class="summary-card"><span class="summary-label">Signups</span><strong id="hero-signup-status">Enabled</strong><p>Current onboarding policy.</p></div>
+                            <div class="summary-card"><span class="summary-label">Maintenance</span><strong id="hero-maintenance-status">Off</strong><p>Platform operating mode.</p></div>
+                            <div class="summary-card"><span class="summary-label">Backups</span><strong id="hero-backup-interval">24 hours</strong><p>Founder safeguard interval.</p></div>
+                            <div class="summary-card"><span class="summary-label">Plan Mix</span><strong id="hero-plan-mix">0 Enterprise / 0 Professional</strong><p>Commercial split across companies.</p></div>
+                        </aside>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card"><div class="stat-icon total-companies"><i class="fas fa-users"></i></div><div class="stat-content"><span>Total Users</span><strong id="stat-total-companies">0</strong><p>Licensed people across the platform.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon active-companies"><i class="fas fa-user-group"></i></div><div class="stat-content"><span>Active Teams</span><strong id="stat-active-companies">0</strong><p>Operational teams under management.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon total-users"><i class="fas fa-diagram-project"></i></div><div class="stat-content"><span>Active Projects</span><strong id="stat-total-users">0</strong><p>Current delivery streams.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon enterprise-plans"><i class="fas fa-wallet"></i></div><div class="stat-content"><span>Monthly Payroll</span><strong id="stat-enterprise">INR 0</strong><p>Current payroll exposure.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon active-companies"><i class="fas fa-signal"></i></div><div class="stat-content"><span>Active Users</span><strong id="stat-active-users">0</strong><p>Recent application activity.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon total-users"><i class="fas fa-check-double"></i></div><div class="stat-content"><span>Completed Tasks</span><strong id="stat-completed-tasks">0</strong><p>Delivery work marked done.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon alert-icon"><i class="fas fa-bell"></i></div><div class="stat-content"><span>Unread Alerts</span><strong id="stat-unread-alerts">0</strong><p>Open notifications across the suite.</p></div></article>
+                        <article class="stat-card"><div class="stat-icon leave-icon"><i class="fas fa-person-walking-luggage"></i></div><div class="stat-content"><span>On Leave Today</span><strong id="stat-on-leave">0</strong><p>Approved leave currently active.</p></div></article>
+                    </div>
+
+                    <div class="charts-grid">
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">People</span><h3>Role Distribution</h3></div></div><canvas id="planDistributionChart"></canvas></article>
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">Execution</span><h3>Task Status Snapshot</h3></div></div><canvas id="usersPerCompanyChart"></canvas></article>
+                    </div>
+
+                    <div class="detail-grid">
+                        <article class="panel-card panel-card-wide">
+                            <div class="panel-header"><div><span class="panel-tag">Live Feed</span><h3>Recent Platform Activity</h3></div></div>
+                            <div class="table-container">
+                                <table>
+                                    <thead><tr><th>Activity</th><th>When</th><th>Type</th></tr></thead>
+                                    <tbody id="recent-companies-tbody"></tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <article class="panel-card">
+                            <div class="panel-header"><div><span class="panel-tag">Operational Focus</span><h3>Founder Notes</h3></div></div>
+                            <div class="focus-list">
+                                <div class="focus-item"><strong>Company Controls</strong><p>Track status, geography, plan mix, and contacts from one panel.</p></div>
+                                <div class="focus-item"><strong>Delivery Visibility</strong><p>Keep payroll, projects, teams, and task velocity in one view.</p></div>
+                                <div class="focus-item"><strong>Platform Policies</strong><p>Control signup access, maintenance posture, and backup cadence.</p></div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="detail-grid">
+                        <article class="panel-card">
+                            <div class="panel-header"><div><span class="panel-tag">Performance</span><h3>Team Leaderboard</h3></div></div>
+                            <div class="table-container">
+                                <table>
+                                    <thead><tr><th>Team</th><th>Completed Tasks</th><th>Projects</th><th>Members</th></tr></thead>
+                                    <tbody id="leaderboard-tbody"></tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <article class="panel-card">
+                            <div class="panel-header"><div><span class="panel-tag">Finance</span><h3>Payroll by Team</h3></div></div>
+                            <div class="table-container">
+                                <table>
+                                    <thead><tr><th>Team</th><th>Manager</th><th>Payroll</th></tr></thead>
+                                    <tbody id="payroll-tbody"></tbody>
+                                </table>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="companies" class="content-section">
+                    <div class="section-header-row">
+                        <div><span class="section-tag">Workspace Management</span><h2>Company Registry</h2><p>Manage company onboarding, plans, contacts, and status.</p></div>
+                        <button class="primary-btn" id="add-company-btn"><i class="fas fa-plus"></i><span>Add Company</span></button>
+                    </div>
+
+                    <div class="snapshot-row">
+                        <div class="snapshot-card"><span>Total Companies</span><strong id="companies-total">0</strong></div>
+                        <div class="snapshot-card"><span>Active Companies</span><strong id="companies-active">0</strong></div>
+                        <div class="snapshot-card"><span>Enterprise Plans</span><strong id="companies-enterprise">0</strong></div>
+                        <div class="snapshot-card"><span>Professional Plans</span><strong id="companies-professional">0</strong></div>
+                    </div>
+
+                    <div class="filters">
+                        <input type="text" id="search-input" placeholder="Search by company or industry" class="search-box">
+                        <select id="filter-status" class="filter-select"><option value="">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                        <select id="filter-plan" class="filter-select"><option value="">All Plans</option><option value="enterprise">Enterprise</option><option value="professional">Professional</option></select>
+                    </div>
+
+                    <article class="panel-card">
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>ID</th><th>Company Name</th><th>Industry</th><th>Country</th><th>Employees</th><th>Users</th><th>Plan</th><th>Status</th><th>Contact</th><th>Actions</th></tr></thead>
+                                <tbody id="companies-tbody"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+
+                <section id="analytics" class="content-section">
+                    <div class="section-header-row">
+                        <div><span class="section-tag">Founder Analytics</span><h2>Platform Growth and Usage</h2><p>Follow adoption, distribution, and company expansion trends.</p></div>
+                    </div>
+
+                    <div class="snapshot-row">
+                        <div class="snapshot-card"><span>Total Projects</span><strong id="analytics-total-projects">0</strong></div>
+                        <div class="snapshot-card"><span>Total Teams</span><strong id="analytics-total-teams">0</strong></div>
+                        <div class="snapshot-card"><span>Total Employees</span><strong id="analytics-total-employees">0</strong></div>
+                        <div class="snapshot-card"><span>Total Tasks</span><strong id="analytics-total-tasks">0</strong></div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">Market Mix</span><h3>Industry Distribution</h3></div></div><canvas id="industryChart"></canvas></article>
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">Commercial</span><h3>Plan Type Distribution</h3></div></div><canvas id="planTypeChart"></canvas></article>
+                    </div>
+
+                    <div class="charts-grid">
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">Geography</span><h3>Country Distribution</h3></div></div><canvas id="countryChart"></canvas></article>
+                        <article class="panel-card"><div class="panel-header"><div><span class="panel-tag">Adoption</span><h3>Company Growth Timeline</h3></div></div><canvas id="growthChart"></canvas></article>
+                    </div>
+                </section>
+
+                <section id="settings" class="content-section">
+                    <div class="section-header-row">
+                        <div><span class="section-tag">Platform Controls</span><h2>Founder Settings</h2><p>Manage signup policy, maintenance posture, and backup cadence.</p></div>
+                    </div>
+
+                    <div class="settings-grid">
+                        <article class="panel-card">
+                            <div class="panel-header"><div><span class="panel-tag">Core Controls</span><h3>Platform Policies</h3></div></div>
+                            <div class="settings-list">
+                                <label class="setting-row"><div><strong>Enable New Signups</strong><p>Allow new companies and users to join the platform.</p></div><input type="checkbox" id="enable-signups" checked></label>
+                                <label class="setting-row"><div><strong>Maintenance Mode</strong><p>Pause normal activity while maintenance is in progress.</p></div><input type="checkbox" id="maintenance-mode"></label>
+                                <label class="setting-row setting-row-input"><div><strong>Auto Backup Interval</strong><p>Choose how often founder configuration snapshots refresh.</p></div><input type="number" id="backup-interval" value="24" min="1" max="168"></label>
+                            </div>
+                            <div class="settings-actions">
+                                <button class="primary-btn" id="save-settings-btn"><i class="fas fa-floppy-disk"></i><span>Save Settings</span></button>
+                            </div>
+                        </article>
+
+                        <article class="panel-card">
+                            <div class="panel-header"><div><span class="panel-tag">Console Reference</span><h3>Founder Workspace Notes</h3></div></div>
+                            <div class="focus-list">
+                                <div class="focus-item"><strong>Separate Application</strong><p>`taskvise_admin` is isolated from the main TaskVise product UI.</p></div>
+                                <div class="focus-item"><strong>Founder Account</strong><p>{{ founder_email or 'saathvikk202@gmail.com' }} is the dedicated founder identity for this console.</p></div>
+                                <div class="focus-item"><strong>Recommended Scope</strong><p>Use this workspace for cross-company monitoring, payroll rollups, and platform-wide settings.</p></div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div id="company-modal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <button type="button" class="close" aria-label="Close company modal">&times;</button>
+            <div class="modal-header-copy">
+                <span class="section-tag">Company Workspace</span>
+                <h2 id="modal-title">Add New Company</h2>
+            </div>
+            <form id="company-form">
+                <div class="form-grid">
+                    <div class="form-group"><label for="form-company-name">Company Name *</label><input type="text" id="form-company-name" required></div>
+                    <div class="form-group"><label for="form-industry">Industry *</label><input type="text" id="form-industry" required></div>
+                    <div class="form-group"><label for="form-country">Country *</label><input type="text" id="form-country" required></div>
+                    <div class="form-group"><label for="form-employees">Number of Employees</label><input type="number" id="form-employees" min="0"></div>
+                    <div class="form-group"><label for="form-plan-type">Plan Type *</label><select id="form-plan-type" required><option value="professional">Professional</option><option value="enterprise">Enterprise</option></select></div>
+                    <div class="form-group"><label for="form-contact-email">Contact Email *</label><input type="email" id="form-contact-email" required></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn"><i class="fas fa-floppy-disk"></i><span>Save Company</span></button>
+                    <button type="button" class="secondary-btn" id="cancel-company-modal"><i class="fas fa-xmark"></i><span>Cancel</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+</body>
+</html>

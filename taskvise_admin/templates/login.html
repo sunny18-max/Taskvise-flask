@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskVise Founder Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="founder-login-shell">
+        <section class="login-showcase">
+            <div class="showcase-badge">
+                <i class="fas fa-crown"></i>
+                <span>Founder Access Only</span>
+            </div>
+            <h1>TaskVise Founder Console</h1>
+            <p>Separate platform monitoring workspace for cross-company visibility, founder controls, payroll tracking, and high-level operational analytics.</p>
+
+            <div class="showcase-grid">
+                <article class="showcase-card">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <strong>Platform Analytics</strong>
+                        <span>Track adoption, teams, projects, and execution health.</span>
+                    </div>
+                </article>
+                <article class="showcase-card">
+                    <i class="fas fa-building"></i>
+                    <div>
+                        <strong>Company Controls</strong>
+                        <span>Manage plans, statuses, contacts, and expansion footprint.</span>
+                    </div>
+                </article>
+                <article class="showcase-card">
+                    <i class="fas fa-wallet"></i>
+                    <div>
+                        <strong>Payroll Visibility</strong>
+                        <span>Follow payroll exposure by team and business unit.</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="login-panel">
+            <div class="login-card">
+                <div class="login-brand">
+                    <div class="brand-mark"><i class="fas fa-check"></i></div>
+                    <div>
+                        <span class="eyebrow">Separate Founder Application</span>
+                        <h2>Sign in to TaskVise Admin</h2>
+                    </div>
+                </div>
+
+                {% if error %}
+                <div class="alert error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <form method="POST" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Founder Email</label>
+                        <input id="username" name="username" type="email" placeholder="{{ founder_email or 'saathvikk202@gmail.com' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-wrap">
+                            <input id="password" name="password" type="password" placeholder="Enter founder password" required>
+                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Open Founder Dashboard</span>
+                    </button>
+                </form>
+
+                <div class="login-meta">
+                    <div class="meta-card">
+                        <span class="meta-label">Founder Account</span>
+                        <strong>{{ founder_email or 'saathvikk202@gmail.com' }}</strong>
+                        <span>{{ founder_password or 'saathvik@2026' }}</span>
+                    </div>
+                    <div class="meta-card">
+                        <span class="meta-label">Run Locally</span>
+                        <strong>python taskvise_admin\app.py</strong>
+                        <span>Open `http://127.0.0.1:5051/login`</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const toggle = document.getElementById('passwordToggle');
+        const passwordInput = document.getElementById('password');
+        toggle?.addEventListener('click', function () {
+            const isHidden = passwordInput.type === 'password';
+            passwordInput.type = isHidden ? 'text' : 'password';
+            toggle.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+    </script>
+</body>
+</html>
